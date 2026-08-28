@@ -1,0 +1,30 @@
+services:
+  # Django REST Framework Web Service
+  - type: web
+    name: lifeos-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: ./build.sh
+    startCommand: gunicorn lifeos.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lifeos-db
+          property: connectionString
+      - key: CORS_ALLOWED_ORIGINS
+        value: "http://localhost:3000"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://*.vercel.app,https://*.onrender.com,http://localhost:3000"
+
+databases:
+  # Managed PostgreSQL Database on Render
+  - name: lifeos-db
+    databaseName: lifeos
+    user: lifeos_user
+    plan: free

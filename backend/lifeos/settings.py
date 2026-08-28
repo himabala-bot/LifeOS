@@ -8,8 +8,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-lifeos-dev-key-change-in-prod')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 't')
 
-allowed_hosts_env = os.environ.get('DJANGO_ALLOWED_HOSTS', '*')
-ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',') if host.strip()]
+# Allowed Hosts
+# In production on Render, RENDER_EXTERNAL_HOSTNAME is automatically provided
+allowed_hosts_env = os.environ.get('DJANGO_ALLOWED_HOSTS', '')
+if allowed_hosts_env:
+    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',') if host.strip()]
+else:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.onrender.com', '*']
 
 # Application definition
 INSTALLED_APPS = [
@@ -17,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
@@ -25,16 +31,20 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
 ]
 
 ROOT_URLCONF = 'lifeos.urls'
 WSGI_APPLICATION = 'lifeos.wsgi.application'
 
-# Database Configuration (supports Postgres via DATABASE_URL or SQLite for local/Vercel /tmp)
+# Database Configuration
+# Render provides DATABASE_URL for PostgreSQL automatically
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     DATABASES = {
@@ -45,12 +55,11 @@ if DATABASE_URL:
         )
     }
 else:
-    # On Vercel serverless, SQLite must be written to /tmp
-    db_file = Path('/tmp/db.sqlite3') if os.environ.get('VERCEL') else BASE_DIR / 'db.sqlite3'
+    # Local fallback to SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': db_file,
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 
@@ -62,20 +71,37 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Kolkata'
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
+# Static files (CSS, JavaScript, Images) for Render / WhiteNoise
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CORS & CSRF
-CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'True').lower() in ('true', '1', 't')
-cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '')
-if cors_origins_env:
-    CORS_ALLOWED_ORIGINS = [orig.strip() for orig in cors_origins_env.split(',') if orig.strip()]
+# CORS & CSRF Configuration for Vercel Frontend & Local Development
+CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False').lower() in ('true', '1', 't')
 
-csrf_trusted_env = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://*.vercel.app,http://localhost:3000,http://127.0.0.1:3000')
+# Specific allowed origins for the Vercel frontend
+cors_origins_env = os.environ.get(
+    'CORS_ALLOWED_ORIGINS',
+    'http://localhost:3000,http://127.0.0.1:3000'
+)
+CORS_ALLOWED_ORIGINS = [orig.strip() for orig in cors_origins_env.split(',') if orig.strip()]
+
+# Match any Vercel preview or production deployments (e.g., https://lifeos-*.vercel.app)
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https:\/\/.*\.vercel\.app$",
+    r"^https:\/\/.*\.onrender\.com$",
+]
+
+# CSRF Trusted Origins (required for POST/PUT requests from Vercel)
+csrf_trusted_env = os.environ.get(
+    'CSRF_TRUSTED_ORIGINS',
+    'https://*.vercel.app,https://*.onrender.com,http://localhost:3000,http://127.0.0.1:3000'
+)
 CSRF_TRUSTED_ORIGINS = [orig.strip() for orig in csrf_trusted_env.split(',') if orig.strip()]
+
+CORS_ALLOW_CREDENTIALS = True
 
 # REST Framework
 REST_FRAMEWORK = {
