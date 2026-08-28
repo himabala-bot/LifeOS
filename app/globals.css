@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --paper: #f8f7f4;
+    --paper-card: #ffffff;
+    --paper-subtle: #f1f0ea;
+    --ink: #181a18;
+    --ink-secondary: #363935;
+    --muted: #797d77;
+    --line: #e4e3dd;
+    --line-subtle: #eeede7;
+    --accent: #e05d38;
+    --accent-hover: #cb4e2a;
+    --accent-subtle: #faece7;
+    --sage: #75926e;
+    --sage-light: #e6eee3;
+    --amber: #d97706;
+    --amber-light: #fef3c7;
+    --blue: #2563eb;
+    --blue-light: #eff6ff;
+    --purple: #7c3aed;
+    --purple-light: #f5f3ff;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    overflow-x: hidden;
+  }
+
+  button {
+    font: inherit;
+  }
+}
+
+.serif {
+  font-family: 'Newsreader', 'Cormorant Garamond', 'Georgia', serif;
+  letter-spacing: -0.015em;
+}
+
+.font-sans-clean {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Custom Sleek Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4d3cc;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b5b4ad;
+}
+
+/* Smooth glassmorphic & noise card utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+}
+
+.glass-panel-dark {
+  background: rgba(24, 26, 24, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glow-accent {
+  box-shadow: 0 0 35px -8px rgba(224, 93, 56, 0.25);
+}
+
+.card-hover {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+/* Subtle pulse dot */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.9); }
+}
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s infinite ease-in-out;
+}
