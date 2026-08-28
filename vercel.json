@@ -1,31 +1,26 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "version": 2,
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/next"
+  "services": {
+    "frontend": {
+      "root": "frontend/"
     },
-    {
-      "src": "backend/lifeos/wsgi.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxDuration": 15
-      }
+    "backend": {
+      "root": "backend/",
+      "entrypoint": "lifeos.wsgi:application"
     }
-  ],
-  "routes": [
+  },
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "backend/lifeos/wsgi.py"
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "backend"
+      }
     },
     {
-      "src": "/static/(.*)",
-      "dest": "backend/static/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "frontend/$1"
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
     }
   ]
 }

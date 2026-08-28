@@ -1,0 +1,2 @@
+[tool.vercel]
+entrypoint = "lifeos.wsgi:application"
