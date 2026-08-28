@@ -1,1 +1,12 @@
-{"scripts":{"dev":"next dev","build":"next build","start":"next start"},"dependencies":{"@tailwindcss/postcss":"latest","@tanstack/react-query":"latest","clsx":"^2.1.1","framer-motion":"latest","lucide-react":"latest","next":"^16.3.3","react":"^19.2.8","react-dom":"^19.2.8","recharts":"latest","tailwind-merge":"^3.6.0","tailwindcss":"latest"},"devDependencies":{"@types/node":"26.4.0","@types/react":"19.2.18","typescript":"^5.9.3"}}
+{
+  "name": "lifeos",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "start": "npm run start --prefix frontend",
+    "lint": "npm run lint --prefix frontend"
+  }
+}
