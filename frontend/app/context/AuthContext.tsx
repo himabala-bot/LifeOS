@@ -1,137 +1,177 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { UserProfile } from '../types';
+import { api, getAccessToken, setTokens, clearTokens } from '../../lib/api';
 
 interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
+  login: (emailOrUsername: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   signup: (name: string, email: string, password?: string, currency?: string) => Promise<{ success: boolean; error?: string }>;
-  loginAsDemo: () => void;
+  loginAsDemo: () => Promise<void>;
   logout: () => void;
-  updateProfile: (updates: Partial<UserProfile>) => void;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DEMO_USER: UserProfile = {
-  id: 'demo-user-1',
-  name: 'Aisha Sharma',
-  email: 'aisha@lifeos.me',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  bio: 'Product Designer & Lifelong Explorer',
-  currency: '₹',
-  monthlyBudget: 25000,
-  dailyFocusTargetMinutes: 180,
-  theme: 'warm-paper',
-  createdAt: new Date().toISOString(),
-};
+function mapBackendUserToProfile(backendUser: any, currency = '₹'): UserProfile {
+  const avatarColors = ['#e66b4b', '#5f805d', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b'];
+  const charCode = (backendUser.username || backendUser.email || 'A').charCodeAt(0);
+  const avatar = avatarColors[charCode % avatarColors.length];
+
+  return {
+    id: String(backendUser.id),
+    name: backendUser.first_name || backendUser.username || 'LifeOS Builder',
+    email: backendUser.email || backendUser.username || '',
+    avatar: avatar,
+    bio: 'Focused builder & high-agency individual',
+    currency: currency,
+    monthlyBudget: backendUser.monthly_budget ? Number(backendUser.monthly_budget) : 25000,
+    dailyFocusTargetMinutes: 180,
+    theme: 'warm-paper',
+    createdAt: backendUser.date_joined || new Date().toISOString(),
+  };
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchCurrentUser = useCallback(async () => {
+    const token = getAccessToken();
+    if (!token) {
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const storedUserId = localStorage.getItem('lifeos_current_user_id');
-      const storedUsersRaw = localStorage.getItem('lifeos_users');
-      if (storedUserId && storedUsersRaw) {
-        const users: Record<string, UserProfile> = JSON.parse(storedUsersRaw);
-        if (users[storedUserId]) {
-          setUser(users[storedUserId]);
-        }
+      const backendUser = await api.auth.me();
+      if (backendUser && backendUser.id) {
+        setUser(mapBackendUserToProfile(backendUser));
+      } else {
+        clearTokens();
+        setUser(null);
       }
-    } catch (e) {
-      console.error('Error loading auth from localStorage', e);
+    } catch (err) {
+      console.warn('Session verification failed, logging out:', err);
+      clearTokens();
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const saveUserRecord = (newUser: UserProfile) => {
-    try {
-      const storedUsersRaw = localStorage.getItem('lifeos_users');
-      const users: Record<string, UserProfile> = storedUsersRaw ? JSON.parse(storedUsersRaw) : {};
-      users[newUser.id] = newUser;
-      localStorage.setItem('lifeos_users', JSON.stringify(users));
-      localStorage.setItem('lifeos_current_user_id', newUser.id);
-      setUser(newUser);
-    } catch (e) {
-      console.error('Error saving user', e);
-    }
-  };
+  useEffect(() => {
+    fetchCurrentUser();
 
-  const login = async (email: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const storedUsersRaw = localStorage.getItem('lifeos_users');
-      const users: Record<string, UserProfile> = storedUsersRaw ? JSON.parse(storedUsersRaw) : {};
-      const foundUser = Object.values(users).find(u => u.email.toLowerCase() === email.toLowerCase());
-      
-      if (foundUser) {
-        localStorage.setItem('lifeos_current_user_id', foundUser.id);
-        setUser(foundUser);
-        return { success: true };
-      }
-      
-      // If user logging in with demo email
-      if (email.toLowerCase() === DEMO_USER.email.toLowerCase()) {
-        saveUserRecord(DEMO_USER);
-        return { success: true };
-      }
+    const handleUnauthorized = () => {
+      setUser(null);
+    };
 
-      return { success: false, error: 'No account found with this email. Please Sign Up to get started!' };
-    } catch (e) {
-      return { success: false, error: 'Failed to sign in. Please try again.' };
-    }
-  };
-
-  const signup = async (name: string, email: string, _password?: string, currency = '₹'): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const storedUsersRaw = localStorage.getItem('lifeos_users');
-      const users: Record<string, UserProfile> = storedUsersRaw ? JSON.parse(storedUsersRaw) : {};
-      
-      const existing = Object.values(users).find(u => u.email.toLowerCase() === email.toLowerCase());
-      if (existing) {
-        return { success: false, error: 'An account with this email already exists. Please log in.' };
-      }
-
-      const avatarColors = ['#e66b4b', '#5f805d', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b'];
-      const randomColor = avatarColors[Math.floor(Math.random() * avatarColors.length)];
-
-      const newUser: UserProfile = {
-        id: 'usr_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36),
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        avatar: randomColor,
-        currency,
-        monthlyBudget: currency === '₹' ? 25000 : 3000,
-        dailyFocusTargetMinutes: 180,
-        theme: 'warm-paper',
-        createdAt: new Date().toISOString(),
+    if (typeof window !== 'undefined') {
+      window.addEventListener('lifeos:auth:unauthorized', handleUnauthorized);
+      return () => {
+        window.removeEventListener('lifeos:auth:unauthorized', handleUnauthorized);
       };
+    }
+  }, [fetchCurrentUser]);
 
-      saveUserRecord(newUser);
-      return { success: true };
-    } catch (e) {
-      return { success: false, error: 'Registration failed. Please try again.' };
+  const login = async (emailOrUsername: string, password = ''): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setIsLoading(true);
+      const res = await api.auth.login({
+        username: emailOrUsername.trim(),
+        password: password || 'LifeOS_User_2026!',
+      });
+
+      if (res.access) {
+        setTokens(res.access, res.refresh);
+        const me = await api.auth.me();
+        setUser(mapBackendUserToProfile(me));
+        return { success: true };
+      }
+      return { success: false, error: 'Invalid response from server.' };
+    } catch (e: any) {
+      const msg = e.message || 'Invalid username or password.';
+      return { success: false, error: msg.includes('401') ? 'Invalid email/username or password.' : msg };
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const loginAsDemo = () => {
-    saveUserRecord(DEMO_USER);
+  const signup = async (
+    name: string,
+    email: string,
+    password = '',
+    currency = '₹'
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setIsLoading(true);
+      const res = await api.auth.signup({
+        name,
+        email,
+        password: password || 'LifeOS_User_2026!',
+        currency,
+      });
+
+      if (res.access) {
+        setTokens(res.access, res.refresh);
+        const profile = mapBackendUserToProfile(res.user || { first_name: name, email }, currency);
+        setUser(profile);
+        return { success: true };
+      }
+      return { success: false, error: 'Failed to create account.' };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Registration failed. Please try again.' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginAsDemo = async () => {
+    try {
+      setIsLoading(true);
+      const demoEmail = 'aisha@lifeos.me';
+      const demoPassword = 'DemoPassword123!';
+
+      const loginRes = await login(demoEmail, demoPassword);
+      if (!loginRes.success) {
+        // Create demo account on backend if it doesn't exist yet
+        const signupRes = await signup('Aisha Sharma', demoEmail, demoPassword, '₹');
+        if (!signupRes.success) {
+          await login(demoEmail, demoPassword);
+        }
+      }
+    } catch (err) {
+      console.error('Failed demo login:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logout = () => {
-    localStorage.removeItem('lifeos_current_user_id');
+    clearTokens();
     setUser(null);
   };
 
-  const updateProfile = (updates: Partial<UserProfile>) => {
+  const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return;
-    const updated = { ...user, ...updates };
-    saveUserRecord(updated);
+    try {
+      const backendUpdates: any = {};
+      if (updates.name) backendUpdates.name = updates.name;
+      if (updates.email) backendUpdates.email = updates.email;
+      if (updates.monthlyBudget !== undefined) backendUpdates.monthly_budget = updates.monthlyBudget;
+
+      await api.auth.updateMe(backendUpdates);
+      setUser(prev => (prev ? { ...prev, ...updates } : null));
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      setUser(prev => (prev ? { ...prev, ...updates } : null));
+    }
   };
 
   return (

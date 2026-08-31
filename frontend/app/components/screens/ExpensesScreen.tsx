@@ -86,7 +86,9 @@ export function ExpensesScreen() {
   };
 
   // Top spending categories list
-  const categoryList = Object.entries(expensesByCategory).sort((a, b) => b[1] - a[1]);
+  const categoryList: [string, number][] = (
+    Object.entries(expensesByCategory) as [string, number][]
+  ).sort((a, b) => Number(b[1]) - Number(a[1]));
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-16">
@@ -315,13 +317,14 @@ export function ExpensesScreen() {
             ) : (
               <div className="mt-4 space-y-4">
                 {categoryList.map(([catName, amount]) => {
-                  const pct = spentThisMonth > 0 ? Math.round((amount / spentThisMonth) * 100) : 0;
+                  const numAmount = Number(amount);
+                  const pct = spentThisMonth > 0 ? Math.round((numAmount / spentThisMonth) * 100) : 0;
                   return (
                     <div key={catName}>
                       <div className="flex justify-between text-xs mb-1">
                         <span className="font-medium text-[var(--ink)]">{catName}</span>
                         <span className="font-semibold text-[var(--muted)]">
-                          {currency}{amount.toLocaleString()} ({pct}%)
+                          {currency}{numAmount.toLocaleString()} ({pct}%)
                         </span>
                       </div>
                       <div className="w-full h-2 bg-[#f1f0ea] rounded-full overflow-hidden">

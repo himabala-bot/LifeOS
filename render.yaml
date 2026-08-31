@@ -1,5 +1,5 @@
 services:
-  # Django REST Framework Web Service (100% FREE Plan)
+  # Django REST Framework Web Service (Render FREE Plan)
   - type: web
     name: lifeos-backend
     runtime: python
@@ -15,19 +15,10 @@ services:
       - key: DJANGO_DEBUG
         value: "False"
       - key: DATABASE_URL
-        fromDatabase:
-          name: lifeos-db
-          property: connectionString
+        sync: false
       - key: CORS_ALLOWED_ORIGINS
         value: "http://localhost:3000"
       - key: CSRF_TRUSTED_ORIGINS
         value: "https://*.vercel.app,https://*.onrender.com,http://localhost:3000"
       - key: DJANGO_ALLOWED_HOSTS
         value: ".onrender.com,localhost,127.0.0.1"
-
-databases:
-  # Managed PostgreSQL Database (100% FREE Plan)
-  - name: lifeos-db
-    databaseName: lifeos
-    user: lifeos_user
-    plan: free

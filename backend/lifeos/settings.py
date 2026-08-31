@@ -44,7 +44,7 @@ ROOT_URLCONF = 'lifeos.urls'
 WSGI_APPLICATION = 'lifeos.wsgi.application'
 
 # Database Configuration
-# Render provides DATABASE_URL for PostgreSQL automatically
+# Uses Supabase PostgreSQL via DATABASE_URL in production, with local SQLite fallback
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     DATABASES = {
@@ -52,10 +52,16 @@ if DATABASE_URL:
             default=DATABASE_URL,
             conn_max_age=600,
             conn_health_checks=True,
+            ssl_require=True,
         )
     }
+    # Ensure SSL mode is explicitly set to require for Supabase PostgreSQL
+    if 'OPTIONS' not in DATABASES['default']:
+        DATABASES['default']['OPTIONS'] = {}
+    if 'sslmode' not in DATABASES['default']['OPTIONS']:
+        DATABASES['default']['OPTIONS']['sslmode'] = 'require'
 else:
-    # Local fallback to SQLite
+    # Local fallback to SQLite when DATABASE_URL is not set
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
