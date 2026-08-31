@@ -10,6 +10,7 @@ from core.views import (
     AnalyticsView,
     RegisterView,
     MeView,
+    health_check,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -22,6 +23,11 @@ router.register('expenses', ExpenseViewSet, basename='expenses')
 router.register('budget', BudgetViewSet, basename='budget')
 
 urlpatterns = [
+    # Health Check Endpoint
+    path('health/', health_check, name='health_check'),
+    path('healthz/', health_check, name='healthz'),
+    path('', health_check, name='root_health_check'),
+
     # Auth Endpoints
     path('api/register/', RegisterView.as_view(), name='register'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

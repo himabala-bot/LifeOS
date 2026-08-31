@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from rest_framework import viewsets, status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -6,6 +7,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from django.db.models import Sum
 from .models import Goal, Task, Habit, HabitCompletion, Expense, MonthlyBudget
+
+
+def health_check(request):
+    """Simple unauthenticated health-check returning HTTP 200"""
+    return JsonResponse({"status": "ok"}, status=200)
 
 
 # ==========================================
