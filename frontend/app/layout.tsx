@@ -4,7 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 
 export const metadata: Metadata = {
-  title: 'LifeOS — The Unified Operating System for Your Ambition, Habits & Life',
+  title: 'LifeOS',
   description: 'Master your daily focus, atomic habits, financial runway, and life goals in one beautifully crafted, distraction-free operating system.',
 };
 
