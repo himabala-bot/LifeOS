@@ -28,7 +28,6 @@ export function LandingPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
 
-  // Interactive demo habit state on the landing page hero preview
   const [demoHabits, setDemoHabits] = useState([true, true, true, false, true, true, false]);
   const [demoTasks, setDemoTasks] = useState([
     { title: 'Finalize Q3 design sprint proposal', done: true, tag: 'Work' },
@@ -36,10 +35,9 @@ export function LandingPage() {
     { title: 'Review monthly cloud spending', done: false, tag: 'Finance' },
   ]);
 
-  // Dynamic Reactive Streak Calculation for preview card
   const demoStreak = useMemo(() => {
     let streak = 0;
-    // Check consecutive true days ending at today (index 6 backwards)
+
     for (let i = demoHabits.length - 1; i >= 0; i--) {
       if (demoHabits[i]) {
         streak++;
@@ -47,7 +45,7 @@ export function LandingPage() {
         break;
       }
     }
-    // If today is unchecked, check if previous day had a streak
+
     if (streak === 0 && demoHabits[demoHabits.length - 2]) {
       for (let i = demoHabits.length - 2; i >= 0; i--) {
         if (demoHabits[i]) streak++;
@@ -57,7 +55,6 @@ export function LandingPage() {
     return streak;
   }, [demoHabits]);
 
-  // Dynamic Reactive Alignment Score for preview card
   const demoScore = useMemo(() => {
     const tasksDone = demoTasks.filter(t => t.done).length;
     const tasksTotal = demoTasks.length || 1;
@@ -76,7 +73,7 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f7f4] text-[#181a18] selection:bg-[#e05d38]/20 selection:text-[#e05d38]">
-      {/* Navigation Bar */}
+
       <header className="sticky top-0 z-40 bg-[#f8f7f4]/85 backdrop-blur-md border-b border-[var(--line)] transition-all">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -111,11 +108,10 @@ export function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
       <section className="relative pt-20 pb-24 overflow-hidden border-b border-[var(--line)]">
         <div className="max-w-7xl mx-auto px-6">
           <div className="max-w-4xl mx-auto text-center">
-            {/* Main Headline */}
+
             <motion.h1
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -134,7 +130,6 @@ export function LandingPage() {
               Stop juggling disjointed apps. LifeOS connects your daily focus tasks, atomic habit loops, financial runway, and milestone goals with zero noise.
             </motion.p>
 
-            {/* CTAs */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -158,14 +153,8 @@ export function LandingPage() {
               </button>
             </motion.div>
 
-            {/* Trust badge */}
-            <p className="mt-5 text-xs text-[var(--muted)] flex items-center justify-center gap-2">
-              <ShieldCheck size={14} className="text-[var(--sage)]" />
-              <span>Private & Local First · No credit card required · Instant setup</span>
-            </p>
           </div>
 
-          {/* Interactive Live Hero Widget Preview */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -186,9 +175,9 @@ export function LandingPage() {
             </div>
 
             <div className="grid md:grid-cols-12 gap-6">
-              {/* Left Column: Life Score & Today Checklist */}
+
               <div className="md:col-span-7 space-y-6">
-                {/* Score Banner */}
+
                 <div className="bg-[var(--ink)] text-white rounded-2xl p-6 relative overflow-hidden shadow-inner">
                   <div className="flex justify-between items-start">
                     <div>
@@ -302,7 +291,7 @@ export function LandingPage() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {/* Flagship Card: Future You Trajectory Simulator */}
+
           <div className="md:col-span-3 bg-gradient-to-br from-[#181a18] to-[#252825] text-white rounded-3xl p-8 sm:p-10 border border-white/15 card-hover shadow-xl flex flex-col lg:flex-row items-center justify-between gap-8">
             <div className="max-w-xl">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--accent)] text-white text-xs font-bold tracking-wide mb-4">
@@ -344,7 +333,6 @@ export function LandingPage() {
             </div>
           </div>
 
-          {/* Card 1: Kanban Task Architecture */}
           <div className="bg-white rounded-3xl p-8 border border-[var(--line)] card-hover flex flex-col justify-between">
             <div>
               <div className="w-12 h-12 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center mb-6">
@@ -485,7 +473,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-[var(--line)] py-12 text-center text-xs text-[var(--muted)]">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
@@ -498,7 +485,6 @@ export function LandingPage() {
         </div>
       </footer>
 
-      {/* Auth Modal */}
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}

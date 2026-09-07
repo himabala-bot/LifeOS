@@ -1,15 +1,16 @@
-/**
- * LifeOS API Client & JWT Manager
- * Connects Next.js Frontend directly to the Django REST API backend
- */
 
-export const API_BASE_URL = 
-  process.env.NEXT_PUBLIC_API_URL || 
-  (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-    ? 'http://127.0.0.1:8000' 
+
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== 'undefined' &&
+   (window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname === '0.0.0.0' ||
+    window.location.hostname.startsWith('192.168.') ||
+    window.location.hostname.startsWith('10.'))
+    ? `http://${window.location.hostname}:8000`
     : 'https://lifeos-backend-bmss.onrender.com');
 
-// In-browser token storage keys
 const ACCESS_TOKEN_KEY = 'lifeos_jwt_access';
 const REFRESH_TOKEN_KEY = 'lifeos_jwt_refresh';
 
@@ -37,16 +38,12 @@ export function clearTokens(): void {
   localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
-/**
- * Core authenticated fetch function with automatic JWT bearer injection
- * and transparent 401 token refreshing.
- */
 export async function apiFetch<T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = endpoint.startsWith('http') 
-    ? endpoint 
+  const url = endpoint.startsWith('http')
+    ? endpoint
     : `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
   const headers: Record<string, string> = {
@@ -64,7 +61,6 @@ export async function apiFetch<T = any>(
     headers,
   });
 
-  // Handle Token Expiry & Automatic Refresh
   if (response.status === 401 && accessToken) {
     const refreshToken = getRefreshToken();
     if (refreshToken && !endpoint.includes('/token/')) {
@@ -80,7 +76,6 @@ export async function apiFetch<T = any>(
           setTokens(data.access);
           headers['Authorization'] = `Bearer ${data.access}`;
 
-          // Retry original request with refreshed token
           response = await fetch(url, {
             ...options,
             headers,
@@ -105,12 +100,11 @@ export async function apiFetch<T = any>(
         errorMessage = errorData.error || errorData.detail || JSON.stringify(errorData);
       }
     } catch {
-      // Use fallback error message
+
     }
     throw new Error(errorMessage);
   }
 
-  // Return empty object for 204 No Content
   if (response.status === 204) {
     return {} as T;
   }
@@ -118,16 +112,21 @@ export async function apiFetch<T = any>(
   return response.json();
 }
 
-// ==========================================
-// Typed API Endpoints
-// ==========================================
-
 export const api = {
-  // Auth
+
+  warmup: () => {
+    if (typeof window === 'undefined') return;
+    try {
+      fetch(`${API_BASE_URL}/health/`, { method: 'GET', keepalive: true }).catch(() => {});
+    } catch {
+
+    }
+  },
+
   auth: {
     login: (credentials: { username?: string; email?: string; password?: string }) => {
       const username = credentials.username || credentials.email || '';
-      return apiFetch<{ access: string; refresh: string }>('/api/token/', {
+      return apiFetch<{ access: string; refresh: string; user?: any }>('/api/token/', {
         method: 'POST',
         body: JSON.stringify({ username, password: credentials.password || '' }),
       });
@@ -150,7 +149,22 @@ export const api = {
     }),
   },
 
-  // Tasks
+  bootstrap: () => apiFetch<{
+    user: any;
+    tasks: any[];
+    habits: any[];
+    goals: any[];
+    expenses: any[];
+    budget: any;
+    analytics: {
+      tasks_completed: number;
+      tasks_total: number;
+      spent_month: number;
+      goal_progress: number;
+      habits_active: number;
+    };
+  }>('/api/bootstrap/'),
+
   tasks: {
     list: () => apiFetch<any[]>('/api/tasks/'),
     create: (task: {
@@ -180,7 +194,6 @@ export const api = {
     }),
   },
 
-  // Habits
   habits: {
     list: () => apiFetch<any[]>('/api/habits/'),
     create: (habit: {
@@ -210,7 +223,6 @@ export const api = {
       }),
   },
 
-  // Goals
   goals: {
     list: () => apiFetch<any[]>('/api/goals/'),
     create: (goal: {
@@ -238,7 +250,6 @@ export const api = {
     }),
   },
 
-  // Expenses
   expenses: {
     list: () => apiFetch<any[]>('/api/expenses/'),
     create: (expense: {
@@ -264,7 +275,6 @@ export const api = {
     }),
   },
 
-  // Budget
   budget: {
     get: () => apiFetch<any[]>('/api/budget/'),
     update: (amount: number) => apiFetch<any>('/api/budget/', {
@@ -273,7 +283,6 @@ export const api = {
     }),
   },
 
-  // Analytics
   analytics: {
     get: () => apiFetch<{
       tasks_completed: number;

@@ -29,7 +29,6 @@ export default function Home() {
     setIsQuickAddOpen(true);
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f7f4]">
@@ -43,15 +42,13 @@ export default function Home() {
     );
   }
 
-  // Not authenticated: render high-craft Landing Page
   if (!isAuthenticated) {
     return <LandingPage />;
   }
 
-  // Authenticated workspace
   return (
     <div className="min-h-screen flex bg-[#f8f7f4] text-[#181a18]">
-      {/* Sidebar navigation */}
+
       <Sidebar
         currentScreen={currentScreen}
         onSelectScreen={setCurrentScreen}
@@ -60,9 +57,8 @@ export default function Home() {
         onOpenQuickAdd={() => openQuickAdd('task')}
       />
 
-      {/* Main Workspace Canvas */}
       <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
-        {/* Mobile Top Bar */}
+
         <header className="md:hidden sticky top-0 z-30 bg-[#f8f7f4]/90 backdrop-blur-md border-b border-[var(--line)] px-5 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -82,7 +78,6 @@ export default function Home() {
           </button>
         </header>
 
-        {/* Dynamic Screen View */}
         <main className="flex-1 px-5 sm:px-8 md:px-12 py-8 max-w-7xl w-full mx-auto">
           {currentScreen === 'today' && (
             <TodayScreen
@@ -109,7 +104,6 @@ export default function Home() {
         </main>
       </div>
 
-      {/* Universal Quick Add Modal */}
       <QuickAddModal
         isOpen={isQuickAddOpen}
         onClose={() => setIsQuickAddOpen(false)}

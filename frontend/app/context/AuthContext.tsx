@@ -36,14 +36,40 @@ function mapBackendUserToProfile(backendUser: any, currency = '₹'): UserProfil
   };
 }
 
+const CACHED_USER_KEY = 'lifeos_cached_user';
+
+function getCachedUser(): UserProfile | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(CACHED_USER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedUser(profile: UserProfile | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (profile) {
+      localStorage.setItem(CACHED_USER_KEY, JSON.stringify(profile));
+    } else {
+      localStorage.removeItem(CACHED_USER_KEY);
+    }
+  } catch {
+
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchCurrentUser = useCallback(async () => {
     const token = getAccessToken();
     if (!token) {
       setUser(null);
+      setCachedUser(null);
       setIsLoading(false);
       return;
     }
@@ -51,24 +77,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const backendUser = await api.auth.me();
       if (backendUser && backendUser.id) {
-        setUser(mapBackendUserToProfile(backendUser));
+        const profile = mapBackendUserToProfile(backendUser);
+        setUser(profile);
+        setCachedUser(profile);
       } else {
         clearTokens();
+        setCachedUser(null);
         setUser(null);
       }
     } catch (err) {
-      console.warn('Session verification failed, logging out:', err);
-      clearTokens();
-      setUser(null);
+      console.warn('Session verification check:', err);
+
+      if (err instanceof Error && err.message.includes('401')) {
+        clearTokens();
+        setCachedUser(null);
+        setUser(null);
+      }
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
+
+    const token = getAccessToken();
+    const cached = getCachedUser();
+    if (token && cached) {
+      setUser(cached);
+      setIsLoading(false);
+    } else if (!token) {
+      setIsLoading(false);
+    }
+
+    api.warmup();
+
     fetchCurrentUser();
 
     const handleUnauthorized = () => {
+      clearTokens();
+      setCachedUser(null);
       setUser(null);
     };
 
@@ -90,8 +137,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (res.access) {
         setTokens(res.access, res.refresh);
-        const me = await api.auth.me();
-        setUser(mapBackendUserToProfile(me));
+
+        if (res.user) {
+          const profile = mapBackendUserToProfile(res.user);
+          setUser(profile);
+          setCachedUser(profile);
+        } else {
+          const me = await api.auth.me();
+          const profile = mapBackendUserToProfile(me);
+          setUser(profile);
+          setCachedUser(profile);
+        }
         return { success: true };
       }
       return { success: false, error: 'Invalid response from server.' };
@@ -122,6 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setTokens(res.access, res.refresh);
         const profile = mapBackendUserToProfile(res.user || { first_name: name, email }, currency);
         setUser(profile);
+        setCachedUser(profile);
         return { success: true };
       }
       return { success: false, error: 'Failed to create account.' };
@@ -140,7 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const loginRes = await login(demoEmail, demoPassword);
       if (!loginRes.success) {
-        // Create demo account on backend if it doesn't exist yet
+
         const signupRes = await signup('Aisha Sharma', demoEmail, demoPassword, '₹');
         if (!signupRes.success) {
           await login(demoEmail, demoPassword);
@@ -155,11 +212,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     clearTokens();
+    setCachedUser(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('lifeos_cached_workspace');
+    }
     setUser(null);
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return;
+    const newProfile = { ...user, ...updates };
+    setUser(newProfile);
+    setCachedUser(newProfile);
+
     try {
       const backendUpdates: any = {};
       if (updates.name) backendUpdates.name = updates.name;
@@ -167,10 +232,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (updates.monthlyBudget !== undefined) backendUpdates.monthly_budget = updates.monthlyBudget;
 
       await api.auth.updateMe(backendUpdates);
-      setUser(prev => (prev ? { ...prev, ...updates } : null));
     } catch (err) {
       console.error('Failed to update profile:', err);
-      setUser(prev => (prev ? { ...prev, ...updates } : null));
     }
   };
 

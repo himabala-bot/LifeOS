@@ -2,17 +2,17 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Check, 
-  Plus, 
-  ChevronRight, 
-  Flame, 
-  CircleDollarSign, 
-  Target, 
-  Sparkles, 
-  ArrowUpRight, 
-  Zap, 
-  Clock, 
+import {
+  Check,
+  Plus,
+  ChevronRight,
+  Flame,
+  CircleDollarSign,
+  Target,
+  Sparkles,
+  ArrowUpRight,
+  Zap,
+  Clock,
   Calendar,
   AlertCircle,
   TrendingUp,
@@ -29,18 +29,18 @@ interface TodayScreenProps {
 
 export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
   const { user } = useAuth();
-  const { 
-    tasks, 
-    toggleTask, 
+  const {
+    tasks,
+    toggleTask,
     addTask,
-    habits, 
-    toggleHabitDay, 
+    habits,
+    toggleHabitDay,
     getHabitStreak,
-    goals, 
+    goals,
     getGoalProgress,
-    lifeScore, 
-    spentThisMonth, 
-    budgetRemaining, 
+    lifeScore,
+    spentThisMonth,
+    budgetRemaining,
     budgetUsagePercent,
     safeDailySpend,
     todayEnergyLog,
@@ -51,27 +51,23 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
   const [selectedTag, setSelectedTag] = useState<TaskTag>('Work');
   const [selectedPriority, setSelectedPriority] = useState<TaskPriority>('medium');
 
-  // Greeting based on hour
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   const firstName = user?.name ? user.name.split(' ')[0] : 'there';
 
   const todayStr = getTodayDateStr();
-  const formattedDate = new Intl.DateTimeFormat('en-US', { 
-    weekday: 'long', 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
   }).format(new Date());
 
-  // Filter tasks for Today
   const todayTasks = tasks.filter(t => !t.dueDate || t.dueDate === todayStr || t.completedAt === todayStr);
   const completedTodayTasks = todayTasks.filter(t => t.completed).length;
 
-  // Active goals
   const activeGoals = goals.filter(g => g.status !== 'completed').slice(0, 3);
 
-  // Quick Inline Add Task
   const handleQuickAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskInput.trim()) return;
@@ -85,13 +81,12 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
     setNewTaskInput('');
   };
 
-  // Quick 7 days labels
   const daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const last7DateStrs = Array.from({ length: 7 }, (_, i) => getPastDateStr(6 - i));
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 pb-16">
-      {/* Header Banner */}
+
       <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)] mb-2">
@@ -121,9 +116,8 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
         </div>
       </header>
 
-      {/* Top Metrics Row: Holistic Life Score & Financial Runway */}
       <section className="grid lg:grid-cols-[1.15fr_1fr] gap-6">
-        {/* Life Score Card */}
+
         <div className="bg-[var(--ink)] text-white rounded-3xl p-7 relative overflow-hidden shadow-xl flex flex-col justify-between">
           <div className="relative z-10 flex justify-between items-start">
             <div>
@@ -170,7 +164,6 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
           </div>
         </div>
 
-        {/* Financial Runway Card */}
         <div className="bg-white rounded-3xl p-7 border border-[var(--line)] shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <div>
@@ -199,15 +192,15 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
               <span className="font-bold text-[var(--accent)]">{user?.currency || '₹'}{safeDailySpend.toLocaleString()} / day</span>
             </div>
             <div className="w-full h-2.5 bg-[#f1f0ea] rounded-full overflow-hidden">
-              <div 
+              <div
                 className={`h-full rounded-full transition-all ${budgetUsagePercent > 90 ? 'bg-red-500' : 'bg-[var(--sage)]'}`}
                 style={{ width: `${Math.min(100, budgetUsagePercent)}%` }}
               />
             </div>
             <div className="flex justify-between items-center text-[11px] text-[var(--muted)] mt-2">
               <span>{budgetUsagePercent}% budget used</span>
-              <button 
-                onClick={() => onNavigate('expenses')} 
+              <button
+                onClick={() => onNavigate('expenses')}
                 className="hover:text-[var(--ink)] font-semibold flex items-center gap-1 cursor-pointer"
               >
                 <span>View ledger</span>
@@ -218,8 +211,7 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
         </div>
       </section>
 
-      {/* Future You Trajectory Pulse Card */}
-      <section 
+      <section
         onClick={() => onNavigate('trajectory')}
         className="p-6 rounded-3xl bg-gradient-to-r from-[#181a18] to-[#2a2e2a] text-white shadow-lg cursor-pointer hover:shadow-xl hover:scale-[1.01] transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-white/10"
       >
@@ -261,7 +253,6 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
             </span>
           </div>
 
-          {/* Task List */}
           <div className="mt-4 divide-y divide-[var(--line)] min-h-[160px]">
             {todayTasks.length === 0 ? (
               <div className="py-10 text-center text-[var(--muted)]">
@@ -307,7 +298,6 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
             )}
           </div>
 
-          {/* Inline Add Task Form */}
           <form onSubmit={handleQuickAdd} className="mt-4 pt-4 border-t border-[var(--line)]">
             <div className="flex items-center gap-2">
               <input
@@ -326,8 +316,8 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
             </div>
             <div className="flex items-center justify-between mt-2 px-1 text-[11px] text-[var(--muted)]">
               <span>Press Enter to save</span>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => onNavigate('tasks')}
                 className="hover:text-[var(--ink)] font-medium"
               >
@@ -337,9 +327,8 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
           </form>
         </div>
 
-        {/* Right Column: Daily Habits & Energy Log */}
         <div className="space-y-6">
-          {/* Habits Card */}
+
           <div className="bg-white rounded-3xl p-7 border border-[var(--line)] shadow-sm">
             <div className="flex items-center justify-between pb-4 border-b border-[var(--line)]">
               <div>
@@ -384,7 +373,6 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
                         </div>
                       </div>
 
-                      {/* 7-Day Matrix */}
                       <div className="flex justify-between items-center pt-2 border-t border-[var(--line)]">
                         {last7DateStrs.map((dStr, idx) => {
                           const done = !!habit.history[dStr];
@@ -428,7 +416,6 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
             </div>
           </div>
 
-          {/* Daily Energy & Focus Logger */}
           <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -461,7 +448,6 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
         </div>
       </section>
 
-      {/* Active Goals Horizon Strip */}
       <section className="bg-white rounded-3xl p-7 border border-[var(--line)] shadow-sm">
         <div className="flex items-center justify-between pb-4 border-b border-[var(--line)]">
           <div>

@@ -3,6 +3,8 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.serializers import ModelSerializer, CharField, EmailField
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from django.db.models import Sum
@@ -14,9 +16,9 @@ def health_check(request):
     return JsonResponse({"status": "ok"}, status=200)
 
 
-# ==========================================
-# Serializers
-# ==========================================
+
+
+
 
 class UserSerializer(ModelSerializer):
     class Meta:
@@ -68,9 +70,23 @@ class MonthlyBudgetSerializer(ModelSerializer):
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']
 
 
-# ==========================================
-# ViewSets (User-Scoped CRUD)
-# ==========================================
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        budget = MonthlyBudget.objects.filter(user=self.user).first()
+        user_data = UserSerializer(self.user).data
+        user_data['monthly_budget'] = float(budget.amount) if budget else 25000
+        data['user'] = user_data
+        return data
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+
+
+
+
+
 
 class BaseUserOwnedViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -86,10 +102,16 @@ class TaskViewSet(BaseUserOwnedViewSet):
     model = Task
     serializer_class = TaskSerializer
 
+    def get_queryset(self):
+        return Task.objects.filter(user=self.request.user).select_related('goal').order_by('-created_at')
+
 
 class HabitViewSet(BaseUserOwnedViewSet):
     model = Habit
     serializer_class = HabitSerializer
+
+    def get_queryset(self):
+        return Habit.objects.filter(user=self.request.user).prefetch_related('habitcompletion_set').order_by('-created_at')
 
 
 class HabitCompletionViewSet(viewsets.ModelViewSet):
@@ -100,7 +122,7 @@ class HabitCompletionViewSet(viewsets.ModelViewSet):
         return HabitCompletion.objects.filter(habit__user=self.request.user)
 
     def perform_create(self, serializer):
-        # Validate habit belongs to current user
+
         habit = serializer.validated_data.get('habit')
         if habit and habit.user == self.request.user:
             serializer.save()
@@ -112,10 +134,16 @@ class GoalViewSet(BaseUserOwnedViewSet):
     model = Goal
     serializer_class = GoalSerializer
 
+    def get_queryset(self):
+        return Goal.objects.filter(user=self.request.user).order_by('-created_at')
+
 
 class ExpenseViewSet(BaseUserOwnedViewSet):
     model = Expense
     serializer_class = ExpenseSerializer
+
+    def get_queryset(self):
+        return Expense.objects.filter(user=self.request.user).order_by('-date', '-created_at')
 
 
 class BudgetViewSet(viewsets.ModelViewSet):
@@ -134,9 +162,9 @@ class BudgetViewSet(viewsets.ModelViewSet):
         return Response([serializer.data])
 
 
-# ==========================================
-# Authentication & User Profile Views
-# ==========================================
+
+
+
 
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -172,12 +200,13 @@ class RegisterView(APIView):
             first_name=name
         )
 
-        # Create default budget
+
         MonthlyBudget.objects.create(user=user, amount=25000)
 
-        # Generate JWT tokens
+
         refresh = RefreshToken.for_user(user)
         user_data = UserSerializer(user).data
+        user_data['monthly_budget'] = 25000
 
         return Response({
             'user': user_data,
@@ -212,9 +241,9 @@ class MeView(APIView):
         return self.get(request)
 
 
-# ==========================================
-# Analytics View
-# ==========================================
+
+
+
 
 class AnalyticsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -227,7 +256,7 @@ class AnalyticsView(APIView):
 
         tasks_total = tasks.count()
         tasks_completed = tasks.filter(completed=True).count()
-        
+
         spent_month = sum(x.amount for x in expenses)
         goal_progress = sum(x.progress for x in goals) / goals.count() if goals.exists() else 0
         habits_active = habits.count()
@@ -238,4 +267,55 @@ class AnalyticsView(APIView):
             'spent_month': float(spent_month),
             'goal_progress': round(goal_progress, 1),
             'habits_active': habits_active,
+        })
+
+
+
+
+
+
+class BootstrapView(APIView):
+    """
+    Returns complete workspace dataset in a single high-performance query/response,
+    eliminating multiple sequential HTTP round-trips upon login/refresh.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        tasks = Task.objects.filter(user=user).select_related('goal').order_by('-created_at')
+        habits = Habit.objects.filter(user=user).prefetch_related('habitcompletion_set').order_by('-created_at')
+        goals = Goal.objects.filter(user=user).order_by('-created_at')
+        expenses = Expense.objects.filter(user=user).order_by('-date', '-created_at')
+        budget, _ = MonthlyBudget.objects.get_or_create(user=user, defaults={'amount': 25000})
+
+        user_data = UserSerializer(user).data
+        user_data['monthly_budget'] = float(budget.amount) if budget else 25000
+
+
+        tasks_list = list(tasks)
+        goals_list = list(goals)
+        expenses_list = list(expenses)
+        habits_list = list(habits)
+
+        tasks_total = len(tasks_list)
+        tasks_completed = sum(1 for t in tasks_list if t.completed)
+        spent_month = sum(x.amount for x in expenses_list)
+        goal_progress = sum(x.progress for x in goals_list) / len(goals_list) if goals_list else 0
+        habits_active = sum(1 for h in habits_list if h.active)
+
+        return Response({
+            'user': user_data,
+            'tasks': TaskSerializer(tasks_list, many=True).data,
+            'habits': HabitSerializer(habits_list, many=True).data,
+            'goals': GoalSerializer(goals_list, many=True).data,
+            'expenses': ExpenseSerializer(expenses_list, many=True).data,
+            'budget': MonthlyBudgetSerializer(budget).data,
+            'analytics': {
+                'tasks_completed': tasks_completed,
+                'tasks_total': tasks_total,
+                'spent_month': float(spent_month),
+                'goal_progress': round(goal_progress, 1),
+                'habits_active': habits_active,
+            }
         })

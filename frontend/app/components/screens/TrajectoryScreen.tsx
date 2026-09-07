@@ -2,65 +2,62 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Sparkles, 
-  TrendingUp, 
-  TrendingDown, 
-  Compass, 
-  Clock, 
-  Zap, 
-  Flame, 
-  Target, 
-  CircleDollarSign, 
-  ShieldCheck, 
-  Layers, 
-  Sliders, 
-  Brain, 
-  Heart, 
-  ArrowRight, 
+import {
+  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  Compass,
+  Clock,
+  Zap,
+  Flame,
+  Target,
+  CircleDollarSign,
+  ShieldCheck,
+  Layers,
+  Sliders,
+  Brain,
+  Heart,
+  ArrowRight,
   HelpCircle,
   Award,
   AlertTriangle,
   RotateCcw
 } from 'lucide-react';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer, 
-  ReferenceLine 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine
 } from 'recharts';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 
 export function TrajectoryScreen() {
   const { user } = useAuth();
-  const { 
-    tasks, 
-    habits, 
-    goals, 
-    expenses, 
-    energyLogs, 
-    lifeScore, 
-    spentThisMonth, 
+  const {
+    tasks,
+    habits,
+    goals,
+    expenses,
+    energyLogs,
+    lifeScore,
+    spentThisMonth,
     budgetRemaining,
     getGoalProgress
   } = useData();
 
   const currency = user?.currency || '₹';
 
-  // 1. Time Horizon State
-  const [horizonYears, setHorizonYears] = useState<number>(3); // 0.5, 1, 3, 5, 10
-  
-  // 2. Interactive "What-If" Levers
-  const [extraFocusMins, setExtraFocusMins] = useState<number>(30); // +0 to +120 mins
-  const [extraMonthlySavings, setExtraMonthlySavings] = useState<number>(user?.currency === '₹' ? 5000 : 100);
-  const [habitDisciplineRate, setHabitDisciplineRate] = useState<number>(85); // 50% to 100%
-  const [readingPagesDaily, setReadingPagesDaily] = useState<number>(15); // 0 to 50 pages
+  const [horizonYears, setHorizonYears] = useState<number>(3);
 
-  // Base metrics from current user data
+  const [extraFocusMins, setExtraFocusMins] = useState<number>(30);
+  const [extraMonthlySavings, setExtraMonthlySavings] = useState<number>(user?.currency === '₹' ? 5000 : 100);
+  const [habitDisciplineRate, setHabitDisciplineRate] = useState<number>(85);
+  const [readingPagesDaily, setReadingPagesDaily] = useState<number>(15);
+
   const baseAvgFocusMinutes = useMemo(() => {
     if (energyLogs.length === 0) return 90;
     const sum = energyLogs.reduce((acc, log) => acc + log.focusMinutes, 0);
@@ -76,17 +73,14 @@ export function TrajectoryScreen() {
   const activeHabitsCount = Math.max(1, habits.length);
   const activeGoalsCount = Math.max(1, goals.length);
 
-  // 3. Mathematical Trajectory Simulation Engine
   const simulation = useMemo(() => {
     const days = horizonYears * 365;
     const months = horizonYears * 12;
 
-    // --- ALPHA TRAJECTORY (High Agency & Compounding) ---
     const totalDailyFocus = baseAvgFocusMinutes + extraFocusMins;
     const totalDeepHoursAlpha = Math.round((totalDailyFocus * days) / 60);
-    const booksReadAlpha = Math.round((readingPagesDaily * days) / 250); // ~250 pages per book
-    
-    // Financial compounding: Monthly savings invested at realistic 10% annual return
+    const booksReadAlpha = Math.round((readingPagesDaily * days) / 250);
+
     const totalMonthlyInvestment = baseMonthlySavings + extraMonthlySavings;
     const monthlyRate = 0.10 / 12;
     let netWealthAlpha = 0;
@@ -95,38 +89,33 @@ export function TrajectoryScreen() {
     }
     netWealthAlpha = Math.round(netWealthAlpha);
 
-    const workoutsAlpha = Math.round((days * (habitDisciplineRate / 100)) * (4 / 7)); // 4x/week target
+    const workoutsAlpha = Math.round((days * (habitDisciplineRate / 100)) * (4 / 7));
     const goalsCompletedAlpha = Math.min(activeGoalsCount, Math.round(activeGoalsCount * (horizonYears >= 3 ? 0.95 : horizonYears >= 1 ? 0.75 : 0.45)));
 
-    // --- BETA TRAJECTORY (Status Quo Entropy & Drift) ---
     const totalDeepHoursBeta = Math.round((Math.max(20, baseAvgFocusMinutes - 30) * days) / 60);
     const booksReadBeta = Math.round(horizonYears * 1.5);
-    const netWealthBeta = Math.round(baseMonthlySavings * 0.2 * months); // 80% lost to lifestyle creep/leaks
+    const netWealthBeta = Math.round(baseMonthlySavings * 0.2 * months);
     const workoutsBeta = Math.round((days * 0.35) * (2 / 7));
     const goalsCompletedBeta = Math.round(activeGoalsCount * 0.15);
-    
-    // Lost hours to un-prioritized friction
-    const lostFrictionHours = Math.round((2.5 * days)); // 2.5h/day doomscrolling/context switching
 
-    // Generate Chart Points for each interval
+    const lostFrictionHours = Math.round((2.5 * days));
+
     const chartData = [];
     const steps = 10;
     const stepMonths = months / steps;
-    
+
     for (let i = 0; i <= steps; i++) {
       const curM = Math.round(i * stepMonths);
       const curYr = (curM / 12).toFixed(1);
       const progressRatio = i / steps;
 
-      // Exponential compounding curve for Alpha
       const alphaScore = Math.min(100, Math.round(
-        (lifeScore.overall || 65) + 
+        (lifeScore.overall || 65) +
         (35 * Math.pow(progressRatio, 0.8) * (habitDisciplineRate / 100))
       ));
 
-      // Entropic drift curve for Beta
       const betaScore = Math.max(20, Math.round(
-        (lifeScore.overall || 65) - 
+        (lifeScore.overall || 65) -
         (35 * Math.pow(progressRatio, 0.9))
       ));
 
@@ -166,7 +155,7 @@ export function TrajectoryScreen() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 pb-20 text-[#181a18]">
-      {/* Header */}
+
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-subtle)] border border-[var(--accent)]/20 text-[var(--accent)] text-xs font-semibold uppercase tracking-wider mb-2">
@@ -179,7 +168,6 @@ export function TrajectoryScreen() {
           </p>
         </div>
 
-        {/* Horizon Selector Pills */}
         <div className="bg-[#ecebe4] p-1.5 rounded-2xl flex items-center gap-1 shrink-0 text-xs font-bold shadow-inner">
           {[
             { label: '6 Months', value: 0.5 },
@@ -203,9 +191,8 @@ export function TrajectoryScreen() {
         </div>
       </div>
 
-      {/* Main Hero Bifurcation Chart */}
       <div className="bg-[var(--ink)] text-white rounded-3xl p-7 sm:p-9 shadow-2xl relative overflow-hidden">
-        {/* Background glow accents */}
+
         <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--accent)]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#8aa682]/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -219,7 +206,6 @@ export function TrajectoryScreen() {
             </h2>
           </div>
 
-          {/* Divergence Gap Badge */}
           <div className="flex items-center gap-4 bg-white/10 px-5 py-3 rounded-2xl backdrop-blur-md border border-white/10">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Quantum Divergence</p>
@@ -231,7 +217,6 @@ export function TrajectoryScreen() {
           </div>
         </div>
 
-        {/* Recharts Area Curve */}
         <div className="relative z-10 h-72 sm:h-80 w-full pt-6">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={simulation.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -281,7 +266,6 @@ export function TrajectoryScreen() {
           </ResponsiveContainer>
         </div>
 
-        {/* Legend strip */}
         <div className="relative z-10 mt-4 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
@@ -297,9 +281,8 @@ export function TrajectoryScreen() {
         </div>
       </div>
 
-      {/* Side-by-Side Reality Matrix */}
       <div className="grid md:grid-cols-2 gap-8">
-        {/* ALPHA COLUMN */}
+
         <div className="p-7 sm:p-8 rounded-3xl bg-white border-2 border-[var(--accent)]/30 shadow-lg relative flex flex-col justify-between">
           <div className="absolute top-4 right-4">
             <span className="px-3 py-1 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-bold text-xs uppercase tracking-wider">
@@ -319,7 +302,7 @@ export function TrajectoryScreen() {
             </div>
 
             <div className="space-y-4 mt-6">
-              {/* Metric 1 */}
+
               <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Brain size={20} className="text-[var(--accent)]" />
@@ -331,7 +314,6 @@ export function TrajectoryScreen() {
                 <span className="text-xs font-bold text-[var(--sage)]">+{simulation.booksReadAlpha} Books Read</span>
               </div>
 
-              {/* Metric 2 */}
               <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <CircleDollarSign size={20} className="text-amber-600" />
@@ -343,7 +325,6 @@ export function TrajectoryScreen() {
                 <span className="text-xs font-bold text-amber-700">Financial Fortress</span>
               </div>
 
-              {/* Metric 3 */}
               <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Flame size={20} className="text-[var(--sage)]" />
@@ -355,7 +336,6 @@ export function TrajectoryScreen() {
                 <span className="text-xs font-bold text-[var(--sage)]">Top 5% Stamina</span>
               </div>
 
-              {/* Metric 4 */}
               <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Target size={20} className="text-blue-600" />
@@ -374,7 +354,6 @@ export function TrajectoryScreen() {
           </p>
         </div>
 
-        {/* BETA COLUMN */}
         <div className="p-7 sm:p-8 rounded-3xl bg-[#f4f3ef] border border-[var(--line)] shadow-sm relative flex flex-col justify-between opacity-90">
           <div className="absolute top-4 right-4">
             <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 font-bold text-xs uppercase tracking-wider">
@@ -394,7 +373,7 @@ export function TrajectoryScreen() {
             </div>
 
             <div className="space-y-4 mt-6">
-              {/* Metric 1 */}
+
               <div className="p-4 rounded-2xl bg-white border border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Clock size={20} className="text-red-500" />
@@ -406,7 +385,6 @@ export function TrajectoryScreen() {
                 <span className="text-xs text-[var(--muted)]">Doomscrolling / Friction</span>
               </div>
 
-              {/* Metric 2 */}
               <div className="p-4 rounded-2xl bg-white border border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <CircleDollarSign size={20} className="text-[var(--muted)]" />
@@ -418,7 +396,6 @@ export function TrajectoryScreen() {
                 <span className="text-xs font-bold text-red-600">80% Lost to Leaks</span>
               </div>
 
-              {/* Metric 3 */}
               <div className="p-4 rounded-2xl bg-white border border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <TrendingDown size={20} className="text-[var(--muted)]" />
@@ -430,7 +407,6 @@ export function TrajectoryScreen() {
                 <span className="text-xs text-red-600">Chronic Fatigue</span>
               </div>
 
-              {/* Metric 4 */}
               <div className="p-4 rounded-2xl bg-white border border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Target size={20} className="text-[var(--muted)]" />
@@ -450,7 +426,6 @@ export function TrajectoryScreen() {
         </div>
       </div>
 
-      {/* Interactive "What-If" Levers Sandbox */}
       <div className="bg-white rounded-3xl p-7 sm:p-9 border border-[var(--line)] shadow-sm">
         <div className="flex items-center justify-between pb-6 border-b border-[var(--line)] mb-6">
           <div className="flex items-center gap-3">
@@ -478,7 +453,7 @@ export function TrajectoryScreen() {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Lever 1: Deep Focus Mins */}
+
           <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-center mb-1">
@@ -499,7 +474,6 @@ export function TrajectoryScreen() {
             />
           </div>
 
-          {/* Lever 2: Monthly Savings */}
           <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-center mb-1">
@@ -520,7 +494,6 @@ export function TrajectoryScreen() {
             />
           </div>
 
-          {/* Lever 3: Habit Discipline Rate */}
           <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-center mb-1">
@@ -541,7 +514,6 @@ export function TrajectoryScreen() {
             />
           </div>
 
-          {/* Lever 4: Daily Reading */}
           <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-center mb-1">
@@ -564,7 +536,6 @@ export function TrajectoryScreen() {
         </div>
       </div>
 
-      {/* The Letter from Future You (Simulated Time Capsule) */}
       <div className="p-8 sm:p-10 rounded-3xl bg-[#f8f7f4] border border-[var(--line)] relative overflow-hidden">
         <div className="max-w-3xl mx-auto space-y-4">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
@@ -578,14 +549,14 @@ export function TrajectoryScreen() {
 
           <div className="text-sm text-[var(--muted)] leading-relaxed space-y-3 font-normal">
             <p>
-              I remember when you were sitting at your screen back in {new Date().getFullYear()}, wondering if committing to 
-              <strong className="text-[var(--ink)]"> {extraFocusMins} extra minutes of deep work</strong> and sticking to your 
+              I remember when you were sitting at your screen back in {new Date().getFullYear()}, wondering if committing to
+              <strong className="text-[var(--ink)]"> {extraFocusMins} extra minutes of deep work</strong> and sticking to your
               <strong className="text-[var(--ink)]"> daily rituals</strong> would really make a difference.
             </p>
             <p>
-              It did. That compounding curve was real. Because you chose not to drift, we accumulated over 
-              <strong className="text-[var(--accent)]"> {simulation.totalDeepHoursAlpha.toLocaleString()} hours of mastery</strong>, read 
-              <strong className="text-[var(--ink)]"> {simulation.booksReadAlpha} mind-expanding books</strong>, and built a financial runway of 
+              It did. That compounding curve was real. Because you chose not to drift, we accumulated over
+              <strong className="text-[var(--accent)]"> {simulation.totalDeepHoursAlpha.toLocaleString()} hours of mastery</strong>, read
+              <strong className="text-[var(--ink)]"> {simulation.booksReadAlpha} mind-expanding books</strong>, and built a financial runway of
               <strong className="text-amber-700"> {currency}{simulation.netWealthAlpha.toLocaleString()}</strong>.
             </p>
             <p className="text-[var(--ink)] font-medium">

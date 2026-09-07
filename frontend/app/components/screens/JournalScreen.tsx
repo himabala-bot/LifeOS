@@ -2,16 +2,16 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  BookOpen, 
-  Sparkles, 
-  Zap, 
-  Smile, 
-  Heart, 
-  Calendar, 
-  Clock, 
-  Plus, 
-  Check 
+import {
+  BookOpen,
+  Sparkles,
+  Zap,
+  Smile,
+  Heart,
+  Calendar,
+  Clock,
+  Plus,
+  Check
 } from 'lucide-react';
 import { useData, getTodayDateStr } from '../../context/DataContext';
 import { EnergyLog } from '../../types';
@@ -21,7 +21,6 @@ export function JournalScreen() {
 
   const todayStr = getTodayDateStr();
 
-  // Form states initialized to today's log if present
   const [energyLevel, setEnergyLevel] = useState<number>(todayEnergyLog?.energyLevel || 4);
   const [focusMinutes, setFocusMinutes] = useState<number>(todayEnergyLog?.focusMinutes || 180);
   const [mood, setMood] = useState<'energized' | 'focused' | 'calm' | 'tired' | 'stressed' | 'inspired'>(todayEnergyLog?.mood || 'focused');
@@ -49,15 +48,14 @@ export function JournalScreen() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-16">
-      {/* Header */}
+
       <div>
         <p className="text-xs uppercase tracking-[0.2em] font-semibold text-[var(--muted)] mb-1">Mind & Energy</p>
         <h1 className="serif text-4xl sm:text-5xl font-normal">Daily Reflection & Log<span className="text-[var(--accent)]">.</span></h1>
       </div>
 
-      {/* Main Grid */}
       <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-8">
-        {/* Left Column: Today's Reflection Form */}
+
         <div className="bg-white rounded-3xl p-7 border border-[var(--line)] shadow-sm">
           <div className="flex items-center justify-between pb-4 border-b border-[var(--line)] mb-6">
             <div>

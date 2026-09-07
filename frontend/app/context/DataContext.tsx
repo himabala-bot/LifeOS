@@ -28,20 +28,17 @@ interface DataContextType {
   isLoadingData: boolean;
   dataError: string | null;
 
-  // Task Actions
   addTask: (task: Omit<Task, 'id' | 'createdAt'>) => Promise<void>;
   toggleTask: (id: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
 
-  // Habit Actions
   addHabit: (habit: Omit<Habit, 'id' | 'createdAt' | 'history'>) => Promise<void>;
   toggleHabitDay: (id: string, dateStr: string) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
   updateHabit: (id: string, updates: Partial<Habit>) => Promise<void>;
   getHabitStreak: (habit: Habit) => { currentStreak: number; longestStreak: number; consistency7d: number };
 
-  // Goal Actions
   addGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => Promise<void>;
   toggleMilestone: (goalId: string, milestoneId: string) => Promise<void>;
   addMilestone: (goalId: string, title: string) => Promise<void>;
@@ -50,16 +47,13 @@ interface DataContextType {
   updateGoal: (goalId: string, updates: Partial<Goal>) => Promise<void>;
   getGoalProgress: (goal: Goal) => number;
 
-  // Expense Actions
   addExpense: (expense: Omit<Expense, 'id' | 'createdAt'>) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
   updateExpense: (id: string, updates: Partial<Expense>) => Promise<void>;
 
-  // Energy / Journal Actions
   addEnergyLog: (log: Omit<EnergyLog, 'id' | 'createdAt'>) => void;
   todayEnergyLog: EnergyLog | undefined;
 
-  // Computed Real Metrics from Django API
   lifeScore: LifeScoreBreakdown;
   spentThisMonth: number;
   budgetRemaining: number;
@@ -67,10 +61,8 @@ interface DataContextType {
   safeDailySpend: number;
   expensesByCategory: Record<string, number>;
 
-  // Maintenance & Reset
   resetAllData: () => Promise<void>;
 
-  // Refresh
   refreshData: () => Promise<void>;
 }
 
@@ -93,7 +85,6 @@ export function getPastDateStr(daysAgo: number): string {
   return `${year}-${month}-${day}`;
 }
 
-// Map backend task format to frontend Task interface
 function mapBackendTask(t: any): Task {
   return {
     id: String(t.id),
@@ -107,7 +98,6 @@ function mapBackendTask(t: any): Task {
   };
 }
 
-// Map backend habit format to frontend Habit interface
 function mapBackendHabit(h: any): Habit {
   const history: Record<string, boolean> = {};
   if (Array.isArray(h.completions)) {
@@ -136,7 +126,6 @@ function mapBackendHabit(h: any): Habit {
   };
 }
 
-// Map backend goal format to frontend Goal interface
 function mapBackendGoal(g: any): Goal {
   let milestones: Milestone[] = [];
   if (g.description && g.description.startsWith('[MILESTONES]:')) {
@@ -160,7 +149,6 @@ function mapBackendGoal(g: any): Goal {
   };
 }
 
-// Map backend expense format to frontend Expense interface
 function mapBackendExpense(e: any): Expense {
   return {
     id: String(e.id),
@@ -170,6 +158,36 @@ function mapBackendExpense(e: any): Expense {
     date: e.date || getTodayDateStr(),
     createdAt: e.created_at || new Date().toISOString(),
   };
+}
+
+const WORKSPACE_CACHE_KEY = 'lifeos_cached_workspace';
+
+interface CachedWorkspace {
+  tasks: Task[];
+  habits: Habit[];
+  goals: Goal[];
+  expenses: Expense[];
+  energyLogs: EnergyLog[];
+}
+
+function getCachedWorkspace(userId?: string): CachedWorkspace | null {
+  if (typeof window === 'undefined' || !userId) return null;
+  try {
+    const raw = localStorage.getItem(`${WORKSPACE_CACHE_KEY}_${userId}`);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function setCachedWorkspace(userId: string, data: CachedWorkspace): void {
+  if (typeof window === 'undefined' || !userId) return;
+  try {
+    localStorage.setItem(`${WORKSPACE_CACHE_KEY}_${userId}`, JSON.stringify(data));
+  } catch {
+
+  }
 }
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
@@ -183,7 +201,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [dataError, setDataError] = useState<string | null>(null);
 
-  // Fetch all user records from Django REST API
+  useEffect(() => {
+    if (user?.id) {
+      const cached = getCachedWorkspace(user.id);
+      if (cached) {
+        setTasks(cached.tasks || []);
+        setHabits(cached.habits || []);
+        setGoals(cached.goals || []);
+        setExpenses(cached.expenses || []);
+        setEnergyLogs(cached.energyLogs || []);
+      }
+    }
+  }, [user?.id]);
+
   const refreshData = useCallback(async () => {
     if (!isAuthenticated || !user) {
       setTasks([]);
@@ -194,48 +224,63 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    setIsLoadingData(true);
     setDataError(null);
 
     try {
-      const [backendTasks, backendHabits, backendGoals, backendExpenses] = await Promise.all([
-        api.tasks.list().catch(err => {
-          console.warn('Failed to load tasks:', err);
-          return [];
-        }),
-        api.habits.list().catch(err => {
-          console.warn('Failed to load habits:', err);
-          return [];
-        }),
-        api.goals.list().catch(err => {
-          console.warn('Failed to load goals:', err);
-          return [];
-        }),
-        api.expenses.list().catch(err => {
-          console.warn('Failed to load expenses:', err);
-          return [];
-        }),
-      ]);
 
-      setTasks(Array.isArray(backendTasks) ? backendTasks.map(mapBackendTask) : []);
-      setHabits(Array.isArray(backendHabits) ? backendHabits.map(mapBackendHabit) : []);
-      setGoals(Array.isArray(backendGoals) ? backendGoals.map(mapBackendGoal) : []);
-      setExpenses(Array.isArray(backendExpenses) ? backendExpenses.map(mapBackendExpense) : []);
+      const bootstrapRes = await api.bootstrap().catch(err => {
+        console.warn('Bootstrap API fallback to parallel fetch:', err);
+        return null;
+      });
+
+      let loadedTasks: Task[] = [];
+      let loadedHabits: Habit[] = [];
+      let loadedGoals: Goal[] = [];
+      let loadedExpenses: Expense[] = [];
+
+      if (bootstrapRes && bootstrapRes.user) {
+        loadedTasks = Array.isArray(bootstrapRes.tasks) ? bootstrapRes.tasks.map(mapBackendTask) : [];
+        loadedHabits = Array.isArray(bootstrapRes.habits) ? bootstrapRes.habits.map(mapBackendHabit) : [];
+        loadedGoals = Array.isArray(bootstrapRes.goals) ? bootstrapRes.goals.map(mapBackendGoal) : [];
+        loadedExpenses = Array.isArray(bootstrapRes.expenses) ? bootstrapRes.expenses.map(mapBackendExpense) : [];
+      } else {
+
+        const [backendTasks, backendHabits, backendGoals, backendExpenses] = await Promise.all([
+          api.tasks.list().catch(() => []),
+          api.habits.list().catch(() => []),
+          api.goals.list().catch(() => []),
+          api.expenses.list().catch(() => []),
+        ]);
+
+        loadedTasks = Array.isArray(backendTasks) ? backendTasks.map(mapBackendTask) : [];
+        loadedHabits = Array.isArray(backendHabits) ? backendHabits.map(mapBackendHabit) : [];
+        loadedGoals = Array.isArray(backendGoals) ? backendGoals.map(mapBackendGoal) : [];
+        loadedExpenses = Array.isArray(backendExpenses) ? backendExpenses.map(mapBackendExpense) : [];
+      }
+
+      setTasks(loadedTasks);
+      setHabits(loadedHabits);
+      setGoals(loadedGoals);
+      setExpenses(loadedExpenses);
+
+      setCachedWorkspace(user.id, {
+        tasks: loadedTasks,
+        habits: loadedHabits,
+        goals: loadedGoals,
+        expenses: loadedExpenses,
+        energyLogs,
+      });
     } catch (err: any) {
       console.error('Error fetching data from Django API:', err);
-      setDataError('Could not load workspace data from Django backend.');
+      setDataError('Could not load workspace data.');
     } finally {
       setIsLoadingData(false);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, energyLogs]);
 
   useEffect(() => {
     refreshData();
-  }, [refreshData]);
-
-  // ==========================================
-  // Task Actions (Django REST API)
-  // ==========================================
+  }, [isAuthenticated, user?.id]);
 
   const addTask = async (newTaskData: Omit<Task, 'id' | 'createdAt'>) => {
     try {
@@ -260,14 +305,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (!task) return;
 
     const newCompleted = !task.completed;
-    // Optimistic UI update
+
     setTasks(prev => prev.map(t => (t.id === id ? { ...t, completed: newCompleted } : t)));
 
     try {
       await api.tasks.update(id, { completed: newCompleted });
     } catch (err) {
       console.error('Failed to toggle task:', err);
-      // Revert optimistic update
+
       setTasks(prev => prev.map(t => (t.id === id ? { ...t, completed: task.completed } : t)));
     }
   };
@@ -302,10 +347,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ==========================================
-  // Habit Actions (Django REST API)
-  // ==========================================
-
   const addHabit = async (newHabitData: Omit<Habit, 'id' | 'createdAt' | 'history'>) => {
     try {
       const created = await api.habits.create({
@@ -329,7 +370,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const currentStatus = Boolean(habit.history[dateStr]);
     const newStatus = !currentStatus;
 
-    // Optimistic UI update
     setHabits(prev =>
       prev.map(h => {
         if (h.id === id) {
@@ -394,7 +434,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (tempStreak > longestStreak) longestStreak = tempStreak;
       } else {
         if (i === 0) {
-          // Today might not be done yet
+
         } else {
           tempStreak = 0;
         }
@@ -418,10 +458,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     return { currentStreak, longestStreak: Math.max(longestStreak, currentStreak), consistency7d };
   };
-
-  // ==========================================
-  // Goal Actions (Django REST API)
-  // ==========================================
 
   const addGoal = async (newGoalData: Omit<Goal, 'id' | 'createdAt'>) => {
     try {
@@ -565,10 +601,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ==========================================
-  // Expense Actions (Django REST API)
-  // ==========================================
-
   const addExpense = async (newExpenseData: Omit<Expense, 'id' | 'createdAt'>) => {
     try {
       const created = await api.expenses.create({
@@ -615,10 +647,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ==========================================
-  // Energy / Journal Actions
-  // ==========================================
-
   const addEnergyLog = (logData: Omit<EnergyLog, 'id' | 'createdAt'>) => {
     const newLog: EnergyLog = {
       ...logData,
@@ -630,10 +658,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const todayStr = getTodayDateStr();
   const todayEnergyLog = energyLogs.find(l => l.date === todayStr);
-
-  // ==========================================
-  // Real Computed Financial & Life Metrics
-  // ==========================================
 
   const currentMonthPrefix = useMemo(() => {
     const d = new Date();
@@ -669,13 +693,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return catMap;
   }, [expenses, currentMonthPrefix]);
 
-  // Dynamic Holistic Life Score (calculated from real user metrics)
   const lifeScore = useMemo<LifeScoreBreakdown>(() => {
-    // 1. Tasks Output Score (0 - 100)
+
     const taskScore =
       tasks.length > 0 ? Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100) : 75;
 
-    // 2. Habit Consistency Score (0 - 100)
     let habitScore = 75;
     if (habits.length > 0) {
       const avgConsistency =
@@ -683,7 +705,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       habitScore = Math.round(avgConsistency);
     }
 
-    // 3. Budget Discipline Score (0 - 100)
     const now = new Date();
     const daysPassedInMonth = now.getDate();
     const totalDaysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -694,7 +715,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         ? 95
         : Math.max(30, Math.round(100 - (actualPacing - expectedPacing) * 100));
 
-    // 4. Goals Trajectory Score (0 - 100)
     let goalsScore = 70;
     if (goals.length > 0) {
       const avgProgress = goals.reduce((acc, g) => acc + getGoalProgress(g), 0) / goals.length;

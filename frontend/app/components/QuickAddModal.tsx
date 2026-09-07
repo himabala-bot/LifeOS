@@ -18,30 +18,25 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
   const { user } = useAuth();
   const [tab, setTab] = useState<'task' | 'habit' | 'goal' | 'expense' | 'journal'>(defaultTab);
 
-  // Task form
   const [taskTitle, setTaskTitle] = useState('');
   const [taskTag, setTaskTag] = useState<TaskTag>('Work');
   const [taskPriority, setTaskPriority] = useState<TaskPriority>('medium');
   const [taskDueDate, setTaskDueDate] = useState(getTodayDateStr());
 
-  // Habit form
   const [habitName, setHabitName] = useState('');
   const [habitCategory, setHabitCategory] = useState<HabitCategory>('Health');
   const [habitFreq, setHabitFreq] = useState<HabitFrequency>('daily');
 
-  // Goal form
   const [goalTitle, setGoalTitle] = useState('');
   const [goalCategory, setGoalCategory] = useState<GoalCategory>('Career');
   const [goalTargetDate, setGoalTargetDate] = useState('');
   const [goalMilestone1, setGoalMilestone1] = useState('');
 
-  // Expense form
   const [expenseTitle, setExpenseTitle] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseCategory, setExpenseCategory] = useState<ExpenseCategory>('Food & Dining');
   const [expenseDate, setExpenseDate] = useState(getTodayDateStr());
 
-  // Journal form
   const [journalEnergy, setJournalEnergy] = useState<number>(4);
   const [journalFocus, setJournalFocus] = useState<number>(120);
   const [journalMood, setJournalMood] = useState<'energized' | 'focused' | 'calm' | 'tired' | 'stressed' | 'inspired'>('focused');
@@ -126,7 +121,7 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -135,14 +130,13 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
           className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         />
 
-        {/* Modal Window */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           className="relative w-full max-w-lg bg-[#f8f7f4] rounded-3xl border border-[var(--line)] shadow-2xl overflow-hidden z-10"
         >
-          {/* Header */}
+
           <div className="p-6 border-b border-[var(--line)] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />
@@ -156,7 +150,6 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
             </button>
           </div>
 
-          {/* Module Selector Tabs */}
           <div className="px-6 pt-4 pb-2 flex gap-2 overflow-x-auto">
             {[
               { id: 'task', label: 'Task', icon: ListTodo },
@@ -173,8 +166,8 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                   onClick={() => setTab(item.id as any)}
                   className={`
                     px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer
-                    ${isActive 
-                      ? 'bg-[var(--ink)] text-white shadow-sm' 
+                    ${isActive
+                      ? 'bg-[var(--ink)] text-white shadow-sm'
                       : 'bg-white text-[var(--muted)] border border-[var(--line)] hover:text-[var(--ink)]'}
                   `}
                 >
@@ -185,9 +178,8 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
             })}
           </div>
 
-          {/* Tab Content */}
           <div className="p-6">
-            {/* 1. TASK TAB */}
+
             {tab === 'task' && (
               <form onSubmit={handleCreateTask} className="space-y-4">
                 <div>
@@ -260,7 +252,6 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
               </form>
             )}
 
-            {/* 2. HABIT TAB */}
             {tab === 'habit' && (
               <form onSubmit={handleCreateHabit} className="space-y-4">
                 <div>
@@ -321,7 +312,6 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
               </form>
             )}
 
-            {/* 3. GOAL TAB */}
             {tab === 'goal' && (
               <form onSubmit={handleCreateGoal} className="space-y-4">
                 <div>
@@ -391,7 +381,6 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
               </form>
             )}
 
-            {/* 4. EXPENSE TAB */}
             {tab === 'expense' && (
               <form onSubmit={handleCreateExpense} className="space-y-4">
                 <div>
@@ -474,7 +463,6 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
               </form>
             )}
 
-            {/* 5. JOURNAL TAB */}
             {tab === 'journal' && (
               <form onSubmit={handleCreateJournal} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">

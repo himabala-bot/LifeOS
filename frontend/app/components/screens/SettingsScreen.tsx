@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  User, 
-  Wallet, 
-  Trash2, 
-  LogOut, 
-  ShieldCheck, 
-  Sparkles, 
-  Check, 
-  AlertTriangle 
+import {
+  User,
+  Wallet,
+  Trash2,
+  LogOut,
+  ShieldCheck,
+  Sparkles,
+  Check,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
@@ -44,13 +44,12 @@ export function SettingsScreen() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-16">
-      {/* Header */}
+
       <div>
         <p className="text-xs uppercase tracking-[0.2em] font-semibold text-[var(--muted)] mb-1">Preferences</p>
         <h1 className="serif text-4xl sm:text-5xl font-normal">Settings & Workspace Control<span className="text-[var(--accent)]">.</span></h1>
       </div>
 
-      {/* Profile & Identity */}
       <div className="bg-white rounded-3xl p-7 border border-[var(--line)] shadow-sm">
         <h2 className="serif text-2xl font-normal pb-4 border-b border-[var(--line)] mb-6">
           Identity & Workspace Configuration
@@ -159,7 +158,6 @@ export function SettingsScreen() {
         </form>
       </div>
 
-      {/* Danger Zone */}
       <div className="bg-red-50/50 rounded-3xl p-7 border border-red-200">
         <h2 className="serif text-2xl font-normal text-red-900 pb-2">Danger Zone</h2>
         <p className="text-xs text-red-700 mb-6">Irreversible actions regarding your local workspace.</p>

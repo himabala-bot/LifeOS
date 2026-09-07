@@ -2,16 +2,16 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Flame, 
-  Plus, 
-  Calendar, 
-  Sparkles, 
-  Trash2, 
-  Edit3, 
-  TrendingUp, 
-  CheckCircle2, 
-  Activity, 
+import {
+  Flame,
+  Plus,
+  Calendar,
+  Sparkles,
+  Trash2,
+  Edit3,
+  TrendingUp,
+  CheckCircle2,
+  Activity,
   Award,
   ChevronLeft,
   ChevronRight
@@ -31,16 +31,13 @@ export function HabitsScreen() {
 
   const todayStr = getTodayDateStr();
 
-  // 14 days grid for habit matrix
   const days14 = Array.from({ length: 14 }, (_, i) => getPastDateStr(13 - i));
 
-  // Filtered habits
   const filteredHabits = habits.filter(h => {
     if (selectedCategory !== 'All' && h.category !== selectedCategory) return false;
     return true;
   });
 
-  // Calculate global habit statistics
   let totalLogs = 0;
   let maxStreak = 0;
   let overallConsistency = 0;
@@ -76,14 +73,13 @@ export function HabitsScreen() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-16">
-      {/* Header */}
+
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] font-semibold text-[var(--muted)] mb-1">Consistency Engine</p>
           <h1 className="serif text-4xl sm:text-5xl font-normal">Atomic Habits Matrix<span className="text-[var(--accent)]">.</span></h1>
         </div>
 
-        {/* Category Filters */}
         <div className="flex items-center gap-2 overflow-x-auto">
           {['All', 'Health', 'Mind', 'Productivity', 'Fitness', 'Learning', 'Lifestyle'].map(cat => (
             <button
@@ -97,7 +93,6 @@ export function HabitsScreen() {
         </div>
       </div>
 
-      {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="p-5 rounded-2xl bg-white border border-[var(--line)] shadow-sm">
           <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--muted)]">Active Habits</p>
@@ -117,7 +112,6 @@ export function HabitsScreen() {
         </div>
       </div>
 
-      {/* Add Habit Bar */}
       <form onSubmit={handleCreate} className="p-4 bg-white rounded-2xl border border-[var(--line)] shadow-sm flex flex-col md:flex-row gap-3 items-center">
         <input
           type="text"
@@ -159,7 +153,6 @@ export function HabitsScreen() {
         </div>
       </form>
 
-      {/* Habit Matrix Table */}
       <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm overflow-x-auto">
         <div className="flex items-center justify-between pb-4 border-b border-[var(--line)] mb-4">
           <div>
@@ -188,7 +181,7 @@ export function HabitsScreen() {
               return (
                 <div key={habit.id} className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] hover:border-[var(--accent)]/30 transition-all">
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    {/* Habit Info */}
+
                     <div className="min-w-[200px]">
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] px-2 py-0.5 rounded-md bg-white border border-[var(--line)] font-semibold text-[var(--muted)]">
@@ -211,7 +204,6 @@ export function HabitsScreen() {
                       </div>
                     </div>
 
-                    {/* 14-Day Checkpoints */}
                     <div className="flex items-center gap-2 overflow-x-auto py-1">
                       {days14.map((dStr) => {
                         const done = !!habit.history[dStr];
@@ -244,7 +236,6 @@ export function HabitsScreen() {
                       })}
                     </div>
 
-                    {/* Actions */}
                     <div className="flex items-center gap-1 shrink-0 justify-end">
                       <button
                         onClick={() => setEditingHabit(habit)}
@@ -269,7 +260,6 @@ export function HabitsScreen() {
         )}
       </div>
 
-      {/* Edit Habit Modal */}
       {editingHabit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-2xl max-w-md w-full">

@@ -1,42 +1,42 @@
 'use client';
 
 import React from 'react';
-import { 
-  AreaChart, 
-  Area, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer, 
-  Cell, 
-  PieChart, 
-  Pie 
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  PieChart,
+  Pie
 } from 'recharts';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Flame, 
-  Target, 
-  CircleDollarSign, 
-  Activity, 
-  Zap, 
-  Sparkles 
+import {
+  BarChart3,
+  TrendingUp,
+  Flame,
+  Target,
+  CircleDollarSign,
+  Activity,
+  Zap,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData, getPastDateStr } from '../../context/DataContext';
 
 export function AnalyticsScreen() {
   const { user } = useAuth();
-  const { 
-    tasks, 
-    habits, 
-    goals, 
-    expenses, 
-    energyLogs, 
-    lifeScore, 
-    spentThisMonth, 
+  const {
+    tasks,
+    habits,
+    goals,
+    expenses,
+    energyLogs,
+    lifeScore,
+    spentThisMonth,
     budgetRemaining,
     expensesByCategory,
     getGoalProgress
@@ -44,7 +44,6 @@ export function AnalyticsScreen() {
 
   const currency = user?.currency || '₹';
 
-  // 1. Focus & Energy Trend over the last 7 days (Strictly Real Data)
   const last7DaysData = Array.from({ length: 7 }, (_, i) => {
     const dStr = getPastDateStr(6 - i);
     const dateObj = new Date(dStr);
@@ -58,7 +57,6 @@ export function AnalyticsScreen() {
     };
   });
 
-  // 2. Habit Consistency by Day of Week (Real logs)
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const habitDayCount: Record<string, { total: number; completed: number }> = {
     Sun: { total: 0, completed: 0 },
@@ -70,7 +68,6 @@ export function AnalyticsScreen() {
     Sat: { total: 0, completed: 0 },
   };
 
-  // Check last 28 days
   for (let i = 0; i < 28; i++) {
     const dStr = getPastDateStr(i);
     const dayIdx = new Date(dStr).getDay();
@@ -85,14 +82,13 @@ export function AnalyticsScreen() {
 
   const habitChartData = dayNames.map(d => ({
     day: d,
-    rate: habitDayCount[d].total > 0 
-      ? Math.round((habitDayCount[d].completed / habitDayCount[d].total) * 100) 
+    rate: habitDayCount[d].total > 0
+      ? Math.round((habitDayCount[d].completed / habitDayCount[d].total) * 100)
       : 0,
   }));
 
-  // 3. Category Expenses Bar Data
   const expenseCategoriesData = Object.entries(expensesByCategory).map(([cat, amt]) => ({
-    category: cat.split(' ')[0], // Short name
+    category: cat.split(' ')[0],
     fullName: cat,
     amount: amt,
   }));
@@ -101,13 +97,12 @@ export function AnalyticsScreen() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-16">
-      {/* Header */}
+
       <div>
         <p className="text-xs uppercase tracking-[0.2em] font-semibold text-[var(--muted)] mb-1">Deep Intelligence</p>
         <h1 className="serif text-4xl sm:text-5xl font-normal">Analytics & Life Vectors<span className="text-[var(--accent)]">.</span></h1>
       </div>
 
-      {/* Life Score Holistic Breakdown */}
       <div className="bg-[var(--ink)] text-white rounded-3xl p-8 relative overflow-hidden shadow-xl">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
@@ -145,9 +140,8 @@ export function AnalyticsScreen() {
         </div>
       </div>
 
-      {/* Grid 1: Focus Minutes & Energy Chart */}
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* Focus Chart */}
+
         <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -177,7 +171,6 @@ export function AnalyticsScreen() {
           </div>
         </div>
 
-        {/* Habit Day Consistency */}
         <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -202,9 +195,8 @@ export function AnalyticsScreen() {
         </div>
       </div>
 
-      {/* Grid 2: Expenses & Goals Distribution */}
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* Category Spending Chart */}
+
         <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -238,7 +230,6 @@ export function AnalyticsScreen() {
           )}
         </div>
 
-        {/* Goal Execution Status */}
         <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
           <div className="flex justify-between items-start mb-4">
             <div>

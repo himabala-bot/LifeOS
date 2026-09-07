@@ -1,12 +1,12 @@
-export type ScreenType = 
-  | 'today' 
+export type ScreenType =
+  | 'today'
   | 'trajectory'
-  | 'tasks' 
-  | 'habits' 
-  | 'goals' 
-  | 'expenses' 
-  | 'analytics' 
-  | 'journal' 
+  | 'tasks'
+  | 'habits'
+  | 'goals'
+  | 'expenses'
+  | 'analytics'
+  | 'journal'
   | 'settings';
 
 export type TaskPriority = 'urgent' | 'high' | 'medium' | 'low';
@@ -18,7 +18,7 @@ export interface Task {
   description?: string;
   tag: TaskTag;
   priority: TaskPriority;
-  dueDate?: string; // YYYY-MM-DD
+  dueDate?: string;
   completed: boolean;
   completedAt?: string;
   createdAt: string;
@@ -34,7 +34,7 @@ export interface Habit {
   frequency: HabitFrequency;
   color?: string;
   icon?: string;
-  history: Record<string, boolean>; // dateStr 'YYYY-MM-DD' -> true
+  history: Record<string, boolean>;
   createdAt: string;
 }
 
@@ -60,16 +60,16 @@ export interface Goal {
   createdAt: string;
 }
 
-export type ExpenseCategory = 
-  | 'Food & Dining' 
-  | 'Housing & Rent' 
-  | 'Transport' 
-  | 'Utilities & Bills' 
-  | 'Entertainment' 
-  | 'Health & Wellness' 
-  | 'Shopping' 
-  | 'Education' 
-  | 'Savings & Investment' 
+export type ExpenseCategory =
+  | 'Food & Dining'
+  | 'Housing & Rent'
+  | 'Transport'
+  | 'Utilities & Bills'
+  | 'Entertainment'
+  | 'Health & Wellness'
+  | 'Shopping'
+  | 'Education'
+  | 'Savings & Investment'
   | 'Other';
 
 export interface Expense {
@@ -77,7 +77,7 @@ export interface Expense {
   title: string;
   amount: number;
   category: ExpenseCategory;
-  date: string; // YYYY-MM-DD
+  date: string;
   paymentMethod?: string;
   notes?: string;
   createdAt: string;
@@ -85,8 +85,8 @@ export interface Expense {
 
 export interface EnergyLog {
   id: string;
-  date: string; // YYYY-MM-DD
-  energyLevel: number; // 1 to 5
+  date: string;
+  energyLevel: number;
   focusMinutes: number;
   mood: 'energized' | 'focused' | 'calm' | 'tired' | 'stressed' | 'inspired';
   highlight?: string;
@@ -101,7 +101,7 @@ export interface UserProfile {
   email: string;
   avatar: string;
   bio?: string;
-  currency: string; // '₹', '$', '€', '£', etc.
+  currency: string;
   monthlyBudget: number;
   dailyFocusTargetMinutes: number;
   theme: 'warm-paper' | 'dark-slate' | 'minimal-light';

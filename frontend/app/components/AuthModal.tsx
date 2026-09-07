@@ -14,17 +14,15 @@ interface AuthModalProps {
 export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModalProps) {
   const { login, signup, loginAsDemo } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
-  
-  // Sign in fields
+
   const [signInEmail, setSignInEmail] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
-  
-  // Sign up fields
+
   const [signUpName, setSignUpName] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
   const [currency, setCurrency] = useState('₹');
-  
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -72,7 +70,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -81,7 +79,6 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
           className="absolute inset-0 bg-black/50 backdrop-blur-md"
         />
 
-        {/* Modal Container */}
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -89,7 +86,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
           transition={{ duration: 0.2 }}
           className="relative w-full max-w-md bg-[#f8f7f4] rounded-3xl border border-[var(--line)] shadow-2xl overflow-hidden z-10"
         >
-          {/* Header decoration */}
+
           <div className="p-7 pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -114,7 +111,6 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                 : 'Zero fake numbers. Real habits, real budgets, your ambition.'}
             </p>
 
-            {/* Mode Switcher */}
             <div className="grid grid-cols-2 p-1 bg-[#ecebe4] rounded-xl mt-6 text-sm font-medium">
               <button
                 type="button"
@@ -133,7 +129,6 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
             </div>
           </div>
 
-          {/* Form Body */}
           <div className="p-7 pt-2">
             {error && (
               <motion.div
@@ -276,7 +271,6 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
               </form>
             )}
 
-            {/* Quick Demo Divider */}
             <div className="relative my-5 text-center">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-[var(--line)]" />
@@ -286,7 +280,6 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
               </span>
             </div>
 
-            {/* Instant Demo Button */}
             <button
               type="button"
               onClick={handleDemo}

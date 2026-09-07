@@ -8,11 +8,13 @@ from core.views import (
     ExpenseViewSet,
     BudgetViewSet,
     AnalyticsView,
+    BootstrapView,
     RegisterView,
     MeView,
+    CustomTokenObtainPairView,
     health_check,
 )
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
 router.register('tasks', TaskViewSet, basename='tasks')
@@ -23,20 +25,24 @@ router.register('expenses', ExpenseViewSet, basename='expenses')
 router.register('budget', BudgetViewSet, basename='budget')
 
 urlpatterns = [
-    # Health Check Endpoint
+
     path('health/', health_check, name='health_check'),
     path('healthz/', health_check, name='healthz'),
     path('', health_check, name='root_health_check'),
 
-    # Auth Endpoints
+
     path('api/register/', RegisterView.as_view(), name='register'),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/me/', MeView.as_view(), name='me'),
 
-    # Analytics Endpoint
+
+    path('api/bootstrap/', BootstrapView.as_view(), name='bootstrap'),
+
+
     path('api/analytics/', AnalyticsView.as_view(), name='analytics'),
 
-    # Resource ViewSets
+
     path('api/', include(router.urls)),
 ]
+

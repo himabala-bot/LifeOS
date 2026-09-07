@@ -2,20 +2,20 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Check, 
-  Trash2, 
-  Edit3, 
-  Calendar, 
-  Tag as TagIcon, 
-  Clock, 
-  List, 
-  Kanban, 
-  CheckCircle2, 
-  AlertCircle 
+import {
+  Plus,
+  Search,
+  Filter,
+  Check,
+  Trash2,
+  Edit3,
+  Calendar,
+  Tag as TagIcon,
+  Clock,
+  List,
+  Kanban,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { useData, getTodayDateStr } from '../../context/DataContext';
 import { Task, TaskPriority, TaskTag } from '../../types';
@@ -29,18 +29,15 @@ export function TasksScreen() {
   const [selectedPriority, setSelectedPriority] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
 
-  // Inline create
   const [newTitle, setNewTitle] = useState('');
   const [newTag, setNewTag] = useState<TaskTag>('Work');
   const [newPriority, setNewPriority] = useState<TaskPriority>('medium');
   const [newDueDate, setNewDueDate] = useState(getTodayDateStr());
 
-  // Edit task modal
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const todayStr = getTodayDateStr();
 
-  // Filtered tasks
   const filteredTasks = tasks.filter(task => {
     if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
@@ -83,14 +80,13 @@ export function TasksScreen() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-16">
-      {/* Header & Stats */}
+
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] font-semibold text-[var(--muted)] mb-1">Execution Engine</p>
           <h1 className="serif text-4xl sm:text-5xl font-normal">Tasks & Action Flow<span className="text-[var(--accent)]">.</span></h1>
         </div>
 
-        {/* View Switcher */}
         <div className="flex items-center gap-2">
           <div className="flex bg-[#ecebe4] p-1 rounded-xl text-xs font-semibold">
             <button
@@ -111,7 +107,6 @@ export function TasksScreen() {
         </div>
       </div>
 
-      {/* Metrics Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="p-5 rounded-2xl bg-white border border-[var(--line)] shadow-sm">
           <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--muted)]">Total Tasks</p>
@@ -133,7 +128,6 @@ export function TasksScreen() {
         </div>
       </div>
 
-      {/* Quick Add Bar */}
       <form onSubmit={handleCreate} className="p-4 bg-white rounded-2xl border border-[var(--line)] shadow-sm flex flex-col md:flex-row gap-3 items-center">
         <input
           type="text"
@@ -182,9 +176,8 @@ export function TasksScreen() {
         </div>
       </form>
 
-      {/* Filter & Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-        {/* Search */}
+
         <div className="relative flex-1 max-w-md">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
           <input
@@ -196,7 +189,6 @@ export function TasksScreen() {
           />
         </div>
 
-        {/* Status Filters */}
         <div className="flex items-center gap-2 overflow-x-auto">
           {(['all', 'pending', 'completed'] as const).map(s => (
             <button
@@ -208,7 +200,6 @@ export function TasksScreen() {
             </button>
           ))}
 
-          {/* Tag Filter */}
           <select
             value={selectedTag}
             onChange={e => setSelectedTag(e.target.value)}
@@ -222,7 +213,6 @@ export function TasksScreen() {
         </div>
       </div>
 
-      {/* View: LIST MODE */}
       {viewMode === 'list' && (
         <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
           {filteredTasks.length === 0 ? (
@@ -303,10 +293,9 @@ export function TasksScreen() {
         </div>
       )}
 
-      {/* View: KANBAN MODE */}
       {viewMode === 'kanban' && (
         <div className="grid md:grid-cols-3 gap-6">
-          {/* Column 1: Backlog / To Do */}
+
           <div className="bg-white rounded-3xl p-5 border border-[var(--line)] shadow-sm flex flex-col">
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line)]">
               <div className="flex items-center gap-2">
@@ -333,7 +322,6 @@ export function TasksScreen() {
             </div>
           </div>
 
-          {/* Column 2: Today Focus */}
           <div className="bg-white rounded-3xl p-5 border border-[var(--line)] shadow-sm flex flex-col">
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line)]">
               <div className="flex items-center gap-2">

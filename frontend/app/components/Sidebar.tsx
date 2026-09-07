@@ -1,17 +1,17 @@
 'use client';
 
 import React from 'react';
-import { 
-  ListTodo, 
-  Flame, 
-  Target, 
-  CircleDollarSign, 
-  BarChart3, 
-  BookOpen, 
-  Settings, 
-  Plus, 
-  LogOut, 
-  X, 
+import {
+  ListTodo,
+  Flame,
+  Target,
+  CircleDollarSign,
+  BarChart3,
+  BookOpen,
+  Settings,
+  Plus,
+  LogOut,
+  X,
   Compass,
   ChevronRight,
   Sparkles
@@ -56,25 +56,24 @@ export function Sidebar({
 
   return (
     <>
-      {/* Mobile Backdrop */}
+
       {isOpenMobile && (
-        <div 
+        <div
           onClick={onCloseMobile}
           className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
         />
       )}
 
-      {/* Sidebar container */}
       <aside
         className={`
           fixed md:sticky top-0 left-0 z-50 h-screen w-72 shrink-0 bg-[#f4f3ef] border-r border-[var(--line)] p-6 flex flex-col justify-between transition-transform duration-200 ease-in-out
           ${isOpenMobile ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
-        {/* Top brand & close */}
+
         <div>
           <div className="flex items-center justify-between mb-8">
-            <div 
+            <div
               onClick={() => { onSelectScreen('today'); onCloseMobile(); }}
               className="flex items-center gap-2.5 cursor-pointer group"
             >
@@ -94,7 +93,6 @@ export function Sidebar({
             </button>
           </div>
 
-          {/* Quick Add Button */}
           <button
             onClick={() => { onOpenQuickAdd(); onCloseMobile(); }}
             className="w-full py-2.5 px-4 mb-6 rounded-xl bg-[var(--ink)] hover:bg-black text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
@@ -103,7 +101,6 @@ export function Sidebar({
             <span>Quick Create</span>
           </button>
 
-          {/* Nav List */}
           <nav className="space-y-1">
             <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-[var(--muted)] px-3 mb-2">
               Workspace
@@ -118,8 +115,8 @@ export function Sidebar({
                   onClick={() => { onSelectScreen(item.id); onCloseMobile(); }}
                   className={`
                     w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-left cursor-pointer
-                    ${isActive 
-                      ? 'bg-white text-[var(--ink)] shadow-sm font-semibold' 
+                    ${isActive
+                      ? 'bg-white text-[var(--ink)] shadow-sm font-semibold'
                       : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-white/50'}
                   `}
                 >
@@ -150,8 +147,8 @@ export function Sidebar({
                   onClick={() => { onSelectScreen(item.id); onCloseMobile(); }}
                   className={`
                     w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-left cursor-pointer
-                    ${isActive 
-                      ? 'bg-white text-[var(--ink)] shadow-sm font-semibold' 
+                    ${isActive
+                      ? 'bg-white text-[var(--ink)] shadow-sm font-semibold'
                       : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-white/50'}
                   `}
                 >
@@ -165,11 +162,10 @@ export function Sidebar({
           </nav>
         </div>
 
-        {/* User Card & Logout */}
         <div className="pt-4 border-t border-[var(--line)]">
           <div className="flex items-center justify-between p-2 rounded-2xl bg-white/70 border border-[var(--line)]">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div 
+              <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-xs shrink-0 shadow-sm"
                 style={{ backgroundColor: user?.avatar?.startsWith('#') ? user.avatar : 'var(--accent)' }}
               >

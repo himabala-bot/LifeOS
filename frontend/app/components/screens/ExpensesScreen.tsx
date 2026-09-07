@@ -2,19 +2,19 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  CircleDollarSign, 
-  Plus, 
-  Search, 
-  Trash2, 
-  Edit3, 
-  TrendingDown, 
-  TrendingUp, 
-  Calendar, 
-  PieChart as PieIcon, 
-  Wallet, 
-  ArrowDownRight, 
-  Sparkles 
+import {
+  CircleDollarSign,
+  Plus,
+  Search,
+  Trash2,
+  Edit3,
+  TrendingDown,
+  TrendingUp,
+  Calendar,
+  PieChart as PieIcon,
+  Wallet,
+  ArrowDownRight,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData, getTodayDateStr } from '../../context/DataContext';
@@ -22,35 +22,32 @@ import { Expense, ExpenseCategory } from '../../types';
 
 export function ExpensesScreen() {
   const { user, updateProfile } = useAuth();
-  const { 
-    expenses, 
-    addExpense, 
-    deleteExpense, 
+  const {
+    expenses,
+    addExpense,
+    deleteExpense,
     updateExpense,
-    spentThisMonth, 
-    budgetRemaining, 
-    budgetUsagePercent, 
-    safeDailySpend, 
-    expensesByCategory 
+    spentThisMonth,
+    budgetRemaining,
+    budgetUsagePercent,
+    safeDailySpend,
+    expensesByCategory
   } = useData();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  
-  // Add Expense form
+
   const [newTitle, setNewTitle] = useState('');
   const [newAmount, setNewAmount] = useState('');
   const [newCategory, setNewCategory] = useState<ExpenseCategory>('Food & Dining');
   const [newDate, setNewDate] = useState(getTodayDateStr());
   const [newNotes, setNewNotes] = useState('');
 
-  // Budget settings modal / inline
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [tempBudget, setTempBudget] = useState(String(user?.monthlyBudget || 25000));
 
   const currency = user?.currency || '₹';
 
-  // Filtered expenses
   const filteredExpenses = expenses.filter(exp => {
     if (searchQuery && !exp.title.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
@@ -85,14 +82,13 @@ export function ExpensesScreen() {
     }
   };
 
-  // Top spending categories list
   const categoryList: [string, number][] = (
     Object.entries(expensesByCategory) as [string, number][]
   ).sort((a, b) => Number(b[1]) - Number(a[1]));
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-16">
-      {/* Header */}
+
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] font-semibold text-[var(--muted)] mb-1">Financial Radar</p>
@@ -108,7 +104,6 @@ export function ExpensesScreen() {
         </button>
       </div>
 
-      {/* Financial Metrics Cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-6 rounded-3xl bg-white border border-[var(--line)] shadow-sm">
           <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--muted)]">Monthly Budget</p>
@@ -137,11 +132,10 @@ export function ExpensesScreen() {
         </div>
       </div>
 
-      {/* Main Grid: Add & Category Breakdown */}
       <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-8">
-        {/* Left Column: Quick Expense Logger & Ledger */}
+
         <div className="space-y-6">
-          {/* Add Expense Form */}
+
           <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
             <h3 className="font-semibold text-sm mb-4">Record New Transaction</h3>
             <form onSubmit={handleCreate} className="space-y-4">
@@ -220,7 +214,6 @@ export function ExpensesScreen() {
             </form>
           </div>
 
-          {/* Ledger Table */}
           <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-4 border-b border-[var(--line)] mb-4">
               <h3 className="font-semibold text-base">Transaction Ledger</h3>
@@ -303,7 +296,6 @@ export function ExpensesScreen() {
           </div>
         </div>
 
-        {/* Right Column: Category Distribution & Insights */}
         <div className="space-y-6">
           <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
             <h3 className="font-semibold text-base pb-3 border-b border-[var(--line)]">
@@ -340,14 +332,13 @@ export function ExpensesScreen() {
             )}
           </div>
 
-          {/* Advice card */}
           <div className="bg-[#f8f7f4] rounded-3xl p-6 border border-[var(--line)]">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--accent)] mb-2">
               <Sparkles size={14} />
               <span>Pacing Insight</span>
             </div>
             <p className="text-xs text-[var(--muted)] leading-relaxed">
-              {budgetRemaining > 0 
+              {budgetRemaining > 0
                 ? `You have ${currency}${Math.round(budgetRemaining).toLocaleString()} remaining in your runway. Spending under ${currency}${safeDailySpend} each day ensures you stay safely within your monthly target.`
                 : `You have exceeded your monthly limit by ${currency}${Math.abs(Math.round(budgetRemaining)).toLocaleString()}. Adjust non-essential outlays or increase your budget target.`}
             </p>
@@ -355,7 +346,6 @@ export function ExpensesScreen() {
         </div>
       </div>
 
-      {/* Adjust Budget Modal */}
       {isEditingBudget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-2xl max-w-sm w-full">

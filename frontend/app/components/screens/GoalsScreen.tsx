@@ -2,16 +2,16 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Target, 
-  Plus, 
-  Check, 
-  Trash2, 
-  Edit3, 
-  Calendar, 
-  CheckCircle2, 
-  Compass, 
-  TrendingUp, 
+import {
+  Target,
+  Plus,
+  Check,
+  Trash2,
+  Edit3,
+  Calendar,
+  CheckCircle2,
+  Compass,
+  TrendingUp,
   Flag,
   Sparkles,
   ChevronDown,
@@ -21,34 +21,30 @@ import { useData } from '../../context/DataContext';
 import { Goal, GoalCategory, GoalStatus } from '../../types';
 
 export function GoalsScreen() {
-  const { 
-    goals, 
-    addGoal, 
-    deleteGoal, 
-    updateGoal, 
-    toggleMilestone, 
-    addMilestone, 
-    deleteMilestone, 
-    getGoalProgress 
+  const {
+    goals,
+    addGoal,
+    deleteGoal,
+    updateGoal,
+    toggleMilestone,
+    addMilestone,
+    deleteMilestone,
+    getGoalProgress
   } = useData();
 
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('All');
-  
-  // Goal creation form
+
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newCategory, setNewCategory] = useState<GoalCategory>('Career');
   const [newTargetDate, setNewTargetDate] = useState('');
   const [newMilestonesText, setNewMilestonesText] = useState('');
 
-  // Expanded cards state
   const [expandedGoalId, setExpandedGoalId] = useState<string | null>(null);
 
-  // New milestone inline input per goal
   const [inlineMilestoneInput, setInlineMilestoneInput] = useState<{ [goalId: string]: string }>({});
 
-  // Filtered goals
   const filteredGoals = goals.filter(g => {
     if (selectedCategory !== 'All' && g.category !== selectedCategory) return false;
     if (statusFilter !== 'All' && g.status !== statusFilter) return false;
@@ -58,9 +54,9 @@ export function GoalsScreen() {
   const totalGoals = goals.length;
   const completedGoals = goals.filter(g => g.status === 'completed').length;
   const activeGoals = goals.filter(g => g.status === 'active' || g.status === 'on_track').length;
-  
-  const avgProgress = totalGoals > 0 
-    ? Math.round(goals.reduce((acc, g) => acc + getGoalProgress(g), 0) / totalGoals) 
+
+  const avgProgress = totalGoals > 0
+    ? Math.round(goals.reduce((acc, g) => acc + getGoalProgress(g), 0) / totalGoals)
     : 0;
 
   const handleCreate = (e: React.FormEvent) => {
@@ -101,14 +97,13 @@ export function GoalsScreen() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-16">
-      {/* Header */}
+
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] font-semibold text-[var(--muted)] mb-1">Strategic Alignment</p>
           <h1 className="serif text-4xl sm:text-5xl font-normal">Life Goals & Milestones<span className="text-[var(--accent)]">.</span></h1>
         </div>
 
-        {/* Category Filters */}
         <div className="flex items-center gap-2 overflow-x-auto">
           {['All', 'Career', 'Wealth', 'Health', 'Personal', 'Travel', 'Creative'].map(cat => (
             <button
@@ -122,7 +117,6 @@ export function GoalsScreen() {
         </div>
       </div>
 
-      {/* Metrics Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="p-5 rounded-2xl bg-white border border-[var(--line)] shadow-sm">
           <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--muted)]">Total Goals</p>
@@ -142,7 +136,6 @@ export function GoalsScreen() {
         </div>
       </div>
 
-      {/* Add New Goal Accordion / Form */}
       <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
         <div className="flex items-center gap-2 pb-4 mb-4 border-b border-[var(--line)]">
           <Sparkles size={16} className="text-[var(--accent)]" />
@@ -225,7 +218,6 @@ export function GoalsScreen() {
         </form>
       </div>
 
-      {/* Goal Cards Grid */}
       <div className="grid md:grid-cols-2 gap-6">
         {filteredGoals.length === 0 ? (
           <div className="md:col-span-2 py-16 text-center text-[var(--muted)] bg-white rounded-3xl border border-[var(--line)]">
@@ -245,7 +237,7 @@ export function GoalsScreen() {
                 className="p-6 rounded-3xl bg-white border border-[var(--line)] shadow-sm hover:border-[var(--accent)]/40 transition-all flex flex-col justify-between"
               >
                 <div>
-                  {/* Top metadata */}
+
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <span className="text-[10px] px-2.5 py-1 rounded-full bg-[#f1f0ea] font-semibold text-[var(--ink)]">
                       {goal.category}
@@ -266,7 +258,6 @@ export function GoalsScreen() {
                     </div>
                   </div>
 
-                  {/* Title & Description */}
                   <h3 className="serif text-2xl font-normal text-[var(--ink)] leading-snug">{goal.title}</h3>
                   {goal.description && (
                     <p className="text-xs text-[var(--muted)] mt-1.5 leading-relaxed">{goal.description}</p>
@@ -279,7 +270,6 @@ export function GoalsScreen() {
                     </div>
                   )}
 
-                  {/* Dynamic Progress Bar */}
                   <div className="mt-5">
                     <div className="flex justify-between items-baseline text-xs mb-1.5">
                       <span className="font-semibold text-[var(--ink)]">Progress</span>
@@ -296,7 +286,6 @@ export function GoalsScreen() {
                     </p>
                   </div>
 
-                  {/* Milestone Checklist */}
                   <div className="mt-6 pt-4 border-t border-[var(--line)]">
                     <p className="text-[10px] uppercase tracking-wider font-bold text-[var(--muted)] mb-3">
                       Milestone Roadmap
@@ -330,7 +319,6 @@ export function GoalsScreen() {
                       ))}
                     </div>
 
-                    {/* Add Inline Milestone */}
                     <div className="flex gap-2 mt-3">
                       <input
                         type="text"

@@ -1,5 +1,4 @@
 services:
-  # Django REST Framework Web Service (Render FREE Plan)
   - type: web
     name: lifeos-backend
     runtime: python
