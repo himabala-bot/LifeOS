@@ -273,20 +273,15 @@ export function HealthScreen() {
       {/* Top Header with Tab Selector & Small Streak Badge */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--accent-subtle)] border border-[var(--accent)]/20 text-[var(--accent)] text-xs font-semibold uppercase tracking-wider">
-              <Activity size={13} />
-              <span>Physical Architecture</span>
-            </div>
-
-            {/* Small Recognizable Streak Badge */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-bold shadow-xs">
-              <Flame size={13} className="text-[#e66b4b]" />
-              <span>{workoutStreak}d streak</span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="serif text-4xl sm:text-5xl font-normal">
+              Physical Architecture<span className="text-[var(--accent)]">.</span>
+            </h1>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-sm font-bold shadow-xs">
+              <Flame size={15} className="text-[#e66b4b]" />
+              <span>{workoutStreak}</span>
             </div>
           </div>
-
-          <h1 className="serif text-4xl sm:text-5xl font-normal">Physical Architecture<span className="text-[var(--accent)]">.</span></h1>
           <p className="text-sm text-[var(--muted)] mt-1.5 max-w-2xl">
             Program your weekly training schedule, log daily meals, and compound your physical vitality.
           </p>
