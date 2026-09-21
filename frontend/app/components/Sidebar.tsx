@@ -46,7 +46,7 @@ export function Sidebar({
     { id: 'tasks', label: 'Tasks', icon: ListTodo, badge: pendingTasksCount > 0 ? pendingTasksCount : undefined },
     { id: 'habits', label: 'Habits', icon: Flame, badge: activeHabitsCount > 0 ? activeHabitsCount : undefined, badgeColor: 'bg-[var(--sage-light)] text-[var(--sage)]' },
     { id: 'goals', label: 'Goals', icon: Target, badge: activeGoalsCount > 0 ? activeGoalsCount : undefined },
-    { id: 'health', label: 'Health', icon: Activity, badge: `${healthProfile.current_weight}kg`, badgeColor: 'bg-emerald-50 text-emerald-800' },
+    { id: 'health', label: 'Health', icon: Activity, badge: healthProfile.current_weight > 0 ? `${healthProfile.current_weight}kg` : undefined, badgeColor: 'bg-[var(--sage-light)] text-[var(--sage)]' },
   ];
 
   const secondaryNavItems: { id: ScreenType; label: string; icon: any }[] = [

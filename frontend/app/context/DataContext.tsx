@@ -74,41 +74,26 @@ export function encodeGoalDescription(cleanDesc?: string, milestones?: Milestone
 }
 
 const DEFAULT_HEALTH_PROFILE: HealthProfile = {
-  age: 24,
+  age: 0,
   biological_sex: 'male',
-  height_cm: 176,
-  current_weight: 49.2,
-  goal_weight: 57.0,
+  height_cm: 0,
+  current_weight: 0,
+  goal_weight: 0,
   activity_level: 'moderate',
   training_focus: 'hypertrophy',
   training_frequency: 4,
-  target_calories: 2400,
-  target_protein: 120,
-  target_carbs: 300,
-  target_fat: 75,
+  target_calories: 0,
+  target_protein: 0,
+  target_carbs: 0,
+  target_fat: 0,
   target_water_ml: 2500,
   creatine_target_g: 5,
-  is_onboarded: true,
+  is_onboarded: false,
 };
 
-const DEFAULT_FOODS: Food[] = [
-  { id: 'f-1', name: 'Whole Eggs (x2)', serving_description: '2 large boiled/fried eggs', calories: 140, protein: 12, carbs: 1, fat: 10, is_staple: true },
-  { id: 'f-2', name: 'Soya Chunks (50g)', serving_description: '50g uncooked boiled', calories: 172, protein: 26, carbs: 16, fat: 0.5, is_staple: true },
-  { id: 'f-3', name: 'Banana (x1)', serving_description: '1 medium robusta', calories: 105, protein: 1.3, carbs: 27, fat: 0.3, is_staple: true },
-  { id: 'f-4', name: 'Paneer (100g)', serving_description: '100g fresh paneer', calories: 265, protein: 18, carbs: 3, fat: 20, is_staple: true },
-  { id: 'f-5', name: 'Peanut Butter Oats', serving_description: '60g oats + 30g PB + milk', calories: 450, protein: 18, carbs: 55, fat: 16, is_staple: true },
-  { id: 'f-6', name: 'High Protein Thali', serving_description: 'Rice, Dal, Paneer, Curd', calories: 650, protein: 28, carbs: 95, fat: 18, is_staple: true },
-  { id: 'f-7', name: 'Almonds & Walnuts', serving_description: '25g raw nuts', calories: 160, protein: 5, carbs: 6, fat: 14, is_staple: false },
-  { id: 'f-8', name: 'Whey Protein Scoop', serving_description: '1 scoop (30g)', calories: 120, protein: 24, carbs: 2, fat: 1.5, is_staple: false },
-];
+const DEFAULT_FOODS: Food[] = [];
 
-const DEFAULT_WEIGHT_CHECKINS: WeightCheckin[] = [
-  { id: 'w-1', date: getPastDateStr(28), weight: 47.0, notes: 'Starting journey baseline' },
-  { id: 'w-2', date: getPastDateStr(21), weight: 47.6, notes: 'Consistent surplus week 1' },
-  { id: 'w-3', date: getPastDateStr(14), weight: 48.2, notes: 'Adding peanut butter oats' },
-  { id: 'w-4', date: getPastDateStr(7), weight: 48.8, notes: 'Strength numbers going up' },
-  { id: 'w-5', date: getTodayDateStr(), weight: 49.2, notes: 'Hitting 120g protein daily' },
-];
+const DEFAULT_WEIGHT_CHECKINS: WeightCheckin[] = [];
 
 const DEFAULT_EXERCISES = [
   { id: 'ex-1', name: 'Barbell Bench Press', muscle_group: 'Chest' },
@@ -124,63 +109,72 @@ const DEFAULT_EXERCISES = [
   { id: 'ex-11', name: 'Leg Press', muscle_group: 'Legs' },
 ];
 
-const DEFAULT_WORKOUT_PLAN: WorkoutPlan = {
-  id: 'wp-1',
-  name: '4-Day Hypertrophy & Strength',
-  frequency: 4,
-  is_active: true,
-  days: [
-    {
-      id: 'wd-1',
-      day_name: 'Push (Chest, Shoulders, Triceps)',
-      day_of_week: 0, // Mon
-      is_rest_day: false,
-      order: 0,
-      exercises: [
-        { id: 'we-1', exercise: 'ex-1', exercise_details: DEFAULT_EXERCISES[0], order: 0, target_sets: 3, target_reps: '6-8', target_weight: 42.5 },
-        { id: 'we-2', exercise: 'ex-2', exercise_details: DEFAULT_EXERCISES[1], order: 1, target_sets: 3, target_reps: '8-10', target_weight: 18.0 },
-        { id: 'we-3', exercise: 'ex-3', exercise_details: DEFAULT_EXERCISES[2], order: 2, target_sets: 3, target_reps: '8-10', target_weight: 27.5 },
-        { id: 'we-4', exercise: 'ex-4', exercise_details: DEFAULT_EXERCISES[3], order: 3, target_sets: 4, target_reps: '12-15', target_weight: 7.5 },
-        { id: 'we-5', exercise: 'ex-5', exercise_details: DEFAULT_EXERCISES[4], order: 4, target_sets: 3, target_reps: '12-15', target_weight: 20.0 },
-      ]
-    },
-    {
-      id: 'wd-2',
-      day_name: 'Pull (Back, Biceps)',
-      day_of_week: 1, // Tue
-      is_rest_day: false,
-      order: 1,
-      exercises: [
-        { id: 'we-6', exercise: 'ex-6', exercise_details: DEFAULT_EXERCISES[5], order: 0, target_sets: 3, target_reps: '8-10', target_weight: 45.0 },
-        { id: 'we-7', exercise: 'ex-7', exercise_details: DEFAULT_EXERCISES[6], order: 1, target_sets: 3, target_reps: '10-12', target_weight: 40.0 },
-        { id: 'we-8', exercise: 'ex-8', exercise_details: DEFAULT_EXERCISES[7], order: 2, target_sets: 3, target_reps: '10-12', target_weight: 12.0 },
-      ]
-    },
-    {
-      id: 'wd-3',
-      day_name: 'Legs & Core',
-      day_of_week: 3, // Thu
-      is_rest_day: false,
-      order: 2,
-      exercises: [
-        { id: 'we-9', exercise: 'ex-9', exercise_details: DEFAULT_EXERCISES[8], order: 0, target_sets: 4, target_reps: '6-8', target_weight: 60.0 },
-        { id: 'we-10', exercise: 'ex-10', exercise_details: DEFAULT_EXERCISES[9], order: 1, target_sets: 3, target_reps: '8-10', target_weight: 55.0 },
-        { id: 'we-11', exercise: 'ex-11', exercise_details: DEFAULT_EXERCISES[10], order: 2, target_sets: 3, target_reps: '12', target_weight: 120.0 },
-      ]
-    },
-    {
-      id: 'wd-4',
-      day_name: 'Upper Power',
-      day_of_week: 4, // Fri
-      is_rest_day: false,
-      order: 3,
-      exercises: [
-        { id: 'we-12', exercise: 'ex-1', exercise_details: DEFAULT_EXERCISES[0], order: 0, target_sets: 3, target_reps: '5', target_weight: 47.5 },
-        { id: 'we-13', exercise: 'ex-6', exercise_details: DEFAULT_EXERCISES[5], order: 1, target_sets: 3, target_reps: '8', target_weight: 50.0 },
-      ]
-    }
-  ]
-};
+export function generateWorkoutPlan(freq: number): WorkoutPlan {
+  const pushDay: WorkoutDay = {
+    id: 'wd-push',
+    day_name: 'Push (Chest, Shoulders, Triceps)',
+    day_of_week: 0,
+    is_rest_day: false,
+    order: 0,
+    exercises: [
+      { id: 'we-1', exercise: 'ex-1', exercise_details: DEFAULT_EXERCISES[0], order: 0, target_sets: 3, target_reps: '6-8', target_weight: 0 },
+      { id: 'we-2', exercise: 'ex-2', exercise_details: DEFAULT_EXERCISES[1], order: 1, target_sets: 3, target_reps: '8-10', target_weight: 0 },
+      { id: 'we-3', exercise: 'ex-3', exercise_details: DEFAULT_EXERCISES[2], order: 2, target_sets: 3, target_reps: '8-10', target_weight: 0 },
+      { id: 'we-4', exercise: 'ex-4', exercise_details: DEFAULT_EXERCISES[3], order: 3, target_sets: 4, target_reps: '12-15', target_weight: 0 },
+    ]
+  };
+  const pullDay: WorkoutDay = {
+    id: 'wd-pull',
+    day_name: 'Pull (Back, Biceps)',
+    day_of_week: 1,
+    is_rest_day: false,
+    order: 1,
+    exercises: [
+      { id: 'we-5', exercise: 'ex-6', exercise_details: DEFAULT_EXERCISES[5], order: 0, target_sets: 3, target_reps: '8-10', target_weight: 0 },
+      { id: 'we-7', exercise: 'ex-7', exercise_details: DEFAULT_EXERCISES[6], order: 1, target_sets: 3, target_reps: '10-12', target_weight: 0 },
+      { id: 'we-8', exercise: 'ex-8', exercise_details: DEFAULT_EXERCISES[7], order: 2, target_sets: 3, target_reps: '10-12', target_weight: 0 },
+    ]
+  };
+  const legsDay: WorkoutDay = {
+    id: 'wd-legs',
+    day_name: 'Legs & Core',
+    day_of_week: 2,
+    is_rest_day: false,
+    order: 2,
+    exercises: [
+      { id: 'we-9', exercise: 'ex-9', exercise_details: DEFAULT_EXERCISES[8], order: 0, target_sets: 4, target_reps: '6-8', target_weight: 0 },
+      { id: 'we-10', exercise: 'ex-10', exercise_details: DEFAULT_EXERCISES[9], order: 1, target_sets: 3, target_reps: '8-10', target_weight: 0 },
+      { id: 'we-11', exercise: 'ex-11', exercise_details: DEFAULT_EXERCISES[10], order: 2, target_sets: 3, target_reps: '12', target_weight: 0 },
+    ]
+  };
+  const upperDay: WorkoutDay = {
+    id: 'wd-upper',
+    day_name: 'Upper Power',
+    day_of_week: 3,
+    is_rest_day: false,
+    order: 3,
+    exercises: [
+      { id: 'we-12', exercise: 'ex-1', exercise_details: DEFAULT_EXERCISES[0], order: 0, target_sets: 3, target_reps: '5', target_weight: 0 },
+      { id: 'we-13', exercise: 'ex-6', exercise_details: DEFAULT_EXERCISES[5], order: 1, target_sets: 3, target_reps: '8', target_weight: 0 },
+    ]
+  };
+
+  const daysMap: Record<number, WorkoutDay[]> = {
+    3: [pushDay, pullDay, legsDay],
+    4: [pushDay, pullDay, legsDay, upperDay],
+    5: [pushDay, pullDay, legsDay, upperDay, { ...legsDay, id: 'wd-legs-2', day_name: 'Lower Power', order: 4 }],
+    6: [pushDay, pullDay, legsDay, { ...pushDay, id: 'wd-push-2', order: 3 }, { ...pullDay, id: 'wd-pull-2', order: 4 }, { ...legsDay, id: 'wd-legs-2', order: 5 }],
+  };
+
+  const days = daysMap[freq] || daysMap[4];
+  return {
+    id: `wp-${freq}d`,
+    name: `${freq}-Day Hypertrophy Program`,
+    frequency: freq,
+    is_active: true,
+    days,
+  };
+}
 
 const DEFAULT_DEMO_TASKS: Task[] = [
   { id: 't-1', title: 'Complete client system architecture document', tag: 'Work', priority: 'urgent', dueDate: getTodayDateStr(), completed: true, completedAt: getTodayDateStr(), createdAt: getPastDateStr(1) },
@@ -353,28 +347,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [goals, setGoals] = useState<Goal[]>(DEFAULT_DEMO_GOALS);
 
   const [healthProfile, setHealthProfile] = useState<HealthProfile>(DEFAULT_HEALTH_PROFILE);
-  const [foods, setFoods] = useState<Food[]>(DEFAULT_FOODS);
-  const [foodLogs, setFoodLogs] = useState<FoodLog[]>([
-    { id: 'fl-1', food: 'f-1', food_details: DEFAULT_FOODS[0], date: getTodayDateStr(), servings: 2 },
-    { id: 'fl-2', food: 'f-3', food_details: DEFAULT_FOODS[2], date: getTodayDateStr(), servings: 1 },
-    { id: 'fl-3', food: 'f-2', food_details: DEFAULT_FOODS[1], date: getTodayDateStr(), servings: 1 },
-    { id: 'fl-4', food: 'f-4', food_details: DEFAULT_FOODS[3], date: getTodayDateStr(), servings: 1 },
-    { id: 'fl-5', food: 'f-5', food_details: DEFAULT_FOODS[4], date: getTodayDateStr(), servings: 1 },
-  ]);
-  const [weightCheckins, setWeightCheckins] = useState<WeightCheckin[]>(DEFAULT_WEIGHT_CHECKINS);
-  const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(DEFAULT_WORKOUT_PLAN);
-  const [todayWorkoutDay, setTodayWorkoutDay] = useState<WorkoutDay | null>(DEFAULT_WORKOUT_PLAN.days![0]);
-  const [todayWorkoutLogs, setTodayWorkoutLogs] = useState<WorkoutLog[]>([
-    { id: 'wl-1', workout_exercise: 'we-1', date: getTodayDateStr(), completed: true, actual_sets: 3, actual_reps: '8,8,7', actual_weight: 42.5 },
-    { id: 'wl-2', workout_exercise: 'we-2', date: getTodayDateStr(), completed: true, actual_sets: 3, actual_reps: '10,9,9', actual_weight: 18.0 },
-    { id: 'wl-3', workout_exercise: 'we-3', date: getTodayDateStr(), completed: false },
-    { id: 'wl-4', workout_exercise: 'we-4', date: getTodayDateStr(), completed: false },
-    { id: 'wl-5', workout_exercise: 'we-5', date: getTodayDateStr(), completed: false },
-  ]);
+  const [foods, setFoods] = useState<Food[]>([]);
+  const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
+  const [weightCheckins, setWeightCheckins] = useState<WeightCheckin[]>([]);
+  const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
+  const [todayWorkoutDay, setTodayWorkoutDay] = useState<WorkoutDay | null>(null);
+  const [todayWorkoutLogs, setTodayWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [dailyHealthStatus, setDailyHealthStatus] = useState<DailyHealthStatus>({
     date: getTodayDateStr(),
-    water_ml: 1750,
-    creatine_completed: true,
+    water_ml: 0,
+    creatine_completed: false,
   });
 
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
@@ -1100,6 +1082,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setWorkoutFrequency = async (freq: number) => {
+    const plan = generateWorkoutPlan(freq);
+    setWorkoutPlan(plan);
+    setTodayWorkoutDay(plan.days[0] || null);
     await updateHealthProfile({ training_frequency: freq });
     if (getAccessToken()) {
       try {
