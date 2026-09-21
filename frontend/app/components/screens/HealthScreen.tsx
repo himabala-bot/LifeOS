@@ -476,23 +476,21 @@ export function HealthScreen() {
                   const isToday = cd.dateStr === todayStr;
 
                   return (
-                    <button
+                    <div
                       key={i}
-                      type="button"
-                      onClick={() => toggleWorkoutDayCompleted(cd.dateStr)}
-                      className={`h-7 sm:h-8 rounded-lg flex items-center justify-center text-xs font-semibold transition-all cursor-pointer ${
+                      className={`h-7 sm:h-8 rounded-lg flex items-center justify-center text-xs font-semibold transition-all select-none ${
                         isWorkedOut
-                          ? 'bg-emerald-600 text-white shadow-xs font-bold hover:bg-emerald-700'
+                          ? 'bg-emerald-600 text-white shadow-xs font-bold'
                           : isToday
                           ? 'bg-[#f1f0ea] text-[var(--ink)] border border-[var(--ink)] font-bold'
                           : cd.isCurrentMonth
-                          ? 'bg-transparent text-[var(--ink)] hover:bg-[#f8f7f4]'
+                          ? 'bg-transparent text-[var(--ink)]'
                           : 'bg-transparent text-black/15'
                       }`}
                       title={isWorkedOut ? `Completed on ${cd.dateStr}` : `No workout on ${cd.dateStr}`}
                     >
                       {cd.dayNum}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
