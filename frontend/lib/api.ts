@@ -255,6 +255,9 @@ export const api = {
           method: 'PATCH',
           body: JSON.stringify(updates),
         }),
+      delete: (id: string) => apiFetch(`/api/health/daily-workout-logs/${id}/`, {
+        method: 'DELETE',
+      }),
     },
 
     weight: {

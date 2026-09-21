@@ -235,7 +235,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('lifeos_workout_records');
-        if (saved) return JSON.parse(saved);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const today = getTodayDateStr();
+          const clean: Record<string, DailyWorkoutRecord> = {};
+          Object.keys(parsed).forEach(d => {
+            if (d <= today && parsed[d]?.completed) {
+              clean[d] = parsed[d];
+            }
+          });
+          return clean;
+        }
       } catch {}
     }
     return {};
@@ -890,17 +900,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // Workout Log & Completion Actions (Calendar & Streaks)
   const toggleWorkoutDayCompleted = async (date = getTodayDateStr(), completed?: boolean) => {
+    const today = getTodayDateStr();
+    // Do not allow marking future dates as completed
+    if (date > today) return;
+
     const current = !!workoutRecords[date]?.completed;
     const nextCompleted = completed !== undefined ? completed : !current;
 
-    setWorkoutRecords(prev => ({
-      ...prev,
-      [date]: {
-        ...prev[date],
-        date,
-        completed: nextCompleted,
-      },
-    }));
+    setWorkoutRecords(prev => {
+      const next = { ...prev };
+      if (!nextCompleted) {
+        delete next[date];
+      } else {
+        next[date] = {
+          ...prev[date],
+          date,
+          completed: true,
+        };
+      }
+      return next;
+    });
 
     if (getAccessToken()) {
       try {
@@ -912,6 +931,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const toggleExerciseCompleted = async (date = getTodayDateStr(), exerciseId: string) => {
+    const today = getTodayDateStr();
+    if (date > today) return;
+
     const currentRec = workoutRecords[date] || { date, completed: false, completed_exercises: [] };
     const completedList = currentRec.completed_exercises || [];
     const isCompleted = completedList.includes(exerciseId);
@@ -946,12 +968,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setWorkoutRecords({});
   };
 
-  const resetWorkoutStreak = () => {
+  const resetWorkoutStreak = async () => {
     setWorkoutRecords({});
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('lifeos_workout_records');
+        localStorage.setItem('lifeos_workout_records', JSON.stringify({}));
       } catch {}
+    }
+    if (getAccessToken()) {
+      try {
+        const logs = await api.health.dailyWorkoutLogs.list();
+        if (Array.isArray(logs)) {
+          for (const l of logs) {
+            if (l.id) await api.health.dailyWorkoutLogs.delete(l.id);
+          }
+        }
+      } catch (err) {
+        console.warn('Remote workout log reset note:', err);
+      }
     }
   };
 
@@ -960,6 +995,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('lifeos_eaten_meals_by_date');
+        localStorage.setItem('lifeos_eaten_meals_by_date', JSON.stringify({}));
       } catch {}
     }
   };
