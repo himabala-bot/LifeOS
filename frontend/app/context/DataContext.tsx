@@ -44,6 +44,35 @@ export function getPastDateStr(daysAgo: number): string {
   return `${year}-${month}-${day}`;
 }
 
+export function parseGoalDescription(rawDesc?: string): { cleanDescription: string; milestones: Milestone[] } {
+  if (!rawDesc) return { cleanDescription: '', milestones: [] };
+  const marker = '[MILESTONES]:';
+  const idx = rawDesc.indexOf(marker);
+  if (idx === -1) {
+    return { cleanDescription: rawDesc.trim(), milestones: [] };
+  }
+  const cleanDescription = rawDesc.substring(0, idx).trim();
+  const milestonesJson = rawDesc.substring(idx + marker.length).trim();
+  try {
+    const parsed = JSON.parse(milestonesJson);
+    if (Array.isArray(parsed)) {
+      return { cleanDescription, milestones: parsed };
+    }
+  } catch (e) {
+    console.warn('Failed to parse milestones from description:', e);
+  }
+  return { cleanDescription, milestones: [] };
+}
+
+export function encodeGoalDescription(cleanDesc?: string, milestones?: Milestone[]): string {
+  const desc = (cleanDesc || '').trim();
+  if (!milestones || milestones.length === 0) {
+    return desc;
+  }
+  const marker = '[MILESTONES]:' + JSON.stringify(milestones);
+  return desc ? `${desc}\n\n${marker}` : marker;
+}
+
 const DEFAULT_HEALTH_PROFILE: HealthProfile = {
   age: 24,
   biological_sex: 'male',
@@ -484,17 +513,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           }));
         }
         if (res.goals) {
-          setGoals(res.goals.map(g => ({
-            id: String(g.id),
-            title: g.title,
-            description: g.description,
-            category: 'Personal' as GoalCategory,
-            targetDate: g.deadline || undefined,
-            status: (g.status || 'active') as GoalStatus,
-            milestones: [],
-            notes: g.description,
-            createdAt: g.created_at || getTodayDateStr(),
-          })));
+          setGoals(res.goals.map(g => {
+            const { cleanDescription, milestones } = parseGoalDescription(g.description);
+            return {
+              id: String(g.id),
+              title: g.title,
+              description: cleanDescription,
+              category: 'Personal' as GoalCategory,
+              targetDate: g.deadline || undefined,
+              status: (g.status || 'active') as GoalStatus,
+              milestones,
+              notes: cleanDescription,
+              createdAt: g.created_at || getTodayDateStr(),
+            };
+          }));
         }
         if (res.health_profile) {
           setHealthProfile(res.health_profile);
@@ -721,13 +753,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setGoals(prev => [newGoal, ...prev]);
     if (getAccessToken()) {
       try {
-        await api.goals.create({
+        const progress = getGoalProgress(newGoal);
+        const encodedDesc = encodeGoalDescription(goalData.description, goalData.milestones);
+        const created = await api.goals.create({
           title: goalData.title,
-          description: goalData.description,
+          description: encodedDesc,
           deadline: goalData.targetDate || null,
           status: goalData.status,
-          progress: 0,
+          progress,
         });
+        if (created && created.id) {
+          setGoals(prev => prev.map(g => (g.id === newGoal.id ? { ...g, id: String(created.id) } : g)));
+        }
       } catch (err) {
         console.error('Failed to create goal:', err);
       }
@@ -735,14 +772,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateGoal = async (id: string, updates: Partial<Goal>) => {
-    setGoals(prev => prev.map(g => (g.id === id ? { ...g, ...updates } : g)));
-    if (getAccessToken()) {
+    let updatedGoal: Goal | null = null;
+    setGoals(prev =>
+      prev.map(g => {
+        if (g.id === id) {
+          updatedGoal = { ...g, ...updates };
+          return updatedGoal;
+        }
+        return g;
+      })
+    );
+    if (getAccessToken() && updatedGoal) {
       try {
+        const goal = updatedGoal as Goal;
+        const progress = getGoalProgress(goal);
         await api.goals.update(id, {
           title: updates.title,
-          description: updates.description,
+          description: encodeGoalDescription(goal.description, goal.milestones),
           deadline: updates.targetDate,
           status: updates.status,
+          progress,
         });
       } catch (err) {
         console.error('Failed to update goal:', err);
@@ -762,42 +811,88 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const toggleMilestone = async (goalId: string, milestoneId: string) => {
+    let targetGoal: Goal | null = null;
     setGoals(prev =>
       prev.map(g => {
         if (g.id === goalId) {
           const updatedMilestones = g.milestones.map(m => (m.id === milestoneId ? { ...m, done: !m.done } : m));
-          return { ...g, milestones: updatedMilestones };
+          const updated = { ...g, milestones: updatedMilestones };
+          targetGoal = updated;
+          return updated;
         }
         return g;
       })
     );
+    if (targetGoal && getAccessToken()) {
+      try {
+        const goal = targetGoal as Goal;
+        const progress = getGoalProgress(goal);
+        await api.goals.update(goalId, {
+          description: encodeGoalDescription(goal.description, goal.milestones),
+          progress,
+          status: progress === 100 ? 'completed' : goal.status,
+        });
+      } catch (err) {
+        console.error('Failed to sync milestone toggle:', err);
+      }
+    }
   };
 
   const addMilestone = async (goalId: string, title: string) => {
     const newMilestone: Milestone = {
-      id: 'm-' + Date.now(),
+      id: 'm_' + Date.now(),
       title,
       done: false,
     };
+    let targetGoal: Goal | null = null;
     setGoals(prev =>
       prev.map(g => {
         if (g.id === goalId) {
-          return { ...g, milestones: [...g.milestones, newMilestone] };
+          const updated = { ...g, milestones: [...g.milestones, newMilestone] };
+          targetGoal = updated;
+          return updated;
         }
         return g;
       })
     );
+    if (targetGoal && getAccessToken()) {
+      try {
+        const goal = targetGoal as Goal;
+        const progress = getGoalProgress(goal);
+        await api.goals.update(goalId, {
+          description: encodeGoalDescription(goal.description, goal.milestones),
+          progress,
+        });
+      } catch (err) {
+        console.error('Failed to sync added milestone:', err);
+      }
+    }
   };
 
   const deleteMilestone = async (goalId: string, milestoneId: string) => {
+    let targetGoal: Goal | null = null;
     setGoals(prev =>
       prev.map(g => {
         if (g.id === goalId) {
-          return { ...g, milestones: g.milestones.filter(m => m.id !== milestoneId) };
+          const updated = { ...g, milestones: g.milestones.filter(m => m.id !== milestoneId) };
+          targetGoal = updated;
+          return updated;
         }
         return g;
       })
     );
+    if (targetGoal && getAccessToken()) {
+      try {
+        const goal = targetGoal as Goal;
+        const progress = getGoalProgress(goal);
+        await api.goals.update(goalId, {
+          description: encodeGoalDescription(goal.description, goal.milestones),
+          progress,
+        });
+      } catch (err) {
+        console.error('Failed to sync deleted milestone:', err);
+      }
+    }
   };
 
   const getGoalProgress = (goal: Goal): number => {

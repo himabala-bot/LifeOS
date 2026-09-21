@@ -492,8 +492,10 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
                       <span className="font-bold text-[var(--accent)]">{progress}%</span>
                     </div>
                     <h3 className="font-semibold text-sm text-[var(--ink)] line-clamp-1">{goal.title}</h3>
-                    {goal.description && (
-                      <p className="text-xs text-[var(--muted)] mt-1 line-clamp-2">{goal.description}</p>
+                    {goal.description && goal.description.split('[MILESTONES]:')[0].trim().length > 0 && (
+                      <p className="text-xs text-[var(--muted)] mt-1 line-clamp-2">
+                        {goal.description.split('[MILESTONES]:')[0].trim()}
+                      </p>
                     )}
                   </div>
 

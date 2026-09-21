@@ -259,8 +259,10 @@ export function GoalsScreen() {
                   </div>
 
                   <h3 className="serif text-2xl font-normal text-[var(--ink)] leading-snug">{goal.title}</h3>
-                  {goal.description && (
-                    <p className="text-xs text-[var(--muted)] mt-1.5 leading-relaxed">{goal.description}</p>
+                  {goal.description && goal.description.split('[MILESTONES]:')[0].trim().length > 0 && (
+                    <p className="text-xs text-[var(--muted)] mt-1.5 leading-relaxed">
+                      {goal.description.split('[MILESTONES]:')[0].trim()}
+                    </p>
                   )}
 
                   {goal.targetDate && (
