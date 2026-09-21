@@ -47,6 +47,13 @@ export interface HealthProfile {
   goal_weight: number;
 }
 
+export interface MasterMealItem {
+  id: string;
+  name: string;
+  meal_type?: string; // 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack' | 'Meal'
+  created_at?: string;
+}
+
 export interface DailyMeal {
   id: string;
   name: string;

@@ -41,14 +41,10 @@ const ORDERED_DAYS = [
 ];
 
 const PRESET_WORKOUT_TYPES = [
-  'Push (Chest, Delts, Triceps)',
-  'Pull (Back, Biceps)',
-  'Legs & Calves',
-  'Upper Body',
-  'Lower Body',
-  'Full Body',
-  'Cardio & Mobility',
-  'Rest & Recovery',
+  'Push',
+  'Pull',
+  'Legs',
+  'Rest',
 ];
 
 export function HealthScreen() {
@@ -59,10 +55,16 @@ export function HealthScreen() {
     logWeight,
     deleteWeightCheckin,
 
-    meals,
-    addMeal,
-    toggleMeal,
-    deleteMeal,
+    masterMeals,
+    addMasterMealItem,
+    deleteMasterMealItem,
+    eatenMealsByDate,
+    toggleDailyMealEaten,
+
+    creatineLogs,
+    toggleCreatine,
+    isCreatineTakenToday,
+    creatineStreak,
 
     weeklySchedule,
     updateWorkoutDayPlan,
@@ -192,32 +194,26 @@ export function HealthScreen() {
   }, [selectedModalDow]);
 
   // ==========================================
-  // DAILY MEALS STATE
+  // DAILY MEALS STATE (MASTER FIXED LIST + DAILY EATEN CHECKLIST)
   // ==========================================
   const [selectedMealDate, setSelectedMealDate] = useState<string>(todayStr);
   const [newMealName, setNewMealName] = useState<string>('');
   const [newMealType, setNewMealType] = useState<string>('Meal');
 
-  const selectedDateMeals = useMemo(() => {
-    return meals.filter(m => m.date === selectedMealDate);
-  }, [meals, selectedMealDate]);
+  const selectedDateEatenIds = useMemo(() => {
+    return eatenMealsByDate[selectedMealDate] || [];
+  }, [eatenMealsByDate, selectedMealDate]);
 
   const selectedDateEatenCount = useMemo(() => {
-    return selectedDateMeals.filter(m => m.completed).length;
-  }, [selectedDateMeals]);
+    return masterMeals.filter(m => selectedDateEatenIds.includes(m.id)).length;
+  }, [masterMeals, selectedDateEatenIds]);
 
-  const selectedDateMealsCount = useMemo(() => {
-    return selectedDateMeals.length;
-  }, [selectedDateMeals]);
-
-  const handleAddMealSubmit = async (e: React.FormEvent) => {
+  const handleAddMealSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMealName.trim()) return;
-    await addMeal({
+    addMasterMealItem({
       name: newMealName.trim(),
-      date: selectedMealDate,
       meal_type: newMealType,
-      completed: false,
     });
     setNewMealName('');
   };
@@ -328,8 +324,8 @@ export function HealthScreen() {
       {/* ========================================================================= */}
       {activeTab === 'workouts' && (
         <div className="space-y-8">
-          {/* Top Row: Compact Calendar (Left) & Today's Workout Focus (Right) */}
-          <div className="grid md:grid-cols-2 gap-6">
+          {/* Top Row: Compact Calendar (Left) & Today's Workout Focus + Creatine Intake (Right) */}
+          <div className="grid md:grid-cols-2 gap-6 items-stretch">
             {/* Small Compact Calendar */}
             <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between pb-3 mb-2 border-b border-[var(--line)]">
@@ -406,14 +402,15 @@ export function HealthScreen() {
               </div>
             </div>
 
-            {/* Today's Workout Action Card */}
-            <div className={`rounded-3xl p-6 border transition-all flex flex-col justify-between ${
-              isTodayWorkoutCompleted
-                ? 'bg-emerald-50/70 border-emerald-200'
-                : 'bg-white border-[var(--line)] shadow-sm'
-            }`}>
-              <div>
-                <div className="flex justify-between items-start">
+            {/* Right Column: Today's Training Focus & Creatine Intake (Halved & Stacked) */}
+            <div className="flex flex-col gap-4 justify-between">
+              {/* Card 1: Today's Training Focus (Top Half) */}
+              <div className={`rounded-3xl p-5 border transition-all flex flex-col justify-between flex-1 ${
+                isTodayWorkoutCompleted
+                  ? 'bg-emerald-50/70 border-emerald-200'
+                  : 'bg-white border-[var(--line)] shadow-sm'
+              }`}>
+                <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
                     Today's Training Focus
                   </span>
@@ -434,35 +431,97 @@ export function HealthScreen() {
                   )}
                 </div>
 
-                <h3 className="serif text-2xl font-normal mt-1">
-                  {todaysWorkoutDay.day_name || 'No Workout Assigned Yet'}
-                </h3>
-                <p className="text-xs text-[var(--muted)] mt-1">
-                  {todaysWorkoutDay.day_name
-                    ? `${todaysWorkoutDay.exercises.length} planned exercise${todaysWorkoutDay.exercises.length !== 1 ? 's' : ''} for today.`
-                    : 'Assign a workout type below to program today\'s training.'}
-                </p>
-              </div>
+                <div className="my-2">
+                  <h4 className="serif text-xl font-normal text-[var(--ink)]">
+                    {todaysWorkoutDay.day_name || 'No Workout Assigned'}
+                  </h4>
+                  <p className="text-[11px] text-[var(--muted)] mt-0.5">
+                    {todaysWorkoutDay.day_name
+                      ? `${todaysWorkoutDay.exercises.length} planned exercise${todaysWorkoutDay.exercises.length !== 1 ? 's' : ''}`
+                      : 'Set workout type below to schedule today.'}
+                  </p>
+                </div>
 
-              <div className="my-5">
                 <button
+                  type="button"
                   onClick={() => toggleWorkoutDayCompleted(todayStr)}
-                  className={`w-full py-3 px-5 rounded-2xl font-semibold text-xs uppercase tracking-wider transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer ${
+                  className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer ${
                     isTodayWorkoutCompleted
                       ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                       : 'bg-[var(--ink)] hover:bg-black text-white'
                   }`}
                 >
-                  <Check size={15} />
-                  <span>{isTodayWorkoutCompleted ? "Workout Completed for Today ✓" : "Mark Today's Workout Complete"}</span>
+                  <Check size={14} />
+                  <span>{isTodayWorkoutCompleted ? "Workout Completed Today ✓" : "Mark Workout Complete"}</span>
                 </button>
               </div>
 
-              <div className="pt-3 border-t border-[var(--line)]/60 text-xs text-[var(--muted)] flex items-center justify-between">
-                <span>Status:</span>
-                <span className={`font-bold ${isTodayWorkoutCompleted ? 'text-emerald-700' : 'text-[var(--muted)]'}`}>
-                  {isTodayWorkoutCompleted ? 'Completed ✓' : 'Pending'}
-                </span>
+              {/* Card 2: Creatine Intake Card (Bottom Half) */}
+              <div className={`rounded-3xl p-5 border transition-all flex flex-col justify-between flex-1 ${
+                isCreatineTakenToday
+                  ? 'bg-emerald-50/70 border-emerald-200'
+                  : 'bg-white border-[var(--line)] shadow-sm'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
+                      Daily Supplement
+                    </span>
+                    {creatineStreak > 0 && (
+                      <span className="text-[10px] font-bold text-[#e66b4b] flex items-center gap-0.5">
+                        <Flame size={11} />
+                        {creatineStreak}d
+                      </span>
+                    )}
+                  </div>
+
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    isCreatineTakenToday
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-[#eae7e1] text-[var(--muted)]'
+                  }`}>
+                    {isCreatineTakenToday ? 'Taken Today ✓' : 'Pending'}
+                  </span>
+                </div>
+
+                <div className="my-2">
+                  <h4 className="serif text-xl font-normal text-[var(--ink)] flex items-center gap-2">
+                    <span>Creatine Intake</span>
+                    <Sparkles size={16} className="text-[var(--accent)]" />
+                  </h4>
+                  <p className="text-[11px] text-[var(--muted)] mt-0.5">
+                    Daily 5g monohydrate for physical & cognitive energy
+                  </p>
+                </div>
+
+                {/* Yes / No Toggle buttons */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleCreatine(todayStr, true)}
+                    className={`py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      isCreatineTakenToday
+                        ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                        : 'bg-[#f8f7f4] hover:bg-[#ecebe4] border border-[var(--line)] text-[var(--ink)]'
+                    }`}
+                  >
+                    <Check size={13} />
+                    <span>Yes, Taken</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleCreatine(todayStr, false)}
+                    className={`py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      !isCreatineTakenToday
+                        ? 'bg-[var(--ink)] text-white shadow-xs'
+                        : 'bg-[#f8f7f4] hover:bg-[#ecebe4] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
+                    }`}
+                  >
+                    <X size={13} />
+                    <span>No / Pending</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -959,6 +1018,7 @@ export function HealthScreen() {
           <div className="bg-white rounded-3xl p-5 border border-[var(--line)] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={() => handleDateShift(-1)}
                 className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center hover:bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
                 title="Previous Day"
@@ -969,6 +1029,7 @@ export function HealthScreen() {
                 {formatDisplayDate(selectedMealDate)} ({selectedMealDate})
               </div>
               <button
+                type="button"
                 onClick={() => handleDateShift(1)}
                 className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center hover:bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
                 title="Next Day"
@@ -977,6 +1038,7 @@ export function HealthScreen() {
               </button>
               {selectedMealDate !== todayStr && (
                 <button
+                  type="button"
                   onClick={() => setSelectedMealDate(todayStr)}
                   className="text-xs font-bold text-[var(--accent)] hover:underline ml-2 cursor-pointer"
                 >
@@ -989,16 +1051,16 @@ export function HealthScreen() {
             <div className="flex items-center gap-3">
               <span className="text-xs text-[var(--muted)]">Daily Meal Adherence:</span>
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#f1f0ea] text-[var(--ink)] border border-[var(--line)]">
-                {selectedDateEatenCount} / {selectedDateMealsCount} eaten
-                {selectedDateMealsCount > 0 ? ` (${Math.round((selectedDateEatenCount / selectedDateMealsCount) * 100)}%)` : ''}
+                {selectedDateEatenCount} / {masterMeals.length} eaten
+                {masterMeals.length > 0 ? ` (${Math.round((selectedDateEatenCount / masterMeals.length) * 100)}%)` : ''}
               </span>
             </div>
           </div>
 
-          {/* Quick Add Meal Bar */}
+          {/* Add Item to Fixed Daily Meal Plan Bar */}
           <form onSubmit={handleAddMealSubmit} className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] block mb-3">
-              Log What You Ate / Plan To Eat
+              Add To Daily Meal Blueprint (Fixed Master List)
             </span>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               {/* Meal Type Pills */}
@@ -1024,7 +1086,7 @@ export function HealthScreen() {
                 type="text"
                 value={newMealName}
                 onChange={e => setNewMealName(e.target.value)}
-                placeholder="e.g. Oatmeal with blueberries, Grilled chicken bowl, Salmon & quinoa..."
+                placeholder="e.g. 4 Eggs + Sourdough, Chicken & Jasmine Rice, Whey Shake..."
                 className="flex-1 px-4 py-2.5 rounded-xl bg-[#f8f7f4] border border-[var(--line)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"
               />
 
@@ -1035,32 +1097,32 @@ export function HealthScreen() {
                 className="px-5 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
               >
                 <Plus size={14} />
-                <span>Add Meal</span>
+                <span>Add To Daily Plan</span>
               </button>
             </div>
           </form>
 
-          {/* Meals List / Empty State */}
+          {/* Master Meals List / Empty State */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[var(--line)] shadow-sm">
             <div className="flex items-center justify-between pb-4 mb-4 border-b border-[var(--line)]">
               <div>
-                <h3 className="serif text-xl font-normal">Meals for {formatDisplayDate(selectedMealDate)}</h3>
-                <p className="text-xs text-[var(--muted)] mt-0.5">Check off each item once you have eaten it.</p>
+                <h3 className="serif text-xl font-normal">Daily Meals Checklist · {formatDisplayDate(selectedMealDate)}</h3>
+                <p className="text-xs text-[var(--muted)] mt-0.5">Your fixed daily meal routine. Mark each item eaten for {formatDisplayDate(selectedMealDate)}.</p>
               </div>
               <span className="text-xs font-bold text-[var(--muted)]">
-                {selectedDateMeals.length} item{selectedDateMeals.length !== 1 ? 's' : ''}
+                {masterMeals.length} item{masterMeals.length !== 1 ? 's' : ''} in blueprint
               </span>
             </div>
 
-            {selectedDateMeals.length === 0 ? (
+            {masterMeals.length === 0 ? (
               /* Clean Empty State */
               <div className="py-14 px-6 text-center max-w-md mx-auto">
                 <div className="w-14 h-14 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] text-[var(--muted)] flex items-center justify-center mx-auto mb-4">
                   <Utensils size={24} />
                 </div>
-                <h4 className="serif text-xl font-normal text-[var(--ink)] mb-1.5">No meals logged for {formatDisplayDate(selectedMealDate)}</h4>
+                <h4 className="serif text-xl font-normal text-[var(--ink)] mb-1.5">No meals in your daily blueprint yet</h4>
                 <p className="text-xs text-[var(--muted)] leading-relaxed mb-6">
-                  Plan what you want to eat or log what you've eaten to track your daily nutrition without friction.
+                  Add the meals you eat daily above. They will stay fixed on your daily checklist every single day so you can mark them off with 1 tap.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   {['+ Breakfast', '+ Lunch', '+ Dinner', '+ Snack'].map(label => {
@@ -1084,64 +1146,70 @@ export function HealthScreen() {
             ) : (
               /* Meals List */
               <div className="space-y-3">
-                {selectedDateMeals.map(meal => (
-                  <div
-                    key={meal.id}
-                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                      meal.completed
-                        ? 'bg-emerald-50/50 border-emerald-200'
-                        : 'bg-[#f8f7f4] border-[var(--line)] hover:border-[var(--accent)]'
-                    }`}
-                  >
+                {masterMeals.map(meal => {
+                  const isEaten = selectedDateEatenIds.includes(meal.id);
+
+                  return (
                     <div
-                      onClick={() => toggleMeal(meal.id, selectedMealDate)}
-                      className="flex items-center gap-3.5 flex-1 cursor-pointer"
+                      key={meal.id}
+                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                        isEaten
+                          ? 'bg-emerald-50/50 border-emerald-200'
+                          : 'bg-[#f8f7f4] border-[var(--line)] hover:border-[var(--accent)]'
+                      }`}
                     >
-                      <button
-                        type="button"
-                        className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
-                          meal.completed
-                            ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
-                            : 'bg-white border-[var(--line)] text-transparent hover:border-[var(--accent)]'
-                        }`}
+                      <div
+                        onClick={() => toggleDailyMealEaten(selectedMealDate, meal.id)}
+                        className="flex items-center gap-3.5 flex-1 cursor-pointer"
                       >
-                        <Check size={13} className={meal.completed ? 'block' : 'hidden'} />
-                      </button>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
-                            meal.completed ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-[var(--muted)] border border-[var(--line)]'
-                          }`}>
-                            {meal.meal_type || 'Meal'}
-                          </span>
-                          <span className={`text-sm font-medium ${meal.completed ? 'line-through text-[var(--muted)]' : 'text-[var(--ink)]'}`}>
-                            {meal.name}
-                          </span>
+                        <button
+                          type="button"
+                          className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
+                            isEaten
+                              ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
+                              : 'bg-white border-[var(--line)] text-transparent hover:border-[var(--accent)]'
+                          }`}
+                        >
+                          <Check size={13} className={isEaten ? 'block' : 'hidden'} />
+                        </button>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
+                              isEaten ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-[var(--muted)] border border-[var(--line)]'
+                            }`}>
+                              {meal.meal_type || 'Meal'}
+                            </span>
+                            <span className={`text-sm font-medium ${isEaten ? 'line-through text-[var(--muted)]' : 'text-[var(--ink)]'}`}>
+                              {meal.name}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => toggleMeal(meal.id, selectedMealDate)}
-                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                          meal.completed
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-white border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
-                        }`}
-                      >
-                        {meal.completed ? 'Eaten ✓' : 'Mark Eaten'}
-                      </button>
-                      <button
-                        onClick={() => deleteMeal(meal.id)}
-                        className="p-1.5 rounded-lg text-[var(--muted)] hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                        title="Delete meal"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleDailyMealEaten(selectedMealDate, meal.id)}
+                          className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                            isEaten
+                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                              : 'bg-white border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
+                          }`}
+                        >
+                          {isEaten ? 'Eaten ✓' : 'Mark Eaten'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteMasterMealItem(meal.id)}
+                          className="p-1.5 rounded-lg text-[var(--muted)] hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          title="Remove from daily meal plan"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

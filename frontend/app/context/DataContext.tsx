@@ -11,6 +11,7 @@ import {
   HabitFrequency,
   HealthProfile,
   DailyMeal,
+  MasterMealItem,
   WorkoutDayPlan,
   WorkoutExerciseItem,
   DailyWorkoutRecord,
@@ -126,7 +127,15 @@ interface DataContextType {
   logWeight: (weight: number, date?: string, notes?: string) => Promise<void>;
   deleteWeightCheckin: (id: string) => Promise<void>;
 
-  // Daily Meals
+  // Daily Master Meals Plan & Adherence
+  masterMeals: MasterMealItem[];
+  addMasterMealItem: (item: { name: string; meal_type?: string }) => void;
+  deleteMasterMealItem: (id: string) => void;
+  updateMasterMealItem: (id: string, updates: Partial<MasterMealItem>) => void;
+  eatenMealsByDate: Record<string, string[]>;
+  toggleDailyMealEaten: (date: string, mealId: string) => void;
+
+  // Daily Meals (Legacy/Direct)
   meals: DailyMeal[];
   addMeal: (meal: Omit<DailyMeal, 'id'>) => Promise<DailyMeal>;
   toggleMeal: (id: string, date?: string) => Promise<void>;
@@ -135,6 +144,12 @@ interface DataContextType {
   todaysMeals: DailyMeal[];
   todaysMealsEatenCount: number;
   todaysMealsTotalCount: number;
+
+  // Creatine Tracking
+  creatineLogs: Record<string, boolean>;
+  toggleCreatine: (date?: string, taken?: boolean) => void;
+  isCreatineTakenToday: boolean;
+  creatineStreak: number;
 
   // Weekly Workouts & Calendar
   weeklySchedule: WorkoutDayPlan[];
@@ -169,6 +184,39 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [weightCheckins, setWeightCheckins] = useState<WeightCheckin[]>([]);
   const [meals, setMeals] = useState<DailyMeal[]>([]);
 
+  // Fixed master meal list (user's daily diet blueprint)
+  const [masterMeals, setMasterMeals] = useState<MasterMealItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('lifeos_master_meal_plan');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
+  });
+
+  // Daily eaten tracking for master meal items: dateStr -> string[] (array of masterMeal IDs)
+  const [eatenMealsByDate, setEatenMealsByDate] = useState<Record<string, string[]>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('lifeos_eaten_meals_by_date');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return {};
+  });
+
+  // Daily creatine logs: dateStr -> boolean
+  const [creatineLogs, setCreatineLogs] = useState<Record<string, boolean>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('lifeos_creatine_logs');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return {};
+  });
+
   // 7-day Sunday-to-Saturday schedule
   const [weeklySchedule, setWeeklySchedule] = useState<WorkoutDayPlan[]>(() => {
     if (typeof window !== 'undefined') {
@@ -192,6 +240,33 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
+
+  // Sync master meals
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('lifeos_master_meal_plan', JSON.stringify(masterMeals));
+      } catch {}
+    }
+  }, [masterMeals]);
+
+  // Sync eaten meals
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('lifeos_eaten_meals_by_date', JSON.stringify(eatenMealsByDate));
+      } catch {}
+    }
+  }, [eatenMealsByDate]);
+
+  // Sync creatine logs
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('lifeos_creatine_logs', JSON.stringify(creatineLogs));
+      } catch {}
+    }
+  }, [creatineLogs]);
 
   // Sync workout schedule to local storage
   useEffect(() => {
@@ -618,7 +693,87 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Daily Meals Actions
+  // Master Meal Plan Actions (Fixed Daily Blueprint)
+  const addMasterMealItem = (item: { name: string; meal_type?: string }) => {
+    const newItem: MasterMealItem = {
+      id: 'm-' + Date.now(),
+      name: item.name,
+      meal_type: item.meal_type || 'Meal',
+      created_at: new Date().toISOString(),
+    };
+    setMasterMeals(prev => [...prev, newItem]);
+  };
+
+  const deleteMasterMealItem = (id: string) => {
+    setMasterMeals(prev => prev.filter(m => m.id !== id));
+  };
+
+  const updateMasterMealItem = (id: string, updates: Partial<MasterMealItem>) => {
+    setMasterMeals(prev => prev.map(m => (m.id === id ? { ...m, ...updates } : m)));
+  };
+
+  const toggleDailyMealEaten = (date: string, mealId: string) => {
+    setEatenMealsByDate(prev => {
+      const currentList = prev[date] || [];
+      const isEaten = currentList.includes(mealId);
+      const updatedList = isEaten
+        ? currentList.filter(id => id !== mealId)
+        : [...currentList, mealId];
+      return {
+        ...prev,
+        [date]: updatedList,
+      };
+    });
+  };
+
+  // Creatine Actions
+  const toggleCreatine = (date = getTodayDateStr(), taken?: boolean) => {
+    setCreatineLogs(prev => {
+      const current = !!prev[date];
+      const next = taken !== undefined ? taken : !current;
+      return {
+        ...prev,
+        [date]: next,
+      };
+    });
+  };
+
+  const isCreatineTakenToday = useMemo(() => {
+    return !!creatineLogs[todayStr];
+  }, [creatineLogs, todayStr]);
+
+  const creatineStreak = useMemo(() => {
+    let streak = 0;
+    const checkDate = new Date();
+
+    while (true) {
+      const year = checkDate.getFullYear();
+      const month = String(checkDate.getMonth() + 1).padStart(2, '0');
+      const day = String(checkDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+
+      if (creatineLogs[dateStr]) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        if (streak === 0) {
+          checkDate.setDate(checkDate.getDate() - 1);
+          const y2 = checkDate.getFullYear();
+          const m2 = String(checkDate.getMonth() + 1).padStart(2, '0');
+          const d2 = String(checkDate.getDate()).padStart(2, '0');
+          if (creatineLogs[`${y2}-${m2}-${d2}`]) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+            continue;
+          }
+        }
+        break;
+      }
+    }
+    return streak;
+  }, [creatineLogs]);
+
+  // Daily Meals Actions (Legacy/Direct)
   const addMeal = async (mealData: Omit<DailyMeal, 'id'>): Promise<DailyMeal> => {
     const newMeal: DailyMeal = {
       ...mealData,
@@ -782,6 +937,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setTasks([]);
     setHabits([]);
     setMeals([]);
+    setMasterMeals([]);
+    setEatenMealsByDate({});
+    setCreatineLogs({});
     setWeightCheckins([]);
     setWorkoutRecords({});
   };
@@ -808,6 +966,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         logWeight,
         deleteWeightCheckin,
 
+        masterMeals,
+        addMasterMealItem,
+        deleteMasterMealItem,
+        updateMasterMealItem,
+        eatenMealsByDate,
+        toggleDailyMealEaten,
+
         meals,
         addMeal,
         toggleMeal,
@@ -816,6 +981,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         todaysMeals,
         todaysMealsEatenCount,
         todaysMealsTotalCount,
+
+        creatineLogs,
+        toggleCreatine,
+        isCreatineTakenToday,
+        creatineStreak,
 
         weeklySchedule,
         updateWorkoutDayPlan,
