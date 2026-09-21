@@ -209,24 +209,22 @@ export function HealthScreen() {
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn pb-12">
+    <div className="max-w-6xl mx-auto space-y-8 pb-16 animate-fadeIn text-[#181a18]">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[var(--line)] pb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5 text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
-            <Activity size={15} />
-            <span>Health & Strength Engine</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-subtle)] border border-[var(--accent)]/20 text-[var(--accent)] text-xs font-semibold uppercase tracking-wider mb-2">
+            <Activity size={13} />
+            <span>Health & Strength Engine · Steady Architecture</span>
           </div>
-          <h1 className="font-serif text-3xl md:text-4xl text-[var(--ink)] mt-1.5 font-bold tracking-tight">
-            Physical Architecture
-          </h1>
-          <p className="text-sm text-[var(--muted)] mt-1">
+          <h1 className="serif text-4xl sm:text-5xl font-normal">Physical Architecture<span className="text-[var(--accent)]">.</span></h1>
+          <p className="text-sm text-[var(--muted)] mt-1.5 max-w-2xl">
             Systematic nutrition, progressive hypertrophy, and compounded physical progress.
           </p>
         </div>
 
         {/* Sub-Navigation Tabs */}
-        <div className="flex items-center gap-1.5 bg-[#eae7e1]/80 p-1.5 rounded-2xl border border-[var(--line)] self-start md:self-auto overflow-x-auto max-w-full">
+        <div className="bg-[#ecebe4] p-1.5 rounded-2xl flex items-center gap-1 shrink-0 text-xs font-bold shadow-inner overflow-x-auto max-w-full">
           {[
             { id: 'overview', label: 'Overview', icon: Sparkles },
             { id: 'nutrition', label: 'Nutrition', icon: Apple },
@@ -240,10 +238,10 @@ export function HealthScreen() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? 'bg-white text-[var(--ink)] shadow-sm'
-                    : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-white/40'
+                    ? 'bg-[var(--ink)] text-white shadow-md'
+                    : 'text-[var(--muted)] hover:text-[var(--ink)]'
                 }`}
               >
                 <Icon size={14} />
@@ -265,7 +263,7 @@ export function HealthScreen() {
             <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-7 border border-[var(--line)] shadow-sm flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--muted)] flex items-center gap-1.5">
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted)] flex items-center gap-1.5">
                     <Scale size={14} className="text-[var(--accent)]" /> Weight Journey
                   </span>
                   <button
@@ -277,18 +275,18 @@ export function HealthScreen() {
                 </div>
 
                 <div className="mt-5 grid grid-cols-3 gap-3 sm:gap-4 text-center">
-                  <div className="p-3 sm:p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
-                    <span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider block">Starting</span>
-                    <span className="font-serif text-xl sm:text-2xl font-bold text-[var(--ink)] mt-1 block">{startingWeight} kg</span>
+                  <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
+                    <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider block">Starting</span>
+                    <span className="serif text-xl sm:text-2xl font-normal text-[var(--ink)] mt-1 block">{startingWeight} kg</span>
                   </div>
-                  <div className="p-3 sm:p-4 rounded-2xl bg-[#f5efe6] border border-[#e8ded0]">
-                    <span className="text-[11px] font-semibold text-[var(--accent)] uppercase tracking-wider block">Current</span>
-                    <span className="font-serif text-2xl sm:text-3xl font-bold text-[var(--ink)] mt-0.5 block">{currentWeight} kg</span>
-                    <span className="text-[10px] font-bold text-emerald-700 mt-0.5 block">+{totalWeightChange} kg gained</span>
+                  <div className="p-4 rounded-2xl bg-[var(--accent-subtle)] border border-[var(--accent)]/20">
+                    <span className="text-[10px] font-bold text-[var(--accent)] uppercase tracking-wider block">Current</span>
+                    <span className="serif text-2xl sm:text-3xl font-normal text-[var(--ink)] mt-0.5 block">{currentWeight} kg</span>
+                    <span className="text-[10px] font-bold text-[var(--sage)] mt-0.5 block">+{totalWeightChange} kg gained</span>
                   </div>
-                  <div className="p-3 sm:p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
-                    <span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider block">Goal</span>
-                    <span className="font-serif text-xl sm:text-2xl font-bold text-[var(--ink)] mt-1 block">{goalWeight} kg</span>
+                  <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
+                    <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider block">Goal</span>
+                    <span className="serif text-xl sm:text-2xl font-normal text-[var(--ink)] mt-1 block">{goalWeight} kg</span>
                     <span className="text-[10px] font-semibold text-[var(--muted)] mt-0.5 block">{remainingWeight} kg to go</span>
                   </div>
                 </div>
@@ -297,9 +295,9 @@ export function HealthScreen() {
                 <div className="mt-5">
                   <div className="flex justify-between text-xs font-semibold mb-1.5">
                     <span className="text-[var(--muted)]">Progress toward target</span>
-                    <span className="text-[var(--ink)] font-bold">{weightJourneyProgress}%</span>
+                    <span className="text-[var(--accent)] font-bold">{weightJourneyProgress}%</span>
                   </div>
-                  <div className="w-full h-3 bg-[#eae7e1] rounded-full overflow-hidden p-0.5 border border-[var(--line)]">
+                  <div className="w-full h-2.5 bg-[#ecebe4] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-[var(--accent)] rounded-full transition-all duration-500"
                       style={{ width: `${weightJourneyProgress}%` }}
@@ -318,8 +316,8 @@ export function HealthScreen() {
             <div className="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-7 border border-[var(--line)] shadow-sm flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--muted)] flex items-center gap-1.5">
-                    <Apple size={14} className="text-[#e66b4b]" /> Today's Nutrition
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted)] flex items-center gap-1.5">
+                    <Apple size={14} className="text-[var(--accent)]" /> Today's Nutrition
                   </span>
                   <button
                     onClick={() => setActiveTab('nutrition')}
@@ -332,12 +330,12 @@ export function HealthScreen() {
                 {/* Calories Big Gauge */}
                 <div className="mt-4 flex items-baseline justify-between border-b border-[var(--line)] pb-3">
                   <div>
-                    <span className="font-serif text-3xl font-bold text-[var(--ink)]">{todayMacros.calories}</span>
+                    <span className="serif text-3xl font-normal text-[var(--ink)]">{todayMacros.calories}</span>
                     <span className="text-xs font-semibold text-[var(--muted)] ml-1">/ {todayMacros.target_calories} kcal</span>
                   </div>
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
                     todayMacros.calories >= todayMacros.target_calories * 0.85
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      ? 'bg-[var(--sage-light)] text-[var(--sage)] border border-[var(--sage)]/20'
                       : 'bg-amber-50 text-amber-700 border border-amber-200'
                   }`}>
                     {Math.round((todayMacros.calories / todayMacros.target_calories) * 100)}% target
@@ -351,9 +349,9 @@ export function HealthScreen() {
                       <span className="text-[var(--ink)]">Protein</span>
                       <span className="text-[var(--muted)]">{todayMacros.protein}g / {todayMacros.target_protein}g</span>
                     </div>
-                    <div className="w-full h-2 bg-[#eae7e1] rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-[#ecebe4] rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[#e66b4b] rounded-full"
+                        className="h-full bg-[var(--accent)] rounded-full"
                         style={{ width: `${Math.min(100, (todayMacros.protein / todayMacros.target_protein) * 100)}%` }}
                       />
                     </div>
@@ -364,9 +362,9 @@ export function HealthScreen() {
                       <span className="text-[var(--ink)]">Carbohydrates</span>
                       <span className="text-[var(--muted)]">{todayMacros.carbs}g / {todayMacros.target_carbs}g</span>
                     </div>
-                    <div className="w-full h-2 bg-[#eae7e1] rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-[#ecebe4] rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[#5f805d] rounded-full"
+                        className="h-full bg-[var(--sage)] rounded-full"
                         style={{ width: `${Math.min(100, (todayMacros.carbs / todayMacros.target_carbs) * 100)}%` }}
                       />
                     </div>
@@ -377,7 +375,7 @@ export function HealthScreen() {
                       <span className="text-[var(--ink)]">Fats</span>
                       <span className="text-[var(--muted)]">{todayMacros.fat}g / {todayMacros.target_fat}g</span>
                     </div>
-                    <div className="w-full h-2 bg-[#eae7e1] rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-[#ecebe4] rounded-full overflow-hidden">
                       <div
                         className="h-full bg-[#d97706] rounded-full"
                         style={{ width: `${Math.min(100, (todayMacros.fat / todayMacros.target_fat) * 100)}%` }}
@@ -389,13 +387,13 @@ export function HealthScreen() {
 
               {/* 1-Tap Quick Staples in Overview */}
               <div className="mt-5 pt-4 border-t border-[var(--line)]">
-                <span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block mb-2">1-Tap Staple Log</span>
+                <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider block mb-2">1-Tap Staple Log</span>
                 <div className="flex flex-wrap gap-1.5">
                   {stapleFoods.slice(0, 4).map(food => (
                     <button
                       key={food.id}
                       onClick={() => logStapleFast(food)}
-                      className="text-xs font-semibold px-2.5 py-1 rounded-xl bg-[#f8f7f4] hover:bg-[#eae7e1] border border-[var(--line)] text-[var(--ink)] transition-colors cursor-pointer"
+                      className="text-xs font-semibold px-2.5 py-1 rounded-xl bg-[#f8f7f4] hover:bg-[#f1f0ea] border border-[var(--line)] text-[var(--ink)] transition-colors cursor-pointer"
                     >
                       + {food.name.split(' ')[0]}
                     </button>
@@ -411,7 +409,7 @@ export function HealthScreen() {
             <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--muted)] flex items-center gap-1.5">
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted)] flex items-center gap-1.5">
                     <Droplets size={14} className="text-blue-500" /> Hydration
                   </span>
                   <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
@@ -420,7 +418,7 @@ export function HealthScreen() {
                 </div>
 
                 <div className="mt-4">
-                  <div className="w-full h-3 bg-[#eae7e1] rounded-full overflow-hidden p-0.5 border border-[var(--line)]">
+                  <div className="w-full h-2.5 bg-[#ecebe4] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-blue-500 rounded-full transition-all"
                       style={{ width: `${Math.min(100, (dailyHealthStatus.water_ml / healthProfile.target_water_ml) * 100)}%` }}
@@ -438,7 +436,7 @@ export function HealthScreen() {
                 </button>
                 <button
                   onClick={() => logWater(500)}
-                  className="flex-1 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold transition-colors shadow-sm cursor-pointer"
+                  className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors shadow-sm cursor-pointer"
                 >
                   +500 ml
                 </button>
@@ -449,7 +447,7 @@ export function HealthScreen() {
             <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--muted)] flex items-center gap-1.5">
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted)] flex items-center gap-1.5">
                     <Zap size={14} className="text-purple-500" /> Creatine Daily
                   </span>
                   <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
@@ -457,18 +455,18 @@ export function HealthScreen() {
                   </span>
                 </div>
 
-                <p className="text-xs text-[var(--muted)] mt-2">
-                  5 grams daily for phosphocreatine muscle saturation and strength capacity.
+                <p className="text-xs text-[var(--muted)] mt-2 leading-relaxed">
+                  5 grams daily for phosphocreatine muscle saturation and power capacity.
                 </p>
               </div>
 
               <div className="mt-6 pt-4 border-t border-[var(--line)]">
                 <button
                   onClick={toggleCreatine}
-                  className={`w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  className={`w-full py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     dailyHealthStatus.creatine_completed
                       ? 'bg-purple-600 text-white shadow-sm'
-                      : 'bg-[#f8f7f4] text-[var(--ink)] border border-[var(--line)] hover:bg-[#eae7e1]'
+                      : 'bg-[#f8f7f4] text-[var(--ink)] border border-[var(--line)] hover:bg-[#f1f0ea]'
                   }`}
                 >
                   <Check size={14} className={dailyHealthStatus.creatine_completed ? 'text-white' : 'text-[var(--muted)]'} />
@@ -481,7 +479,7 @@ export function HealthScreen() {
             <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--muted)] flex items-center gap-1.5">
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted)] flex items-center gap-1.5">
                     <Dumbbell size={14} className="text-[var(--accent)]" /> Today's Split
                   </span>
                   <span className="text-xs font-bold text-[var(--ink)]">
@@ -493,7 +491,7 @@ export function HealthScreen() {
                   <span className="text-xs font-semibold text-[var(--muted)] block">
                     {todayWorkoutLogs.filter(wl => wl.completed).length} / {todayWorkoutDay?.exercises?.length || 5} exercises completed
                   </span>
-                  <div className="w-full h-2 bg-[#eae7e1] rounded-full overflow-hidden mt-1.5">
+                  <div className="w-full h-2 bg-[#ecebe4] rounded-full overflow-hidden mt-1.5">
                     <div
                       className="h-full bg-[var(--accent)] rounded-full transition-all"
                       style={{
@@ -509,7 +507,7 @@ export function HealthScreen() {
               <div className="mt-6 pt-4 border-t border-[var(--line)]">
                 <button
                   onClick={() => setActiveTab('workout')}
-                  className="w-full py-2.5 rounded-xl bg-[var(--ink)] text-white hover:bg-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-[var(--ink)] text-white hover:bg-black font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
                 >
                   <span>Open Workout</span>
                   <ChevronRight size={13} />
@@ -529,12 +527,12 @@ export function HealthScreen() {
           <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h3 className="font-serif text-lg font-bold text-[var(--ink)]">1-Tap Staple Foods</h3>
-                <p className="text-xs text-[var(--muted)]">Log routine meals and snacks with a single touch</p>
+                <h3 className="serif text-2xl font-normal text-[var(--ink)]">1-Tap Staple Foods</h3>
+                <p className="text-xs text-[var(--muted)] mt-0.5">Log routine meals and snacks with a single touch</p>
               </div>
               <button
                 onClick={() => setIsFoodLibraryOpen(true)}
-                className="text-xs font-bold text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-xs font-semibold text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer"
               >
                 Food Library ({foods.length}) <ChevronRight size={13} />
               </button>
@@ -545,13 +543,13 @@ export function HealthScreen() {
                 <button
                   key={food.id}
                   onClick={() => logStapleFast(food)}
-                  className="group flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-[#f8f7f4] hover:bg-[#f5efe6] border border-[var(--line)] hover:border-[#e8ded0] transition-all cursor-pointer text-left"
+                  className="group flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-[#f8f7f4] hover:bg-[var(--accent-subtle)] border border-[var(--line)] hover:border-[var(--accent)]/30 transition-all cursor-pointer text-left"
                 >
                   <div className="w-6 h-6 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center font-bold text-xs group-hover:bg-[var(--accent)] group-hover:text-white transition-colors">
                     +
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-[var(--ink)] block">{food.name}</span>
+                    <span className="text-xs font-semibold text-[var(--ink)] block">{food.name}</span>
                     <span className="text-[10px] text-[var(--muted)] font-medium">
                       {food.calories} kcal · {food.protein}g protein
                     </span>
@@ -565,10 +563,10 @@ export function HealthScreen() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Custom Log Meal Form (5 cols) */}
             <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
-              <h3 className="font-serif text-lg font-bold text-[var(--ink)] mb-4">Log Food or Meal</h3>
+              <h3 className="serif text-2xl font-normal text-[var(--ink)] mb-4">Log Food or Meal</h3>
               <form onSubmit={handleLogFoodSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+                  <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
                     Select Food Item
                   </label>
                   <select
@@ -585,7 +583,7 @@ export function HealthScreen() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+                  <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
                     Servings (e.g. 1, 2, 1.5)
                   </label>
                   <input
@@ -601,7 +599,7 @@ export function HealthScreen() {
 
                 <button
                   type="submit"
-                  className="w-full py-2.5 rounded-xl bg-[var(--ink)] hover:bg-black text-white font-bold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-[var(--ink)] hover:bg-black text-white font-semibold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
                 >
                   Add to Daily Log
                 </button>
@@ -611,8 +609,8 @@ export function HealthScreen() {
             {/* Today's Meals List (7 cols) */}
             <div className="lg:col-span-7 bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-serif text-lg font-bold text-[var(--ink)]">Today's Logged Items</h3>
-                <span className="text-xs font-bold text-[var(--muted)]">
+                <h3 className="serif text-2xl font-normal text-[var(--ink)]">Today's Logged Items</h3>
+                <span className="text-xs font-semibold text-[var(--muted)]">
                   {todaysFoodLogs.length} items logged
                 </span>
               </div>
@@ -631,7 +629,7 @@ export function HealthScreen() {
                     return (
                       <div
                         key={log.id}
-                        className="flex items-center justify-between p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] hover:border-[#ded9ce] transition-all"
+                        className="flex items-center justify-between p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] hover:border-[var(--accent)]/30 transition-all"
                       >
                         <div>
                           <span className="text-xs font-bold text-[var(--ink)] block">
@@ -667,19 +665,19 @@ export function HealthScreen() {
           <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="font-serif text-lg font-bold text-[var(--ink)]">Workout Routine & Split</h3>
-                <p className="text-xs text-[var(--muted)]">Current split: {healthProfile.training_frequency}-Day Hypertrophy Program</p>
+                <h3 className="serif text-2xl font-normal text-[var(--ink)]">Workout Routine & Split</h3>
+                <p className="text-xs text-[var(--muted)] mt-0.5">Current split: {healthProfile.training_frequency}-Day Hypertrophy Program</p>
               </div>
 
               {/* Frequency Selector */}
-              <div className="flex items-center gap-1.5 bg-[#eae7e1] p-1 rounded-xl border border-[var(--line)] self-start sm:self-auto">
+              <div className="flex items-center gap-1 bg-[#ecebe4] p-1 rounded-xl shadow-inner self-start sm:self-auto">
                 {[3, 4, 5, 6].map(freq => (
                   <button
                     key={freq}
                     onClick={() => setWorkoutFrequency(freq)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       healthProfile.training_frequency === freq
-                        ? 'bg-white text-[var(--ink)] shadow-sm'
+                        ? 'bg-[var(--ink)] text-white shadow-sm'
                         : 'text-[var(--muted)] hover:text-[var(--ink)]'
                     }`}
                   >
@@ -696,7 +694,7 @@ export function HealthScreen() {
                   <button
                     key={day.id}
                     onClick={() => setSelectedDayIndex(idx)}
-                    className={`px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                    className={`px-4 py-2 rounded-2xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                       selectedDayIndex === idx
                         ? 'bg-[var(--ink)] text-white shadow-sm'
                         : 'bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]'
@@ -713,20 +711,20 @@ export function HealthScreen() {
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[var(--line)] shadow-sm">
             <div className="flex items-center justify-between border-b border-[var(--line)] pb-4 mb-6">
               <div>
-                <span className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--accent)]">
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
                   Day Focus
                 </span>
-                <h2 className="font-serif text-2xl font-bold text-[var(--ink)]">
+                <h2 className="serif text-3xl font-normal text-[var(--ink)] mt-0.5">
                   {currentWorkoutDay?.day_name || 'Workout Day'}
                 </h2>
               </div>
-              <span className="text-xs font-bold text-[var(--muted)]">
+              <span className="text-xs font-semibold text-[var(--muted)]">
                 {currentWorkoutDay?.exercises?.length || 0} Exercises
               </span>
             </div>
 
             {/* Exercises List */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               {currentWorkoutDay?.exercises?.map((we, index) => {
                 const exName = typeof we.exercise === 'string' ? (we.exercise_details?.name || 'Exercise') : we.exercise.name;
                 const muscle = we.exercise_details?.muscle_group || 'Compound';
@@ -738,19 +736,19 @@ export function HealthScreen() {
                     key={we.id}
                     className={`p-4 sm:p-5 rounded-2xl border transition-all ${
                       isDone
-                        ? 'bg-[#f5efe6]/70 border-[#e8ded0]'
-                        : 'bg-[#f8f7f4] border-[var(--line)] hover:border-[#ded9ce]'
+                        ? 'bg-[var(--sage-light)]/40 border-[var(--sage)]/30'
+                        : 'bg-[#f8f7f4] border border-[var(--line)] hover:border-[var(--accent)]/30'
                     }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-3.5">
                         <div className="w-7 h-7 rounded-full bg-white border border-[var(--line)] flex items-center justify-center font-bold text-xs text-[var(--ink)] shrink-0">
                           {index + 1}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-bold text-[var(--ink)]">{exName}</h4>
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[#eae7e1] text-[var(--muted)] uppercase">
+                            <h4 className="text-sm font-semibold text-[var(--ink)]">{exName}</h4>
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[#ecebe4] text-[var(--muted)] uppercase">
                               {muscle}
                             </span>
                           </div>
@@ -764,10 +762,10 @@ export function HealthScreen() {
                       <div className="flex items-center gap-3 self-end sm:self-auto">
                         <button
                           onClick={() => toggleWorkoutExercise(we.id, !isDone)}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                          className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                             isDone
-                              ? 'bg-emerald-600 text-white shadow-sm'
-                              : 'bg-white text-[var(--ink)] border border-[var(--line)] hover:bg-[#eae7e1]'
+                              ? 'bg-[var(--sage)] text-white shadow-sm'
+                              : 'bg-white text-[var(--ink)] border border-[var(--line)] hover:bg-[#f1f0ea]'
                           }`}
                         >
                           <Check size={14} />
@@ -792,10 +790,10 @@ export function HealthScreen() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Weight Checkin Form (5 cols) */}
             <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
-              <h3 className="font-serif text-lg font-bold text-[var(--ink)] mb-4">Log Weight Check-in</h3>
+              <h3 className="serif text-2xl font-normal text-[var(--ink)] mb-4">Log Weight Check-in</h3>
               <form onSubmit={handleLogWeightSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
                     Weight (kg)
                   </label>
                   <input
@@ -812,7 +810,7 @@ export function HealthScreen() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
                     Date
                   </label>
                   <input
@@ -824,7 +822,7 @@ export function HealthScreen() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
                     Notes (Optional)
                   </label>
                   <input
@@ -838,7 +836,7 @@ export function HealthScreen() {
 
                 <button
                   type="submit"
-                  className="w-full py-2.5 rounded-xl bg-[var(--ink)] hover:bg-black text-white font-bold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-[var(--ink)] hover:bg-black text-white font-semibold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
                 >
                   Save Check-in
                 </button>
@@ -848,23 +846,23 @@ export function HealthScreen() {
             {/* Weight Journey Stats (7 cols) */}
             <div className="lg:col-span-7 bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
               <div>
-                <h3 className="font-serif text-lg font-bold text-[var(--ink)] mb-4">Progression Metrics</h3>
+                <h3 className="serif text-2xl font-normal text-[var(--ink)] mb-4">Progression Metrics</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
                     <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Start</span>
-                    <span className="text-lg font-bold text-[var(--ink)] mt-0.5 block">{startingWeight} kg</span>
+                    <span className="serif text-xl font-normal text-[var(--ink)] mt-0.5 block">{startingWeight} kg</span>
                   </div>
-                  <div className="p-3.5 rounded-2xl bg-[#f5efe6] border border-[#e8ded0]">
+                  <div className="p-3.5 rounded-2xl bg-[var(--accent-subtle)] border border-[var(--accent)]/20">
                     <span className="text-[10px] font-bold text-[var(--accent)] uppercase block">Current</span>
-                    <span className="text-lg font-bold text-[var(--ink)] mt-0.5 block">{currentWeight} kg</span>
+                    <span className="serif text-xl font-normal text-[var(--ink)] mt-0.5 block">{currentWeight} kg</span>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
                     <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Gained</span>
-                    <span className="text-lg font-bold text-emerald-700 mt-0.5 block">+{totalWeightChange} kg</span>
+                    <span className="serif text-xl font-normal text-[var(--sage)] mt-0.5 block">+{totalWeightChange} kg</span>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
                     <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Target</span>
-                    <span className="text-lg font-bold text-[var(--ink)] mt-0.5 block">{goalWeight} kg</span>
+                    <span className="serif text-xl font-normal text-[var(--ink)] mt-0.5 block">{goalWeight} kg</span>
                   </div>
                 </div>
               </div>
@@ -879,14 +877,22 @@ export function HealthScreen() {
                     <AreaChart data={weightChartData}>
                       <defs>
                         <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.25} />
+                          <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3} />
                           <stop offset="95%" stopColor="var(--accent)" stopOpacity={0.0} />
                         </linearGradient>
                       </defs>
-                      <XAxis dataKey="date" stroke="#9ca3af" fontSize={11} tickLine={false} />
-                      <YAxis domain={['dataMin - 1', 'dataMax + 2']} stroke="#9ca3af" fontSize={11} tickLine={false} />
-                      <Tooltip />
-                      <ReferenceLine y={goalWeight} stroke="#10b981" strokeDasharray="3 3" label={{ value: 'Goal', position: 'insideTopRight', fill: '#10b981', fontSize: 10 }} />
+                      <XAxis dataKey="date" stroke="#797d77" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis domain={['dataMin - 1', 'dataMax + 2']} stroke="#797d77" fontSize={11} tickLine={false} axisLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#181a18',
+                          borderRadius: '12px',
+                          border: 'none',
+                          color: '#fff',
+                          fontSize: '12px',
+                        }}
+                      />
+                      <ReferenceLine y={goalWeight} stroke="#75926e" strokeDasharray="3 3" label={{ value: 'Target', position: 'insideTopRight', fill: '#75926e', fontSize: 10 }} />
                       <Area type="monotone" dataKey="weight" stroke="var(--accent)" strokeWidth={2.5} fill="url(#weightGrad)" />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -897,15 +903,15 @@ export function HealthScreen() {
 
           {/* Historical Log Entries */}
           <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
-            <h3 className="font-serif text-lg font-bold text-[var(--ink)] mb-4">Recent Check-in Logs</h3>
+            <h3 className="serif text-2xl font-normal text-[var(--ink)] mb-4">Recent Check-in Logs</h3>
             <div className="space-y-2">
               {weightCheckins.map(w => (
                 <div
                   key={w.id}
-                  className="flex items-center justify-between p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] hover:border-[#ded9ce] transition-all"
+                  className="flex items-center justify-between p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] hover:border-[var(--accent)]/30 transition-all"
                 >
                   <div className="flex items-center gap-4">
-                    <span className="font-serif text-base font-bold text-[var(--ink)]">{w.weight} kg</span>
+                    <span className="serif text-lg font-normal text-[var(--ink)]">{w.weight} kg</span>
                     <span className="text-xs text-[var(--muted)]">{w.date}</span>
                     {w.notes && <span className="text-xs text-[var(--muted)] italic">· {w.notes}</span>}
                   </div>
@@ -928,7 +934,7 @@ export function HealthScreen() {
       {activeTab === 'settings' && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[var(--line)] shadow-sm max-w-3xl mx-auto animate-fadeIn">
           <div className="border-b border-[var(--line)] pb-4 mb-6">
-            <h2 className="font-serif text-2xl font-bold text-[var(--ink)]">Health Profile & Macro Targets</h2>
+            <h2 className="serif text-3xl font-normal text-[var(--ink)]">Health Profile & Macro Targets</h2>
             <p className="text-xs text-[var(--muted)] mt-1">
               Configure your biological stats, training frequency, and daily nutritional targets.
             </p>
@@ -937,7 +943,7 @@ export function HealthScreen() {
           <form onSubmit={handleSaveHealthSettings} className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
                   Current Weight (kg)
                 </label>
                 <input
@@ -945,12 +951,12 @@ export function HealthScreen() {
                   step="0.1"
                   value={setupWeight}
                   onChange={e => setSetupWeight(e.target.value)}
-                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold"
+                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
                   Goal Weight (kg)
                 </label>
                 <input
@@ -958,55 +964,55 @@ export function HealthScreen() {
                   step="0.1"
                   value={setupGoalWeight}
                   onChange={e => setSetupGoalWeight(e.target.value)}
-                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold"
+                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
                   Height (cm)
                 </label>
                 <input
                   type="number"
                   value={setupHeight}
                   onChange={e => setSetupHeight(e.target.value)}
-                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold"
+                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
                   Age
                 </label>
                 <input
                   type="number"
                   value={setupAge}
                   onChange={e => setSetupAge(e.target.value)}
-                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold"
+                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
                   Daily Calorie Target (kcal)
                 </label>
                 <input
                   type="number"
                   value={setupCalories}
                   onChange={e => setSetupCalories(e.target.value)}
-                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold"
+                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
                   Daily Protein Target (grams)
                 </label>
                 <input
                   type="number"
                   value={setupProtein}
                   onChange={e => setSetupProtein(e.target.value)}
-                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold"
+                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
             </div>
@@ -1014,7 +1020,7 @@ export function HealthScreen() {
             <div className="pt-4 border-t border-[var(--line)] flex justify-end">
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-[var(--ink)] hover:bg-black text-white font-bold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-[var(--ink)] hover:bg-black text-white font-semibold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
               >
                 Save Health Profile
               </button>
@@ -1037,8 +1043,8 @@ export function HealthScreen() {
             >
               <div className="flex items-center justify-between border-b border-[var(--line)] pb-4 mb-4">
                 <div>
-                  <h3 className="font-serif text-xl font-bold text-[var(--ink)]">Food Library</h3>
-                  <p className="text-xs text-[var(--muted)]">Manage your staples and custom nutritional foods</p>
+                  <h3 className="serif text-2xl font-normal text-[var(--ink)]">Food Library</h3>
+                  <p className="text-xs text-[var(--muted)] mt-0.5">Manage your staples and custom nutritional foods</p>
                 </div>
                 <button
                   onClick={() => setIsFoodLibraryOpen(false)}
@@ -1049,10 +1055,10 @@ export function HealthScreen() {
               </div>
 
               <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-bold text-[var(--muted)] uppercase">{foods.length} items registered</span>
+                <span className="text-xs font-semibold text-[var(--muted)] uppercase">{foods.length} items registered</span>
                 <button
                   onClick={() => setIsAddFoodOpen(!isAddFoodOpen)}
-                  className="text-xs font-bold text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-semibold text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <Plus size={13} /> {isAddFoodOpen ? 'Close Form' : 'Add Custom Food'}
                 </button>
@@ -1063,45 +1069,45 @@ export function HealthScreen() {
                 <form onSubmit={handleAddCustomFood} className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] mb-4 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--muted)] uppercase block mb-1">Name</label>
+                      <label className="text-[10px] font-semibold text-[var(--muted)] uppercase block mb-1">Name</label>
                       <input
                         type="text"
                         placeholder="e.g. Greek Yogurt (200g)"
                         value={newFoodName}
                         onChange={e => setNewFoodName(e.target.value)}
-                        className="w-full bg-white border border-[var(--line)] rounded-lg px-2.5 py-1.5 text-xs"
+                        className="w-full bg-white border border-[var(--line)] rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)]"
                         required
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--muted)] uppercase block mb-1">Serving Desc</label>
+                      <label className="text-[10px] font-semibold text-[var(--muted)] uppercase block mb-1">Serving Desc</label>
                       <input
                         type="text"
                         placeholder="e.g. 1 bowl (200g)"
                         value={newFoodServing}
                         onChange={e => setNewFoodServing(e.target.value)}
-                        className="w-full bg-white border border-[var(--line)] rounded-lg px-2.5 py-1.5 text-xs"
+                        className="w-full bg-white border border-[var(--line)] rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)]"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--muted)] uppercase block mb-1">Calories (kcal)</label>
+                      <label className="text-[10px] font-semibold text-[var(--muted)] uppercase block mb-1">Calories (kcal)</label>
                       <input
                         type="number"
                         placeholder="e.g. 130"
                         value={newFoodCals}
                         onChange={e => setNewFoodCals(e.target.value)}
-                        className="w-full bg-white border border-[var(--line)] rounded-lg px-2.5 py-1.5 text-xs"
+                        className="w-full bg-white border border-[var(--line)] rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)]"
                         required
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--muted)] uppercase block mb-1">Protein (g)</label>
+                      <label className="text-[10px] font-semibold text-[var(--muted)] uppercase block mb-1">Protein (g)</label>
                       <input
                         type="number"
                         placeholder="e.g. 20"
                         value={newFoodProtein}
                         onChange={e => setNewFoodProtein(e.target.value)}
-                        className="w-full bg-white border border-[var(--line)] rounded-lg px-2.5 py-1.5 text-xs"
+                        className="w-full bg-white border border-[var(--line)] rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)]"
                         required
                       />
                     </div>
@@ -1119,7 +1125,7 @@ export function HealthScreen() {
                     </label>
                     <button
                       type="submit"
-                      className="px-4 py-1.5 rounded-lg bg-[var(--ink)] text-white text-xs font-bold cursor-pointer"
+                      className="px-4 py-1.5 rounded-xl bg-[var(--ink)] text-white text-xs font-semibold cursor-pointer"
                     >
                       Save Food
                     </button>
@@ -1132,13 +1138,13 @@ export function HealthScreen() {
                 {foods.map(f => (
                   <div
                     key={f.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-[#f8f7f4] border border-[var(--line)]"
+                    className="flex items-center justify-between p-3 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]"
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-[var(--ink)]">{f.name}</span>
+                        <span className="text-xs font-semibold text-[var(--ink)]">{f.name}</span>
                         {f.is_staple && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--accent)]/15 text-[var(--accent)] uppercase">
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--accent-subtle)] text-[var(--accent)] uppercase">
                             Staple
                           </span>
                         )}
