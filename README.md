@@ -1,6 +1,6 @@
 # LifeOS
 
-LifeOS is a warm, editorial personal operating system for daily tasks, atomic habits, long-term goals, and health & strength architecture.
+LifeOS is a warm, editorial personal operating system for daily tasks, atomic habits, and health & strength architecture.
 
 ## Run the frontend
 

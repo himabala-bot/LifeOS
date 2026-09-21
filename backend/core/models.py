@@ -12,21 +12,8 @@ class Base(models.Model):
         abstract = True
 
 
-class Goal(Base):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    title = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    deadline = models.DateField(null=True, blank=True)
-    status = models.CharField(max_length=20, default='active')
-    progress = models.PositiveIntegerField(default=0)
-
-    def __str__(self):
-        return self.title
-
-
 class Task(Base):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    goal = models.ForeignKey(Goal, null=True, blank=True, on_delete=models.SET_NULL)
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     priority = models.CharField(max_length=10, default='medium')
@@ -39,7 +26,6 @@ class Task(Base):
 
 class Habit(Base):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    goal = models.ForeignKey(Goal, null=True, blank=True, on_delete=models.SET_NULL)
     name = models.CharField(max_length=200)
     frequency = models.CharField(max_length=20, default='daily')
     active = models.BooleanField(default=True)

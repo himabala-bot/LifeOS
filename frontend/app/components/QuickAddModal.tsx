@@ -6,7 +6,6 @@ import {
   X,
   ListTodo,
   Flame,
-  Target,
   Apple,
   Scale,
   Droplets,
@@ -14,19 +13,18 @@ import {
   Plus,
 } from 'lucide-react';
 import { useData, getTodayDateStr } from '../context/DataContext';
-import { TaskPriority, TaskTag, HabitCategory, HabitFrequency, GoalCategory } from '../types';
+import { TaskPriority, TaskTag, HabitCategory, HabitFrequency } from '../types';
 
 interface QuickAddModalProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultTab?: 'task' | 'habit' | 'goal' | 'food' | 'weight' | 'water' | 'workout';
+  defaultTab?: 'task' | 'habit' | 'food' | 'weight' | 'water' | 'workout';
 }
 
 export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAddModalProps) {
   const {
     addTask,
     addHabit,
-    addGoal,
     foods,
     logFood,
     logWeight,
@@ -36,7 +34,7 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
     toggleWorkoutExercise,
   } = useData();
 
-  const [tab, setTab] = useState<'task' | 'habit' | 'goal' | 'food' | 'weight' | 'water' | 'workout'>(defaultTab);
+  const [tab, setTab] = useState<'task' | 'habit' | 'food' | 'weight' | 'water' | 'workout'>(defaultTab);
 
   // Task form
   const [taskTitle, setTaskTitle] = useState('');
@@ -48,12 +46,6 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
   const [habitName, setHabitName] = useState('');
   const [habitCategory, setHabitCategory] = useState<HabitCategory>('Health');
   const [habitFreq, setHabitFreq] = useState<HabitFrequency>('daily');
-
-  // Goal form
-  const [goalTitle, setGoalTitle] = useState('');
-  const [goalCategory, setGoalCategory] = useState<GoalCategory>('Career');
-  const [goalTargetDate, setGoalTargetDate] = useState('');
-  const [goalMilestone1, setGoalMilestone1] = useState('');
 
   // Food form
   const [selectedFoodId, setSelectedFoodId] = useState<string>(foods[0]?.id || '');
@@ -96,24 +88,6 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
       frequency: habitFreq,
     });
     setHabitName('');
-    onClose();
-  };
-
-  const handleCreateGoal = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!goalTitle.trim()) return;
-    const milestones = goalMilestone1.trim()
-      ? [{ id: 'm_' + Date.now(), title: goalMilestone1.trim(), done: false }]
-      : [];
-    addGoal({
-      title: goalTitle.trim(),
-      category: goalCategory,
-      targetDate: goalTargetDate || undefined,
-      status: 'active',
-      milestones,
-    });
-    setGoalTitle('');
-    setGoalMilestone1('');
     onClose();
   };
 
@@ -185,7 +159,6 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
             {[
               { id: 'task', label: 'Task', icon: ListTodo },
               { id: 'habit', label: 'Habit', icon: Flame },
-              { id: 'goal', label: 'Goal', icon: Target },
               { id: 'food', label: 'Food', icon: Apple },
               { id: 'weight', label: 'Weight', icon: Scale },
               { id: 'water', label: 'Water', icon: Droplets },
@@ -342,76 +315,6 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                 >
                   <Plus size={16} />
                   <span>Track Habit</span>
-                </button>
-              </form>
-            )}
-
-            {/* GOAL FORM */}
-            {tab === 'goal' && (
-              <form onSubmit={handleCreateGoal} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                    Goal Objective
-                  </label>
-                  <input
-                    type="text"
-                    value={goalTitle}
-                    onChange={e => setGoalTitle(e.target.value)}
-                    placeholder="e.g., Reach 57kg lean bodyweight"
-                    className="w-full px-4 py-2.5 bg-white rounded-xl border border-[var(--line)] text-sm focus:outline-none focus:border-[var(--accent)]"
-                    autoFocus
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                      Category
-                    </label>
-                    <select
-                      value={goalCategory}
-                      onChange={e => setGoalCategory(e.target.value as GoalCategory)}
-                      className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs font-medium focus:outline-none"
-                    >
-                      {['Career', 'Health', 'Personal', 'Travel', 'Creative'].map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                      Target Date
-                    </label>
-                    <input
-                      type="date"
-                      value={goalTargetDate}
-                      onChange={e => setGoalTargetDate(e.target.value)}
-                      className="w-full px-2 py-2 bg-white rounded-xl border border-[var(--line)] text-xs font-medium focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                    First Key Milestone
-                  </label>
-                  <input
-                    type="text"
-                    value={goalMilestone1}
-                    onChange={e => setGoalMilestone1(e.target.value)}
-                    placeholder="e.g., Hit 50kg solid baseline"
-                    className="w-full px-4 py-2 bg-white rounded-xl border border-[var(--line)] text-xs focus:outline-none focus:border-[var(--accent)]"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 rounded-xl bg-[var(--ink)] hover:bg-black text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-md mt-2 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Plus size={16} />
-                  <span>Set Goal</span>
                 </button>
               </form>
             )}

@@ -5,7 +5,7 @@ import { DataProvider } from './context/DataContext';
 
 export const metadata: Metadata = {
   title: 'LifeOS',
-  description: 'Master your daily focus, atomic habits, nutrition, strength, and life goals in one beautifully crafted, distraction-free operating system.',
+  description: 'Master your daily focus, atomic habits, nutrition, and strength in one beautifully crafted, distraction-free operating system.',
 };
 
 export default function RootLayout({

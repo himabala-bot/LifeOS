@@ -4,7 +4,6 @@ import React from 'react';
 import {
   ListTodo,
   Flame,
-  Target,
   Activity,
   BarChart3,
   Settings,
@@ -34,18 +33,16 @@ export function Sidebar({
   onOpenQuickAdd,
 }: SidebarProps) {
   const { user, logout } = useAuth();
-  const { tasks, habits, goals, healthProfile, lifeScore } = useData();
+  const { tasks, habits, healthProfile, lifeScore } = useData();
 
   const pendingTasksCount = tasks.filter(t => !t.completed).length;
   const activeHabitsCount = habits.length;
-  const activeGoalsCount = goals.filter(g => g.status !== 'completed' && g.status !== 'paused').length;
 
   const primaryNavItems: { id: ScreenType; label: string; icon: any; badge?: string | number; badgeColor?: string }[] = [
     { id: 'today', label: 'Today', icon: Compass, badge: lifeScore.overall > 0 ? `${lifeScore.overall}%` : undefined, badgeColor: 'bg-[var(--accent-subtle)] text-[var(--accent)]' },
     { id: 'trajectory', label: 'Future Simulator', icon: Sparkles },
     { id: 'tasks', label: 'Tasks', icon: ListTodo, badge: pendingTasksCount > 0 ? pendingTasksCount : undefined },
     { id: 'habits', label: 'Habits', icon: Flame, badge: activeHabitsCount > 0 ? activeHabitsCount : undefined, badgeColor: 'bg-[var(--sage-light)] text-[var(--sage)]' },
-    { id: 'goals', label: 'Goals', icon: Target, badge: activeGoalsCount > 0 ? activeGoalsCount : undefined },
     { id: 'health', label: 'Health', icon: Activity, badge: healthProfile.current_weight > 0 ? `${healthProfile.current_weight}kg` : undefined, badgeColor: 'bg-[var(--sage-light)] text-[var(--sage)]' },
   ];
 

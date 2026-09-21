@@ -269,7 +269,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
                 </div>
                 <div className="text-left">
                   <p className="font-semibold text-xs text-[var(--ink)]">Explore Aisha's Interactive Demo</p>
-                  <p className="text-[10px] text-[var(--muted)]">Pre-populated with real habits, goals & strength</p>
+                  <p className="text-[10px] text-[var(--muted)]">Pre-populated with real habits, tasks & strength</p>
                 </div>
               </div>
               <Sparkles size={14} className="text-[var(--accent)]" />

@@ -4,15 +4,11 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import {
   Task,
   Habit,
-  Goal,
-  Milestone,
   LifeScoreBreakdown,
   TaskPriority,
   TaskTag,
   HabitCategory,
   HabitFrequency,
-  GoalCategory,
-  GoalStatus,
   HealthProfile,
   Food,
   FoodLog,
@@ -42,35 +38,6 @@ export function getPastDateStr(daysAgo: number): string {
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-}
-
-export function parseGoalDescription(rawDesc?: string): { cleanDescription: string; milestones: Milestone[] } {
-  if (!rawDesc) return { cleanDescription: '', milestones: [] };
-  const marker = '[MILESTONES]:';
-  const idx = rawDesc.indexOf(marker);
-  if (idx === -1) {
-    return { cleanDescription: rawDesc.trim(), milestones: [] };
-  }
-  const cleanDescription = rawDesc.substring(0, idx).trim();
-  const milestonesJson = rawDesc.substring(idx + marker.length).trim();
-  try {
-    const parsed = JSON.parse(milestonesJson);
-    if (Array.isArray(parsed)) {
-      return { cleanDescription, milestones: parsed };
-    }
-  } catch (e) {
-    console.warn('Failed to parse milestones from description:', e);
-  }
-  return { cleanDescription, milestones: [] };
-}
-
-export function encodeGoalDescription(cleanDesc?: string, milestones?: Milestone[]): string {
-  const desc = (cleanDesc || '').trim();
-  if (!milestones || milestones.length === 0) {
-    return desc;
-  }
-  const marker = '[MILESTONES]:' + JSON.stringify(milestones);
-  return desc ? `${desc}\n\n${marker}` : marker;
 }
 
 const DEFAULT_HEALTH_PROFILE: HealthProfile = {
@@ -231,40 +198,6 @@ const DEFAULT_DEMO_HABITS: Habit[] = [
   },
 ];
 
-const DEFAULT_DEMO_GOALS: Goal[] = [
-  {
-    id: 'g-1',
-    title: 'Reach 57 kg Lean Muscle Mass',
-    description: 'Systematic lean surplus of +350 kcal/day, 120g+ protein, 4x weekly progressive strength training.',
-    category: 'Health',
-    targetDate: '2026-12-31',
-    status: 'on_track',
-    milestones: [
-      { id: 'm-1', title: 'Break through 48.5 kg milestone', done: true, dueDate: '2026-08-30' },
-      { id: 'm-2', title: 'Reach 50.0 kg solid bodyweight', done: false, dueDate: '2026-10-15' },
-      { id: 'm-3', title: 'Bench press 50kg for 3x8 clean', done: false, dueDate: '2026-11-15' },
-      { id: 'm-4', title: 'Final target 57.0 kg lean mass', done: false, dueDate: '2026-12-31' },
-    ],
-    notes: 'Prioritize whole eggs, soya chunks, paneer, and peanut butter shakes.',
-    createdAt: getPastDateStr(45),
-  },
-  {
-    id: 'g-2',
-    title: 'Scale Software Engineering Consultancy',
-    description: 'Deliver 3 high-impact client systems and build reusable open-source architecture.',
-    category: 'Career',
-    targetDate: '2026-11-30',
-    status: 'on_track',
-    milestones: [
-      { id: 'm-5', title: 'Close Q3 enterprise contract', done: true, dueDate: '2026-09-15' },
-      { id: 'm-6', title: 'Deploy core API infrastructure', done: true, dueDate: '2026-09-30' },
-      { id: 'm-7', title: 'Publish technical case study', done: false, dueDate: '2026-10-31' },
-    ],
-    notes: 'Maintain 90+ min daily focus blocks.',
-    createdAt: getPastDateStr(60),
-  },
-];
-
 interface HabitStreakInfo {
   currentStreak: number;
   longestStreak: number;
@@ -286,16 +219,6 @@ interface DataContextType {
   deleteHabit: (id: string) => Promise<void>;
   toggleHabitDay: (id: string, dateStr: string) => Promise<void>;
   getHabitStreak: (habit: Habit) => HabitStreakInfo;
-
-  // Goals
-  goals: Goal[];
-  addGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => Promise<void>;
-  updateGoal: (id: string, updates: Partial<Goal>) => Promise<void>;
-  deleteGoal: (id: string) => Promise<void>;
-  toggleMilestone: (goalId: string, milestoneId: string) => Promise<void>;
-  addMilestone: (goalId: string, title: string) => Promise<void>;
-  deleteMilestone: (goalId: string, milestoneId: string) => Promise<void>;
-  getGoalProgress: (goal: Goal) => number;
 
   // Health Module State & Actions
   healthProfile: HealthProfile;
@@ -344,7 +267,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const [tasks, setTasks] = useState<Task[]>(DEFAULT_DEMO_TASKS);
   const [habits, setHabits] = useState<Habit[]>(DEFAULT_DEMO_HABITS);
-  const [goals, setGoals] = useState<Goal[]>(DEFAULT_DEMO_GOALS);
 
   const [healthProfile, setHealthProfile] = useState<HealthProfile>(DEFAULT_HEALTH_PROFILE);
   const [foods, setFoods] = useState<Food[]>([]);
@@ -427,19 +349,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       (creatineScore * 0.10)
     );
 
-    // 4. Goals Score (25%)
-    const goalScores = goals.map(g => {
-      if (g.milestones.length === 0) return 75;
-      const done = g.milestones.filter(m => m.done).length;
-      return Math.round((done / g.milestones.length) * 100);
-    });
-    const goalsScore = goalScores.length > 0 ? Math.round(goalScores.reduce((a, b) => a + b, 0) / goalScores.length) : 75;
-
     const overall = Math.round(
-      (tasksScore * 0.25) +
-      (habitsScore * 0.25) +
-      (healthScore * 0.25) +
-      (goalsScore * 0.25)
+      (tasksScore * 0.35) +
+      (habitsScore * 0.35) +
+      (healthScore * 0.30)
     );
 
     return {
@@ -447,11 +360,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       tasksScore,
       habitsScore,
       healthScore,
-      goalsScore,
       summary: overall >= 80 ? 'Exceptional momentum across all personal pillars.' : 'Consistent execution in progress.',
       changeVsLastWeek: +3.2,
     };
-  }, [tasks, habits, goals, todayMacros, healthProfile, dailyHealthStatus, todayWorkoutDay, todayWorkoutLogs]);
+  }, [tasks, habits, todayMacros, healthProfile, dailyHealthStatus, todayWorkoutDay, todayWorkoutLogs]);
 
   // Fetch Workspace from API or fallback
   const refreshData = useCallback(async () => {
@@ -491,22 +403,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
               color: '#e66b4b',
               history: hist,
               createdAt: h.created_at || getTodayDateStr(),
-            };
-          }));
-        }
-        if (res.goals) {
-          setGoals(res.goals.map(g => {
-            const { cleanDescription, milestones } = parseGoalDescription(g.description);
-            return {
-              id: String(g.id),
-              title: g.title,
-              description: cleanDescription,
-              category: 'Personal' as GoalCategory,
-              targetDate: g.deadline || undefined,
-              status: (g.status || 'active') as GoalStatus,
-              milestones,
-              notes: cleanDescription,
-              createdAt: g.created_at || getTodayDateStr(),
             };
           }));
         }
@@ -725,164 +621,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return { currentStreak, longestStreak, consistency7d };
   };
 
-  // Goals actions
-  const addGoal = async (goalData: Omit<Goal, 'id' | 'createdAt'>) => {
-    const newGoal: Goal = {
-      ...goalData,
-      id: 'g-' + Date.now(),
-      createdAt: getTodayDateStr(),
-    };
-    setGoals(prev => [newGoal, ...prev]);
-    if (getAccessToken()) {
-      try {
-        const progress = getGoalProgress(newGoal);
-        const encodedDesc = encodeGoalDescription(goalData.description, goalData.milestones);
-        const created = await api.goals.create({
-          title: goalData.title,
-          description: encodedDesc,
-          deadline: goalData.targetDate || null,
-          status: goalData.status,
-          progress,
-        });
-        if (created && created.id) {
-          setGoals(prev => prev.map(g => (g.id === newGoal.id ? { ...g, id: String(created.id) } : g)));
-        }
-      } catch (err) {
-        console.error('Failed to create goal:', err);
-      }
-    }
-  };
-
-  const updateGoal = async (id: string, updates: Partial<Goal>) => {
-    let updatedGoal: Goal | null = null;
-    setGoals(prev =>
-      prev.map(g => {
-        if (g.id === id) {
-          updatedGoal = { ...g, ...updates };
-          return updatedGoal;
-        }
-        return g;
-      })
-    );
-    if (getAccessToken() && updatedGoal) {
-      try {
-        const goal = updatedGoal as Goal;
-        const progress = getGoalProgress(goal);
-        await api.goals.update(id, {
-          title: updates.title,
-          description: encodeGoalDescription(goal.description, goal.milestones),
-          deadline: updates.targetDate,
-          status: updates.status,
-          progress,
-        });
-      } catch (err) {
-        console.error('Failed to update goal:', err);
-      }
-    }
-  };
-
-  const deleteGoal = async (id: string) => {
-    setGoals(prev => prev.filter(g => g.id !== id));
-    if (getAccessToken()) {
-      try {
-        await api.goals.delete(id);
-      } catch (err) {
-        console.error('Failed to delete goal:', err);
-      }
-    }
-  };
-
-  const toggleMilestone = async (goalId: string, milestoneId: string) => {
-    let targetGoal: Goal | null = null;
-    setGoals(prev =>
-      prev.map(g => {
-        if (g.id === goalId) {
-          const updatedMilestones = g.milestones.map(m => (m.id === milestoneId ? { ...m, done: !m.done } : m));
-          const updated = { ...g, milestones: updatedMilestones };
-          targetGoal = updated;
-          return updated;
-        }
-        return g;
-      })
-    );
-    if (targetGoal && getAccessToken()) {
-      try {
-        const goal = targetGoal as Goal;
-        const progress = getGoalProgress(goal);
-        await api.goals.update(goalId, {
-          description: encodeGoalDescription(goal.description, goal.milestones),
-          progress,
-          status: progress === 100 ? 'completed' : goal.status,
-        });
-      } catch (err) {
-        console.error('Failed to sync milestone toggle:', err);
-      }
-    }
-  };
-
-  const addMilestone = async (goalId: string, title: string) => {
-    const newMilestone: Milestone = {
-      id: 'm_' + Date.now(),
-      title,
-      done: false,
-    };
-    let targetGoal: Goal | null = null;
-    setGoals(prev =>
-      prev.map(g => {
-        if (g.id === goalId) {
-          const updated = { ...g, milestones: [...g.milestones, newMilestone] };
-          targetGoal = updated;
-          return updated;
-        }
-        return g;
-      })
-    );
-    if (targetGoal && getAccessToken()) {
-      try {
-        const goal = targetGoal as Goal;
-        const progress = getGoalProgress(goal);
-        await api.goals.update(goalId, {
-          description: encodeGoalDescription(goal.description, goal.milestones),
-          progress,
-        });
-      } catch (err) {
-        console.error('Failed to sync added milestone:', err);
-      }
-    }
-  };
-
-  const deleteMilestone = async (goalId: string, milestoneId: string) => {
-    let targetGoal: Goal | null = null;
-    setGoals(prev =>
-      prev.map(g => {
-        if (g.id === goalId) {
-          const updated = { ...g, milestones: g.milestones.filter(m => m.id !== milestoneId) };
-          targetGoal = updated;
-          return updated;
-        }
-        return g;
-      })
-    );
-    if (targetGoal && getAccessToken()) {
-      try {
-        const goal = targetGoal as Goal;
-        const progress = getGoalProgress(goal);
-        await api.goals.update(goalId, {
-          description: encodeGoalDescription(goal.description, goal.milestones),
-          progress,
-        });
-      } catch (err) {
-        console.error('Failed to sync deleted milestone:', err);
-      }
-    }
-  };
-
-  const getGoalProgress = (goal: Goal): number => {
-    if (!goal.milestones || goal.milestones.length === 0) return 0;
-    const completed = goal.milestones.filter(m => m.done).length;
-    return Math.round((completed / goal.milestones.length) * 100);
-  };
-
   // Health Profile & Onboarding
   const onboardHealth = async (data: Partial<HealthProfile>) => {
     const updated = { ...healthProfile, ...data, is_onboarded: true };
@@ -1099,7 +837,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const resetAllData = () => {
     setTasks([]);
     setHabits([]);
-    setGoals([]);
     setFoodLogs([]);
     setWeightCheckins([]);
   };
@@ -1119,15 +856,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         deleteHabit,
         toggleHabitDay,
         getHabitStreak,
-
-        goals,
-        addGoal,
-        updateGoal,
-        deleteGoal,
-        toggleMilestone,
-        addMilestone,
-        deleteMilestone,
-        getGoalProgress,
 
         healthProfile,
         onboardHealth,

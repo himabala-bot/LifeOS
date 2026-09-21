@@ -10,7 +10,6 @@ import { TodayScreen } from './components/screens/TodayScreen';
 import { TrajectoryScreen } from './components/screens/TrajectoryScreen';
 import { TasksScreen } from './components/screens/TasksScreen';
 import { HabitsScreen } from './components/screens/HabitsScreen';
-import { GoalsScreen } from './components/screens/GoalsScreen';
 import { HealthScreen } from './components/screens/HealthScreen';
 import { AnalyticsScreen } from './components/screens/AnalyticsScreen';
 import { SettingsScreen } from './components/screens/SettingsScreen';
@@ -21,9 +20,9 @@ export default function Home() {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('today');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-  const [quickAddTab, setQuickAddTab] = useState<'task' | 'habit' | 'goal' | 'food' | 'weight' | 'water' | 'workout'>('task');
+  const [quickAddTab, setQuickAddTab] = useState<'task' | 'habit' | 'food' | 'weight' | 'water' | 'workout'>('task');
 
-  const openQuickAdd = (tab: 'task' | 'habit' | 'goal' | 'food' | 'weight' | 'water' | 'workout' = 'task') => {
+  const openQuickAdd = (tab: 'task' | 'habit' | 'food' | 'weight' | 'water' | 'workout' = 'task') => {
     setQuickAddTab(tab);
     setIsQuickAddOpen(true);
   };
@@ -91,8 +90,6 @@ export default function Home() {
           {currentScreen === 'tasks' && <TasksScreen />}
 
           {currentScreen === 'habits' && <HabitsScreen />}
-
-          {currentScreen === 'goals' && <GoalsScreen />}
 
           {currentScreen === 'health' && <HealthScreen />}
 

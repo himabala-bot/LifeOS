@@ -4,7 +4,6 @@ from core.views import (
     TaskViewSet,
     HabitViewSet,
     HabitCompletionViewSet,
-    GoalViewSet,
     HealthProfileViewSet,
     FoodViewSet,
     FoodLogViewSet,
@@ -29,7 +28,6 @@ router = DefaultRouter()
 router.register('tasks', TaskViewSet, basename='tasks')
 router.register('habits', HabitViewSet, basename='habits')
 router.register('habit-completions', HabitCompletionViewSet, basename='habit-completions')
-router.register('goals', GoalViewSet, basename='goals')
 
 # Health & Strength endpoints
 router.register('health/profile', HealthProfileViewSet, basename='health-profile')

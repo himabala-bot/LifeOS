@@ -150,7 +150,6 @@ export const api = {
     user: any;
     tasks: any[];
     habits: any[];
-    goals: any[];
     health_profile: any;
     foods: any[];
     food_logs_today: any[];
@@ -172,7 +171,6 @@ export const api = {
       priority?: string;
       due_date?: string | null;
       completed?: boolean;
-      goal?: string | null;
     }) => apiFetch<any>('/api/tasks/', {
       method: 'POST',
       body: JSON.stringify(task),
@@ -183,7 +181,6 @@ export const api = {
       priority: string;
       due_date: string | null;
       completed: boolean;
-      goal: string | null;
     }>) => apiFetch<any>(`/api/tasks/${id}/`, {
       method: 'PATCH',
       body: JSON.stringify(updates),
@@ -199,7 +196,6 @@ export const api = {
       name: string;
       frequency?: string;
       active?: boolean;
-      goal?: string | null;
     }) => apiFetch<any>('/api/habits/', {
       method: 'POST',
       body: JSON.stringify(habit),
@@ -220,33 +216,6 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(completion),
       }),
-  },
-
-  goals: {
-    list: () => apiFetch<any[]>('/api/goals/'),
-    create: (goal: {
-      title: string;
-      description?: string;
-      deadline?: string | null;
-      status?: string;
-      progress?: number;
-    }) => apiFetch<any>('/api/goals/', {
-      method: 'POST',
-      body: JSON.stringify(goal),
-    }),
-    update: (id: string, updates: Partial<{
-      title: string;
-      description: string;
-      deadline: string | null;
-      status: string;
-      progress: number;
-    }>) => apiFetch<any>(`/api/goals/${id}/`, {
-      method: 'PATCH',
-      body: JSON.stringify(updates),
-    }),
-    delete: (id: string) => apiFetch(`/api/goals/${id}/`, {
-      method: 'DELETE',
-    }),
   },
 
   // ==========================================

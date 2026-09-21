@@ -7,13 +7,13 @@ import {
   TrendingDown,
   Clock,
   Flame,
-  Target,
   Utensils,
   Sliders,
   Brain,
   AlertTriangle,
   RotateCcw,
   BookOpen,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -29,8 +29,8 @@ import { useData } from '../../context/DataContext';
 export function TrajectoryScreen() {
   const { user } = useAuth();
   const {
+    tasks,
     habits,
-    goals,
     lifeScore,
   } = useData();
 
@@ -44,7 +44,6 @@ export function TrajectoryScreen() {
   const baseAvgFocusMinutes = 90;
 
   const activeHabitsCount = Math.max(1, habits.length);
-  const activeGoalsCount = Math.max(1, goals.length);
 
   const simulation = useMemo(() => {
     const days = Math.round(horizonYears * 365);
@@ -56,13 +55,13 @@ export function TrajectoryScreen() {
 
     const cleanFuelDaysAlpha = Math.round(days * (nutritionDiscipline / 100));
     const workoutsAlpha = Math.round((days * (habitDisciplineRate / 100)) * (4 / 7));
-    const goalsCompletedAlpha = Math.min(activeGoalsCount, Math.round(activeGoalsCount * (horizonYears >= 3 ? 0.95 : horizonYears >= 1 ? 0.75 : 0.45)));
+    const tasksExecutedAlpha = Math.round(days * 4.2);
 
     const totalDeepHoursBeta = Math.round((Math.max(20, baseAvgFocusMinutes - 30) * days) / 60);
     const booksReadBeta = Math.round(horizonYears * 1.5);
     const metabolicDragDaysBeta = Math.round(days * 0.65);
     const workoutsBeta = Math.round((days * 0.35) * (2 / 7));
-    const goalsCompletedBeta = Math.round(activeGoalsCount * 0.15);
+    const tasksExecutedBeta = Math.round(days * 1.2);
 
     const lostFrictionHours = Math.round(2.5 * days);
 
@@ -102,17 +101,17 @@ export function TrajectoryScreen() {
       booksReadAlpha,
       cleanFuelDaysAlpha,
       workoutsAlpha,
-      goalsCompletedAlpha,
+      tasksExecutedAlpha,
       totalDeepHoursBeta,
       booksReadBeta,
       metabolicDragDaysBeta,
       workoutsBeta,
-      goalsCompletedBeta,
+      tasksExecutedBeta,
       lostFrictionHours,
       chartData,
       divergencePct,
     };
-  }, [horizonYears, extraFocusMins, nutritionDiscipline, habitDisciplineRate, readingPagesDaily, baseAvgFocusMinutes, activeHabitsCount, activeGoalsCount, lifeScore.overall]);
+  }, [horizonYears, extraFocusMins, nutritionDiscipline, habitDisciplineRate, readingPagesDaily, baseAvgFocusMinutes, activeHabitsCount, lifeScore.overall]);
 
   const targetYear = new Date().getFullYear() + Math.round(horizonYears);
   const userFirstName = user?.name ? user.name.split(' ')[0] : 'Explorer';
@@ -298,10 +297,10 @@ export function TrajectoryScreen() {
 
               <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Target size={20} className="text-blue-600" />
+                  <CheckCircle2 size={20} className="text-blue-600" />
                   <div>
-                    <p className="text-xs text-[var(--muted)] font-semibold uppercase tracking-wider">Life Ambition Realized</p>
-                    <p className="text-sm font-bold text-[var(--ink)] mt-0.5">{simulation.goalsCompletedAlpha} Major Horizons Shipped</p>
+                    <p className="text-xs text-[var(--muted)] font-semibold uppercase tracking-wider">High Output Execution</p>
+                    <p className="text-sm font-bold text-[var(--ink)] mt-0.5">{simulation.tasksExecutedAlpha.toLocaleString()} Core Tasks Shipped</p>
                   </div>
                 </div>
                 <span className="text-xs font-bold text-blue-700">High Agency</span>
@@ -368,13 +367,13 @@ export function TrajectoryScreen() {
 
               <div className="p-4 rounded-2xl bg-white border border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Target size={20} className="text-[var(--muted)]" />
+                  <Clock size={20} className="text-[var(--muted)]" />
                   <div>
-                    <p className="text-xs text-[var(--muted)] font-semibold uppercase tracking-wider">Deferred Dreams</p>
-                    <p className="text-sm font-bold text-[var(--ink)] mt-0.5">{simulation.goalsCompletedBeta} Goals Stalled</p>
+                    <p className="text-xs text-[var(--muted)] font-semibold uppercase tracking-wider">Execution Deficit</p>
+                    <p className="text-sm font-bold text-[var(--ink)] mt-0.5">{simulation.tasksExecutedBeta.toLocaleString()} Tasks Crawled</p>
                   </div>
                 </div>
-                <span className="text-xs text-red-600">"Someday" Trap</span>
+                <span className="text-xs text-red-600">Stalled Momentum</span>
               </div>
             </div>
           </div>

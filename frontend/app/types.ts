@@ -3,7 +3,6 @@ export type ScreenType =
   | 'trajectory'
   | 'tasks'
   | 'habits'
-  | 'goals'
   | 'health'
   | 'analytics'
   | 'settings';
@@ -34,28 +33,6 @@ export interface Habit {
   color?: string;
   icon?: string;
   history: Record<string, boolean>;
-  createdAt: string;
-}
-
-export interface Milestone {
-  id: string;
-  title: string;
-  done: boolean;
-  dueDate?: string;
-}
-
-export type GoalCategory = 'Career' | 'Health' | 'Personal' | 'Travel' | 'Creative';
-export type GoalStatus = 'active' | 'on_track' | 'behind' | 'completed' | 'paused';
-
-export interface Goal {
-  id: string;
-  title: string;
-  description?: string;
-  category: GoalCategory;
-  targetDate?: string;
-  status: GoalStatus;
-  milestones: Milestone[];
-  notes?: string;
   createdAt: string;
 }
 
@@ -192,7 +169,6 @@ export interface LifeScoreBreakdown {
   tasksScore: number;
   habitsScore: number;
   healthScore: number;
-  goalsScore: number;
   summary: string;
   changeVsLastWeek: number;
 }

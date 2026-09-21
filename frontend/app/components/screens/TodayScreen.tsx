@@ -7,7 +7,6 @@ import {
   Plus,
   ChevronRight,
   Flame,
-  Target,
   Sparkles,
   TrendingUp,
   Activity,
@@ -22,7 +21,7 @@ import { ScreenType, TaskPriority, TaskTag } from '../../types';
 
 interface TodayScreenProps {
   onNavigate: (screen: ScreenType) => void;
-  onOpenQuickAdd: (tab?: 'task' | 'habit' | 'goal' | 'food' | 'weight' | 'water' | 'workout') => void;
+  onOpenQuickAdd: (tab?: 'task' | 'habit' | 'food' | 'weight' | 'water' | 'workout') => void;
 }
 
 export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
@@ -34,8 +33,6 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
     habits,
     toggleHabitDay,
     getHabitStreak,
-    goals,
-    getGoalProgress,
     lifeScore,
     healthProfile,
     todayMacros,
@@ -63,8 +60,6 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
 
   const todayTasks = tasks.filter(t => !t.dueDate || t.dueDate === todayStr || t.completedAt === todayStr);
   const completedTodayTasks = todayTasks.filter(t => t.completed).length;
-
-  const activeGoals = goals.filter(g => g.status !== 'completed').slice(0, 3);
 
   const handleQuickAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,7 +136,7 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
             </div>
           </div>
 
-          <div className="relative z-10 mt-6 pt-6 border-t border-white/10 grid grid-cols-4 gap-2 text-center">
+          <div className="relative z-10 mt-6 pt-6 border-t border-white/10 grid grid-cols-3 gap-2 text-center">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-white/50">Tasks</p>
               <p className="text-base font-semibold mt-1">{lifeScore.tasksScore}%</p>
@@ -153,10 +148,6 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
             <div>
               <p className="text-[10px] uppercase tracking-wider text-white/50">Health</p>
               <p className="text-base font-semibold mt-1">{lifeScore.healthScore}%</p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-white/50">Goals</p>
-              <p className="text-base font-semibold mt-1">{lifeScore.goalsScore}%</p>
             </div>
           </div>
 
@@ -445,76 +436,6 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
             </div>
           </div>
         </div>
-      </section>
-
-      {/* Strategic Goals Section */}
-      <section className="bg-white rounded-3xl p-7 border border-[var(--line)] shadow-sm">
-        <div className="flex items-center justify-between pb-4 border-b border-[var(--line)]">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] font-semibold text-[var(--muted)]">Milestone Ambition</p>
-            <h2 className="serif text-2xl font-normal mt-1">Strategic Life Goals</h2>
-          </div>
-          <button
-            onClick={() => onNavigate('goals')}
-            className="text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] flex items-center gap-1 cursor-pointer"
-          >
-            <span>All Goals</span>
-            <ChevronRight size={14} />
-          </button>
-        </div>
-
-        {activeGoals.length === 0 ? (
-          <div className="py-8 text-center text-[var(--muted)]">
-            <p className="text-sm">No strategic goals created yet.</p>
-            <button
-              onClick={() => onOpenQuickAdd('goal')}
-              className="mt-3 px-4 py-2 rounded-xl bg-[var(--ink)] text-white text-xs font-semibold hover:bg-black transition-colors cursor-pointer"
-            >
-              + Create Life Goal
-            </button>
-          </div>
-        ) : (
-          <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {activeGoals.map((goal) => {
-              const progress = getGoalProgress(goal);
-              const doneCount = goal.milestones.filter(m => m.done).length;
-              return (
-                <div
-                  key={goal.id}
-                  onClick={() => onNavigate('goals')}
-                  className="p-5 rounded-2xl border border-[var(--line)] bg-[#f8f7f4] hover:bg-white hover:border-[var(--accent)] transition-all cursor-pointer flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between text-xs mb-2">
-                      <span className="px-2 py-0.5 rounded bg-white border border-[var(--line)] text-[var(--muted)] font-medium">
-                        {goal.category}
-                      </span>
-                      <span className="font-bold text-[var(--accent)]">{progress}%</span>
-                    </div>
-                    <h3 className="font-semibold text-sm text-[var(--ink)] line-clamp-1">{goal.title}</h3>
-                    {goal.description && goal.description.split('[MILESTONES]:')[0].trim().length > 0 && (
-                      <p className="text-xs text-[var(--muted)] mt-1 line-clamp-2">
-                        {goal.description.split('[MILESTONES]:')[0].trim()}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-[var(--line)]">
-                    <div className="w-full h-1.5 bg-[#e4e3dd] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[var(--accent)] rounded-full transition-all"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                    <p className="text-[10px] text-[var(--muted)] mt-2">
-                      {doneCount} of {goal.milestones.length} milestones reached
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </section>
     </div>
   );

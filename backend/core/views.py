@@ -12,7 +12,6 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import (
-    Goal,
     Task,
     Habit,
     HabitCompletion,
@@ -67,13 +66,6 @@ class HabitSerializer(ModelSerializer):
 
     class Meta:
         model = Habit
-        fields = '__all__'
-        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
-
-
-class GoalSerializer(ModelSerializer):
-    class Meta:
-        model = Goal
         fields = '__all__'
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']
 
@@ -275,7 +267,7 @@ class TaskViewSet(BaseUserOwnedViewSet):
     serializer_class = TaskSerializer
 
     def get_queryset(self):
-        return Task.objects.filter(user=self.request.user).select_related('goal').order_by('-created_at')
+        return Task.objects.filter(user=self.request.user).order_by('-created_at')
 
 
 class HabitViewSet(BaseUserOwnedViewSet):
@@ -312,14 +304,6 @@ class HabitCompletionViewSet(viewsets.ModelViewSet):
         )
         serializer = self.get_serializer(instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
-
-
-class GoalViewSet(BaseUserOwnedViewSet):
-    model = Goal
-    serializer_class = GoalSerializer
-
-    def get_queryset(self):
-        return Goal.objects.filter(user=self.request.user).order_by('-created_at')
 
 
 # ==========================================
@@ -660,9 +644,8 @@ class BootstrapView(APIView):
         today = timezone.localdate()
 
         # 1. Base LifeOS Entities
-        tasks = list(Task.objects.filter(user=user).select_related('goal').order_by('-created_at'))
+        tasks = list(Task.objects.filter(user=user).order_by('-created_at'))
         habits = list(Habit.objects.filter(user=user).prefetch_related('habitcompletion_set').order_by('-created_at'))
-        goals = list(Goal.objects.filter(user=user).order_by('-created_at'))
 
         # 2. Health Entities
         profile, _ = HealthProfile.objects.get_or_create(user=user)
@@ -698,7 +681,7 @@ class BootstrapView(APIView):
             total_carbs += float(log.food.carbs) * s
             total_fat += float(log.food.fat) * s
 
-        # 4. LifeScore Calculation (4 Pillars: Tasks, Habits, Health, Goals)
+        # 4. LifeScore Calculation (3 Pillars: Tasks, Habits, Health)
         tasks_total = len(tasks)
         tasks_completed = sum(1 for t in tasks if t.completed)
         task_score = (tasks_completed / tasks_total * 100.0) if tasks_total > 0 else 85.0
@@ -728,10 +711,7 @@ class BootstrapView(APIView):
             creatine_done=daily_status.creatine_completed
         )
 
-        # Goal score
-        goal_score = (sum(g.progress for g in goals) / len(goals)) if goals else 75.0
-
-        overall_lifescore = round((task_score * 0.25) + (habit_score * 0.25) + (health_score * 0.25) + (goal_score * 0.25), 1)
+        overall_lifescore = round((task_score * 0.35) + (habit_score * 0.35) + (health_score * 0.30), 1)
 
         user_data = UserSerializer(user).data
         user_data['health_profile'] = HealthProfileSerializer(profile).data
@@ -740,7 +720,6 @@ class BootstrapView(APIView):
             'user': user_data,
             'tasks': TaskSerializer(tasks, many=True).data,
             'habits': HabitSerializer(habits, many=True).data,
-            'goals': GoalSerializer(goals, many=True).data,
             'health_profile': HealthProfileSerializer(profile).data,
             'foods': FoodSerializer(foods, many=True).data,
             'food_logs_today': FoodLogSerializer(today_food_logs, many=True).data,
@@ -764,7 +743,6 @@ class BootstrapView(APIView):
                 'tasks_score': round(task_score, 1),
                 'habits_score': round(habit_score, 1),
                 'health_score': round(health_score, 1),
-                'goals_score': round(goal_score, 1),
                 'summary': "Balanced productivity and physical consistency across core life domains.",
                 'change_vs_last_week': 2.4,
             },
@@ -772,7 +750,6 @@ class BootstrapView(APIView):
                 'tasks_completed': tasks_completed,
                 'tasks_total': tasks_total,
                 'habits_active': habit_count,
-                'goal_progress': round(goal_score, 1),
                 'health_consistency': health_score,
                 'current_weight': profile.current_weight,
                 'goal_weight': profile.goal_weight,
@@ -792,7 +769,6 @@ class AnalyticsView(APIView):
         today = timezone.localdate()
 
         tasks = Task.objects.filter(user=user)
-        goals = Goal.objects.filter(user=user)
         habits = Habit.objects.filter(user=user, active=True)
         profile, _ = HealthProfile.objects.get_or_create(user=user)
 
@@ -828,12 +804,10 @@ class AnalyticsView(APIView):
 
         tasks_total = tasks.count()
         tasks_completed = tasks.filter(completed=True).count()
-        goal_progress = sum(x.progress for x in goals) / goals.count() if goals.exists() else 0
 
         return Response({
             'tasks_completed': tasks_completed,
             'tasks_total': tasks_total,
-            'goal_progress': round(goal_progress, 1),
             'habits_active': habits.count(),
             'current_weight': profile.current_weight,
             'goal_weight': profile.goal_weight,

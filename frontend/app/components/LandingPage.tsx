@@ -5,13 +5,13 @@ import {
   Sparkles,
   ArrowRight,
   Flame,
-  Target,
   Activity,
   Zap,
   Dumbbell,
   Apple,
   Check,
   Kanban,
+  CheckSquare,
 } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 import { useAuth } from '../context/AuthContext';
@@ -106,11 +106,11 @@ export function LandingPage() {
         </div>
 
         <h1 className="serif text-5xl sm:text-7xl lg:text-8xl font-normal tracking-tight text-[var(--ink)] max-w-5xl mx-auto leading-[1.08]">
-          One OS for your mind, goals & physical strength<span className="text-[var(--accent)]">.</span>
+          One OS for your focus, habits & physical strength<span className="text-[var(--accent)]">.</span>
         </h1>
 
         <p className="mt-8 text-base sm:text-lg text-[var(--muted)] max-w-2xl mx-auto font-normal leading-relaxed">
-          LifeOS brings together daily execution, habit formation, strategic milestones, nutrition macros, and progressive strength training into one editorial dashboard.
+          LifeOS brings together daily task execution, atomic habit formation, nutrition macros, and progressive strength training into one editorial dashboard.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -265,28 +265,28 @@ export function LandingPage() {
               </div>
               <h3 className="serif text-2xl font-normal mb-3">Holistic Life Score</h3>
               <p className="text-sm text-[var(--muted)] leading-relaxed">
-                A single honest number synthesizing your habit adherence, task output, physical health consistency, and goal trajectory in real time.
+                A single honest number synthesizing your habit adherence, task execution, and physical health consistency in real time.
               </p>
             </div>
             <div className="mt-8 pt-4 border-t border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
-              <span>4-Pillar dynamic calculation</span>
+              <span>3-Pillar dynamic calculation</span>
               <ArrowRight size={12} className="text-[var(--accent)]" />
             </div>
           </div>
 
-          {/* Card 5: Goal Milestones */}
+          {/* Card 5: Task Pipeline */}
           <div className="bg-white rounded-3xl p-8 border border-[var(--line)] card-hover flex flex-col justify-between">
             <div>
               <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center mb-6">
-                <Target size={24} />
+                <CheckSquare size={24} />
               </div>
-              <h3 className="serif text-2xl font-normal mb-3">Milestone Goal Engine</h3>
+              <h3 className="serif text-2xl font-normal mb-3">Daily Task Pipeline</h3>
               <p className="text-sm text-[var(--muted)] leading-relaxed">
-                Bridge abstract long-term dreams with actionable milestones. Progress bars calculate automatically as you tick off milestones.
+                Organize your high-leverage focus items, backlog, and daily sprints with priorities, tags, and progress tracking.
               </p>
             </div>
             <div className="mt-8 pt-4 border-t border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
-              <span>Horizons & milestone trees</span>
+              <span>Priorities & sprint focus</span>
               <ArrowRight size={12} className="text-[var(--accent)]" />
             </div>
           </div>

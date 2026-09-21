@@ -20,14 +20,12 @@ export function AnalyticsScreen() {
   const {
     tasks,
     habits,
-    goals,
     healthProfile,
     weightCheckins,
     foodLogs,
     foods,
     todayMacros,
     lifeScore,
-    getGoalProgress,
   } = useData();
 
   // 7-day Nutrition history for chart
@@ -116,26 +114,21 @@ export function AnalyticsScreen() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-sm">
+          <div className="grid grid-cols-3 gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-sm">
             <div className="p-3">
               <p className="text-[10px] uppercase tracking-wider text-white/50">Task Output</p>
               <p className="text-2xl font-bold mt-1 text-white">{lifeScore.tasksScore}%</p>
-              <p className="text-[10px] text-white/40 mt-0.5">Weight: 25%</p>
+              <p className="text-[10px] text-white/40 mt-0.5">Weight: 35%</p>
             </div>
             <div className="p-3">
               <p className="text-[10px] uppercase tracking-wider text-white/50">Habit Loops</p>
               <p className="text-2xl font-bold mt-1 text-[#bdd0b5]">{lifeScore.habitsScore}%</p>
-              <p className="text-[10px] text-white/40 mt-0.5">Weight: 25%</p>
+              <p className="text-[10px] text-white/40 mt-0.5">Weight: 35%</p>
             </div>
             <div className="p-3">
               <p className="text-[10px] uppercase tracking-wider text-white/50">Health & Strength</p>
               <p className="text-2xl font-bold mt-1 text-emerald-300">{lifeScore.healthScore}%</p>
-              <p className="text-[10px] text-white/40 mt-0.5">Weight: 25%</p>
-            </div>
-            <div className="p-3">
-              <p className="text-[10px] uppercase tracking-wider text-white/50">Goal Horizon</p>
-              <p className="text-2xl font-bold mt-1 text-blue-300">{lifeScore.goalsScore}%</p>
-              <p className="text-[10px] text-white/40 mt-0.5">Weight: 25%</p>
+              <p className="text-[10px] text-white/40 mt-0.5">Weight: 30%</p>
             </div>
           </div>
         </div>
@@ -192,7 +185,7 @@ export function AnalyticsScreen() {
         </div>
       </div>
 
-      {/* Row 2: Weight Progression & Strategic Goals */}
+      {/* Row 2: Weight Progression & Task Execution */}
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Weight Progression Trend */}
         <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
@@ -225,40 +218,36 @@ export function AnalyticsScreen() {
           </div>
         </div>
 
-        {/* Milestone Ambition Velocity */}
-        <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
+        {/* Task Execution Output & Velocity */}
+        <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-xs uppercase tracking-wider font-semibold text-[var(--muted)]">Ambition Trajectory</p>
-              <h3 className="font-semibold text-lg text-[var(--ink)]">Milestone Completion Velocity</h3>
+              <p className="text-xs uppercase tracking-wider font-semibold text-[var(--muted)]">Execution Velocity</p>
+              <h3 className="font-semibold text-lg text-[var(--ink)]">Daily Task Completion Pipeline</h3>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full">
-              {goals.length} Active Goals
+            <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200">
+              {tasks.filter(t => t.completed).length} of {tasks.length} Completed
             </span>
           </div>
 
-          {goals.length === 0 ? (
-            <div className="h-56 flex items-center justify-center text-xs text-[var(--muted)]">
-              No strategic goals set yet.
-            </div>
-          ) : (
-            <div className="space-y-4 pt-2">
-              {goals.slice(0, 4).map((g) => {
-                const prog = getGoalProgress(g);
-                return (
-                  <div key={g.id} className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
-                    <div className="flex justify-between text-xs mb-1.5">
-                      <span className="font-semibold text-[var(--ink)] truncate max-w-[200px]">{g.title}</span>
-                      <span className="font-bold text-[var(--accent)]">{prog}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-[#e4e3dd] rounded-full overflow-hidden">
-                      <div className="h-full bg-[var(--accent)] rounded-full" style={{ width: `${prog}%` }} />
-                    </div>
+          <div className="space-y-4 pt-2">
+            {['urgent', 'high', 'medium', 'low'].map((p) => {
+              const priorityTasks = tasks.filter(t => t.priority === p);
+              const done = priorityTasks.filter(t => t.completed).length;
+              const pct = priorityTasks.length > 0 ? Math.round((done / priorityTasks.length) * 100) : 0;
+              return (
+                <div key={p} className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <span className="font-semibold text-[var(--ink)] capitalize">{p} Priority</span>
+                    <span className="font-bold text-[var(--accent)]">{done}/{priorityTasks.length} ({pct}%)</span>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <div className="w-full h-2 bg-[#e4e3dd] rounded-full overflow-hidden">
+                    <div className="h-full bg-[var(--accent)] rounded-full transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
