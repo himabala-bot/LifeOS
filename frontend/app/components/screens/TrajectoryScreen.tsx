@@ -437,7 +437,7 @@ export function TrajectoryScreen() {
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Nutrition Adherence</span>
                 <span className="text-xs font-bold text-emerald-600">{nutritionDiscipline}%</span>
               </div>
-              <p className="text-[11px] text-[var(--muted)]">Clean fuel, protein targets & hydration</p>
+              <p className="text-[11px] text-[var(--muted)]">Clean daily meals & consistent fueling</p>
             </div>
 
             <input

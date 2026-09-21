@@ -37,50 +37,47 @@ export interface Habit {
 }
 
 // ==========================================
-// HEALTH & STRENGTH MODULE TYPES
 // ==========================================
-
-export type BiologicalSex = 'male' | 'female';
-export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
-export type TrainingFocus = 'hypertrophy' | 'strength' | 'endurance' | 'general_fitness';
+// HEALTH & PHYSICAL ARCHITECTURE TYPES
+// ==========================================
 
 export interface HealthProfile {
   id?: string;
-  age: number;
-  biological_sex: BiologicalSex;
-  height_cm: number;
   current_weight: number;
   goal_weight: number;
-  activity_level: ActivityLevel;
-  training_focus: TrainingFocus;
-  training_frequency: number;
-  target_calories: number;
-  target_protein: number;
-  target_carbs: number;
-  target_fat: number;
-  target_water_ml: number;
-  creatine_target_g: number;
-  is_onboarded: boolean;
 }
 
-export interface Food {
+export interface DailyMeal {
   id: string;
   name: string;
-  serving_description: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  is_staple: boolean;
+  date: string; // YYYY-MM-DD
+  meal_type?: string; // 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack' | 'Meal'
+  completed: boolean; // marked complete if eaten
+  created_at?: string;
 }
 
-export interface FoodLog {
+export interface WorkoutExerciseItem {
   id: string;
-  food: string;
-  food_details?: Food;
-  date: string;
-  servings: number;
-  logged_at?: string;
+  name: string;
+  target_sets?: number;
+  target_reps?: string;
+  target_weight?: number;
+}
+
+export interface WorkoutDayPlan {
+  id: string;
+  day_of_week: number; // 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
+  day_name: string; // e.g. "Chest & Triceps", "Rest & Recovery"
+  is_rest_day: boolean;
+  exercises: WorkoutExerciseItem[];
+}
+
+export interface DailyWorkoutRecord {
+  id?: string;
+  date: string; // YYYY-MM-DD
+  completed: boolean;
+  completed_exercises?: string[]; // IDs of exercises completed
+  notes?: string;
 }
 
 export interface WeightCheckin {
@@ -88,68 +85,6 @@ export interface WeightCheckin {
   date: string;
   weight: number;
   notes?: string;
-}
-
-export interface Exercise {
-  id: string;
-  name: string;
-  muscle_group: string;
-}
-
-export interface WorkoutExercise {
-  id: string;
-  workout_day?: string;
-  exercise: string | Exercise;
-  exercise_details?: Exercise;
-  order: number;
-  target_sets: number;
-  target_reps: string;
-  target_weight: number;
-}
-
-export interface WorkoutDay {
-  id: string;
-  day_name: string;
-  day_of_week: number;
-  is_rest_day: boolean;
-  order: number;
-  exercises?: WorkoutExercise[];
-}
-
-export interface WorkoutPlan {
-  id: string;
-  name: string;
-  frequency: number;
-  is_active: boolean;
-  days?: WorkoutDay[];
-}
-
-export interface WorkoutLog {
-  id: string;
-  workout_exercise: string;
-  date: string;
-  completed: boolean;
-  actual_sets?: number;
-  actual_reps?: string;
-  actual_weight?: number;
-}
-
-export interface DailyHealthStatus {
-  id?: string;
-  date: string;
-  water_ml: number;
-  creatine_completed: boolean;
-}
-
-export interface TodayMacros {
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  target_calories: number;
-  target_protein: number;
-  target_carbs: number;
-  target_fat: number;
 }
 
 export interface UserProfile {

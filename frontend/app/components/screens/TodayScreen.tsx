@@ -8,10 +8,8 @@ import {
   ChevronRight,
   Flame,
   Sparkles,
-  TrendingUp,
   Activity,
-  Apple,
-  Droplets,
+  Utensils,
   Dumbbell,
   Scale,
 } from 'lucide-react';
@@ -21,7 +19,7 @@ import { ScreenType, TaskPriority, TaskTag } from '../../types';
 
 interface TodayScreenProps {
   onNavigate: (screen: ScreenType) => void;
-  onOpenQuickAdd: (tab?: 'task' | 'habit' | 'food' | 'weight' | 'water' | 'workout') => void;
+  onOpenQuickAdd: (tab?: 'task' | 'habit' | 'food' | 'meal' | 'weight' | 'workout') => void;
 }
 
 export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
@@ -35,11 +33,13 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
     getHabitStreak,
     lifeScore,
     healthProfile,
-    todayMacros,
-    dailyHealthStatus,
-    logWater,
-    todayWorkoutDay,
-    todayWorkoutLogs,
+    todaysMeals,
+    todaysMealsEatenCount,
+    todaysMealsTotalCount,
+    todaysWorkoutDay,
+    isTodayWorkoutCompleted,
+    toggleWorkoutDayCompleted,
+    workoutStreak,
   } = useData();
 
   const [newTaskInput, setNewTaskInput] = useState('');
@@ -76,9 +76,6 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
   const daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const last7DateStrs = Array.from({ length: 7 }, (_, i) => getPastDateStr(6 - i));
 
-  const completedExercisesCount = todayWorkoutLogs.filter(wl => wl.completed).length;
-  const totalExercisesCount = todayWorkoutDay?.exercises?.length || 0;
-
   return (
     <div className="max-w-6xl mx-auto space-y-10 pb-16 animate-fadeIn">
       {/* Header */}
@@ -102,51 +99,47 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
             <span>New Task</span>
           </button>
           <button
-            onClick={() => onOpenQuickAdd('food')}
+            onClick={() => onNavigate('health')}
             className="px-4 py-2 rounded-xl bg-white border border-[var(--line)] hover:bg-[#ecebe4] text-xs font-semibold flex items-center gap-2 text-[var(--ink)] transition-colors shadow-sm cursor-pointer"
           >
             <Plus size={14} className="text-[#e66b4b]" />
-            <span>Log Food</span>
+            <span>Add Meal</span>
           </button>
         </div>
       </header>
 
-      {/* Top Banner: LifeScore & Health Snapshot */}
-      <section className="grid lg:grid-cols-[1.15fr_1fr] gap-6">
-        {/* LifeScore Card */}
-        <div className="bg-[var(--ink)] text-white rounded-3xl p-7 relative overflow-hidden shadow-xl flex flex-col justify-between">
+      {/* Top Grid: LifeScore Alignment & Health Snapshot */}
+      <section className="grid lg:grid-cols-2 gap-8">
+        {/* Alignment Center / LifeScore */}
+        <div className="bg-[var(--ink)] text-white rounded-3xl p-7 relative overflow-hidden flex flex-col justify-between shadow-xl">
           <div className="relative z-10 flex justify-between items-start">
             <div>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#bdd0b5] animate-pulse" />
-                <p className="text-xs uppercase tracking-[0.25em] text-white/60 font-semibold">Life Score</p>
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#bdd0b5]">Holistic Balance</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               </div>
-              <div className="text-6xl sm:text-7xl serif font-normal mt-3">
-                {lifeScore.overall}
-                <span className="text-3xl text-white/35 font-light"> / 100</span>
-              </div>
+              <h2 className="serif text-3xl font-normal mt-1 text-white">Daily LifeScore</h2>
             </div>
-
             <div className="text-right">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 text-xs font-semibold text-[#bdd0b5] backdrop-blur-sm">
-                <TrendingUp size={13} />
-                <span>{lifeScore.overall >= 70 ? 'Optimal' : lifeScore.overall >= 40 ? 'Moderate' : 'Building'}</span>
-              </div>
-              <p className="text-[11px] text-white/50 mt-2">Dynamic real-time balance</p>
+              <span className="serif text-4xl sm:text-5xl font-normal text-white">
+                {lifeScore.overall}%
+              </span>
+              <p className="text-[10px] text-white/60 uppercase tracking-widest mt-1">Unified Index</p>
             </div>
           </div>
 
-          <div className="relative z-10 mt-6 pt-6 border-t border-white/10 grid grid-cols-3 gap-2 text-center">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-white/50">Tasks</p>
+          {/* 3 Pillars Breakdown */}
+          <div className="relative z-10 grid grid-cols-3 gap-3 my-6 pt-5 border-t border-white/10 text-center">
+            <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10">
+              <span className="text-[10px] uppercase tracking-wider text-white/60 font-semibold block">Tasks (35%)</span>
               <p className="text-base font-semibold mt-1">{lifeScore.tasksScore}%</p>
             </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-white/50">Habits</p>
+            <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10">
+              <span className="text-[10px] uppercase tracking-wider text-white/60 font-semibold block">Habits (35%)</span>
               <p className="text-base font-semibold mt-1">{lifeScore.habitsScore}%</p>
             </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-white/50">Health</p>
+            <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10">
+              <span className="text-[10px] uppercase tracking-wider text-white/60 font-semibold block">Health (30%)</span>
               <p className="text-base font-semibold mt-1">{lifeScore.healthScore}%</p>
             </div>
           </div>
@@ -163,58 +156,70 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-600" />
-                  <p className="text-xs uppercase tracking-[0.25em] text-[var(--muted)] font-semibold">Health & Nutrition</p>
+                  <p className="text-xs uppercase tracking-[0.25em] text-[var(--muted)] font-semibold">Physical Architecture</p>
                 </div>
                 <div className="flex items-baseline gap-3 mt-3">
                   <span className="text-3xl sm:text-4xl font-bold text-[var(--ink)]">
-                    {todayMacros.calories}
+                    {todaysMealsEatenCount} / {todaysMealsTotalCount}
                   </span>
-                  <span className="text-xs font-semibold text-[var(--muted)]">/ {todayMacros.target_calories} kcal</span>
+                  <span className="text-xs font-semibold text-[var(--muted)]">meals eaten today</span>
                 </div>
               </div>
 
               <div className="text-right">
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                  {healthProfile.current_weight} kg
-                </span>
-                <p className="text-[10px] text-[var(--muted)] mt-1">Goal: {healthProfile.goal_weight} kg</p>
+                {healthProfile.current_weight > 0 ? (
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    {healthProfile.current_weight} kg
+                  </span>
+                ) : (
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#f8f7f4] text-[var(--muted)] border border-[var(--line)]">
+                    No weight logged
+                  </span>
+                )}
+                {healthProfile.goal_weight > 0 && (
+                  <p className="text-[10px] text-[var(--muted)] mt-1">Goal: {healthProfile.goal_weight} kg</p>
+                )}
               </div>
             </div>
 
-            {/* Macro & Hydration Quick Stats */}
+            {/* Quick Status Pill */}
             <div className="mt-5 grid grid-cols-2 gap-3">
               <div className="p-3 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
                 <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-[var(--muted)] font-medium">Protein</span>
-                  <span className="font-bold text-[var(--ink)]">{todayMacros.protein}g / {todayMacros.target_protein}g</span>
+                  <span className="text-[var(--muted)] font-medium">Training</span>
+                  <span className="font-bold text-[var(--ink)] flex items-center gap-1">
+                    <Flame size={12} className="text-[#e66b4b]" /> {workoutStreak}d streak
+                  </span>
                 </div>
-                <div className="w-full h-1.5 bg-[#eae7e1] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#e66b4b] rounded-full"
-                    style={{ width: `${Math.min(100, (todayMacros.protein / todayMacros.target_protein) * 100)}%` }}
-                  />
-                </div>
+                <p className="text-[11px] font-semibold text-[var(--ink)] truncate mt-1">
+                  {todaysWorkoutDay?.day_name}
+                </p>
               </div>
 
               <div className="p-3 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
                 <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-[var(--muted)] font-medium">Water</span>
-                  <span className="font-bold text-blue-700">{(dailyHealthStatus.water_ml / 1000).toFixed(1)}L / {(healthProfile.target_water_ml / 1000).toFixed(1)}L</span>
+                  <span className="text-[var(--muted)] font-medium">Workout Status</span>
+                  <span className={`font-bold text-xs ${isTodayWorkoutCompleted ? 'text-emerald-700' : 'text-[var(--muted)]'}`}>
+                    {isTodayWorkoutCompleted ? 'Completed ✓' : 'Pending'}
+                  </span>
                 </div>
-                <div className="w-full h-1.5 bg-[#eae7e1] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500 rounded-full"
-                    style={{ width: `${Math.min(100, (dailyHealthStatus.water_ml / healthProfile.target_water_ml) * 100)}%` }}
-                  />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleWorkoutDayCompleted(todayStr)}
+                  className={`mt-1 text-[11px] font-semibold w-full text-left cursor-pointer hover:underline ${
+                    isTodayWorkoutCompleted ? 'text-emerald-700' : 'text-[var(--accent)]'
+                  }`}
+                >
+                  {isTodayWorkoutCompleted ? 'Mark Pending' : 'Tap to Mark Done'}
+                </button>
               </div>
             </div>
           </div>
 
           <div className="mt-5 pt-4 border-t border-[var(--line)] flex items-center justify-between">
             <div className="text-xs text-[var(--muted)]">
-              <span className="font-semibold text-[var(--ink)]">{todayWorkoutDay?.day_name.split(' ')[0] || 'Strength'}:</span>{' '}
-              {completedExercisesCount}/{totalExercisesCount} exercises
+              <span className="font-semibold text-[var(--ink)]">{todaysWorkoutDay?.day_name.split(' ')[0] || 'Training'}:</span>{' '}
+              {todaysWorkoutDay?.is_rest_day ? 'Rest & Recovery Day' : `${todaysWorkoutDay?.exercises?.length || 0} planned exercises`}
             </div>
             <button
               onClick={() => onNavigate('health')}

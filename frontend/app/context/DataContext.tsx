@@ -10,15 +10,11 @@ import {
   HabitCategory,
   HabitFrequency,
   HealthProfile,
-  Food,
-  FoodLog,
+  DailyMeal,
+  WorkoutDayPlan,
+  WorkoutExerciseItem,
+  DailyWorkoutRecord,
   WeightCheckin,
-  WorkoutPlan,
-  WorkoutDay,
-  WorkoutExercise,
-  WorkoutLog,
-  DailyHealthStatus,
-  TodayMacros,
 } from '../types';
 import { api, getAccessToken } from '../../lib/api';
 import { useAuth } from './AuthContext';
@@ -41,120 +37,32 @@ export function getPastDateStr(daysAgo: number): string {
 }
 
 const DEFAULT_HEALTH_PROFILE: HealthProfile = {
-  age: 0,
-  biological_sex: 'male',
-  height_cm: 0,
   current_weight: 0,
   goal_weight: 0,
-  activity_level: 'moderate',
-  training_focus: 'hypertrophy',
-  training_frequency: 4,
-  target_calories: 0,
-  target_protein: 0,
-  target_carbs: 0,
-  target_fat: 0,
-  target_water_ml: 2500,
-  creatine_target_g: 5,
-  is_onboarded: false,
 };
 
-const DEFAULT_FOODS: Food[] = [];
-
-const DEFAULT_WEIGHT_CHECKINS: WeightCheckin[] = [];
-
-const DEFAULT_EXERCISES = [
-  { id: 'ex-1', name: 'Barbell Bench Press', muscle_group: 'Chest' },
-  { id: 'ex-2', name: 'Incline Dumbbell Press', muscle_group: 'Chest' },
-  { id: 'ex-3', name: 'Overhead Shoulder Press', muscle_group: 'Shoulders' },
-  { id: 'ex-4', name: 'Lateral Raises', muscle_group: 'Shoulders' },
-  { id: 'ex-5', name: 'Tricep Rope Pushdown', muscle_group: 'Arms' },
-  { id: 'ex-6', name: 'Lat Pulldown', muscle_group: 'Back' },
-  { id: 'ex-7', name: 'Seated Cable Row', muscle_group: 'Back' },
-  { id: 'ex-8', name: 'Bicep Dumbbell Curl', muscle_group: 'Arms' },
-  { id: 'ex-9', name: 'Barbell Back Squat', muscle_group: 'Legs' },
-  { id: 'ex-10', name: 'Romanian Deadlift', muscle_group: 'Legs' },
-  { id: 'ex-11', name: 'Leg Press', muscle_group: 'Legs' },
+const DEFAULT_WEEKLY_SCHEDULE: WorkoutDayPlan[] = [
+  { id: 'w-0', day_of_week: 0, day_name: 'Rest & Recovery', is_rest_day: true, exercises: [] },
+  { id: 'w-1', day_of_week: 1, day_name: 'Chest & Triceps', is_rest_day: false, exercises: [] },
+  { id: 'w-2', day_of_week: 2, day_name: 'Back & Biceps', is_rest_day: false, exercises: [] },
+  { id: 'w-3', day_of_week: 3, day_name: 'Rest & Active Recovery', is_rest_day: true, exercises: [] },
+  { id: 'w-4', day_of_week: 4, day_name: 'Shoulders & Core', is_rest_day: false, exercises: [] },
+  { id: 'w-5', day_of_week: 5, day_name: 'Legs & Lower Body', is_rest_day: false, exercises: [] },
+  { id: 'w-6', day_of_week: 6, day_name: 'Cardio & Mobility', is_rest_day: true, exercises: [] },
 ];
-
-export function generateWorkoutPlan(freq: number): WorkoutPlan {
-  const pushDay: WorkoutDay = {
-    id: 'wd-push',
-    day_name: 'Push (Chest, Shoulders, Triceps)',
-    day_of_week: 0,
-    is_rest_day: false,
-    order: 0,
-    exercises: [
-      { id: 'we-1', exercise: 'ex-1', exercise_details: DEFAULT_EXERCISES[0], order: 0, target_sets: 3, target_reps: '6-8', target_weight: 0 },
-      { id: 'we-2', exercise: 'ex-2', exercise_details: DEFAULT_EXERCISES[1], order: 1, target_sets: 3, target_reps: '8-10', target_weight: 0 },
-      { id: 'we-3', exercise: 'ex-3', exercise_details: DEFAULT_EXERCISES[2], order: 2, target_sets: 3, target_reps: '8-10', target_weight: 0 },
-      { id: 'we-4', exercise: 'ex-4', exercise_details: DEFAULT_EXERCISES[3], order: 3, target_sets: 4, target_reps: '12-15', target_weight: 0 },
-    ]
-  };
-  const pullDay: WorkoutDay = {
-    id: 'wd-pull',
-    day_name: 'Pull (Back, Biceps)',
-    day_of_week: 1,
-    is_rest_day: false,
-    order: 1,
-    exercises: [
-      { id: 'we-5', exercise: 'ex-6', exercise_details: DEFAULT_EXERCISES[5], order: 0, target_sets: 3, target_reps: '8-10', target_weight: 0 },
-      { id: 'we-7', exercise: 'ex-7', exercise_details: DEFAULT_EXERCISES[6], order: 1, target_sets: 3, target_reps: '10-12', target_weight: 0 },
-      { id: 'we-8', exercise: 'ex-8', exercise_details: DEFAULT_EXERCISES[7], order: 2, target_sets: 3, target_reps: '10-12', target_weight: 0 },
-    ]
-  };
-  const legsDay: WorkoutDay = {
-    id: 'wd-legs',
-    day_name: 'Legs & Core',
-    day_of_week: 2,
-    is_rest_day: false,
-    order: 2,
-    exercises: [
-      { id: 'we-9', exercise: 'ex-9', exercise_details: DEFAULT_EXERCISES[8], order: 0, target_sets: 4, target_reps: '6-8', target_weight: 0 },
-      { id: 'we-10', exercise: 'ex-10', exercise_details: DEFAULT_EXERCISES[9], order: 1, target_sets: 3, target_reps: '8-10', target_weight: 0 },
-      { id: 'we-11', exercise: 'ex-11', exercise_details: DEFAULT_EXERCISES[10], order: 2, target_sets: 3, target_reps: '12', target_weight: 0 },
-    ]
-  };
-  const upperDay: WorkoutDay = {
-    id: 'wd-upper',
-    day_name: 'Upper Power',
-    day_of_week: 3,
-    is_rest_day: false,
-    order: 3,
-    exercises: [
-      { id: 'we-12', exercise: 'ex-1', exercise_details: DEFAULT_EXERCISES[0], order: 0, target_sets: 3, target_reps: '5', target_weight: 0 },
-      { id: 'we-13', exercise: 'ex-6', exercise_details: DEFAULT_EXERCISES[5], order: 1, target_sets: 3, target_reps: '8', target_weight: 0 },
-    ]
-  };
-
-  const daysMap: Record<number, WorkoutDay[]> = {
-    3: [pushDay, pullDay, legsDay],
-    4: [pushDay, pullDay, legsDay, upperDay],
-    5: [pushDay, pullDay, legsDay, upperDay, { ...legsDay, id: 'wd-legs-2', day_name: 'Lower Power', order: 4 }],
-    6: [pushDay, pullDay, legsDay, { ...pushDay, id: 'wd-push-2', order: 3 }, { ...pullDay, id: 'wd-pull-2', order: 4 }, { ...legsDay, id: 'wd-legs-2', order: 5 }],
-  };
-
-  const days = daysMap[freq] || daysMap[4];
-  return {
-    id: `wp-${freq}d`,
-    name: `${freq}-Day Hypertrophy Program`,
-    frequency: freq,
-    is_active: true,
-    days,
-  };
-}
 
 const DEFAULT_DEMO_TASKS: Task[] = [
   { id: 't-1', title: 'Complete client system architecture document', tag: 'Work', priority: 'urgent', dueDate: getTodayDateStr(), completed: true, completedAt: getTodayDateStr(), createdAt: getPastDateStr(1) },
   { id: 't-2', title: 'Review pull requests & merge deployment scripts', tag: 'Work', priority: 'high', dueDate: getTodayDateStr(), completed: false, createdAt: getTodayDateStr() },
   { id: 't-3', title: 'Read 20 pages of High Output Management', tag: 'Learning', priority: 'medium', dueDate: getTodayDateStr(), completed: false, createdAt: getTodayDateStr() },
-  { id: 't-4', title: 'Meal prep high protein lunches for week', tag: 'Wellbeing', priority: 'medium', dueDate: getTodayDateStr(), completed: true, completedAt: getTodayDateStr(), createdAt: getPastDateStr(2) },
+  { id: 't-4', title: 'Prepare healthy meals for the week', tag: 'Wellbeing', priority: 'medium', dueDate: getTodayDateStr(), completed: true, completedAt: getTodayDateStr(), createdAt: getPastDateStr(2) },
 ];
 
 const DEFAULT_DEMO_HABITS: Habit[] = [
   {
     id: 'h-1',
-    name: 'Hydration (2.5L Water)',
-    category: 'Health',
+    name: 'Morning Focus & Breathwork',
+    category: 'Mind',
     frequency: 'daily',
     color: '#3b82f6',
     history: { [getPastDateStr(3)]: true, [getPastDateStr(2)]: true, [getPastDateStr(1)]: true, [getTodayDateStr()]: true },
@@ -162,8 +70,8 @@ const DEFAULT_DEMO_HABITS: Habit[] = [
   },
   {
     id: 'h-2',
-    name: 'Hit 120g Daily Protein',
-    category: 'Health',
+    name: 'Read 20 Pages',
+    category: 'Learning',
     frequency: 'daily',
     color: '#e66b4b',
     history: { [getPastDateStr(3)]: true, [getPastDateStr(2)]: true, [getPastDateStr(1)]: true, [getTodayDateStr()]: true },
@@ -171,7 +79,7 @@ const DEFAULT_DEMO_HABITS: Habit[] = [
   },
   {
     id: 'h-3',
-    name: 'Strength Training Session',
+    name: 'Daily Movement & Training',
     category: 'Fitness',
     frequency: 'daily',
     color: '#5f805d',
@@ -180,19 +88,10 @@ const DEFAULT_DEMO_HABITS: Habit[] = [
   },
   {
     id: 'h-4',
-    name: 'Creatine (5g Daily)',
-    category: 'Health',
-    frequency: 'daily',
-    color: '#8b5cf6',
-    history: { [getPastDateStr(3)]: true, [getPastDateStr(2)]: true, [getPastDateStr(1)]: true, [getTodayDateStr()]: true },
-    createdAt: getPastDateStr(30),
-  },
-  {
-    id: 'h-5',
     name: 'Deep Work (3 Focus Blocks)',
     category: 'Productivity',
     frequency: 'weekdays',
-    color: '#e66b4b',
+    color: '#8b5cf6',
     history: { [getPastDateStr(3)]: true, [getPastDateStr(2)]: true, [getPastDateStr(1)]: true, [getTodayDateStr()]: true },
     createdAt: getPastDateStr(30),
   },
@@ -220,38 +119,36 @@ interface DataContextType {
   toggleHabitDay: (id: string, dateStr: string) => Promise<void>;
   getHabitStreak: (habit: Habit) => HabitStreakInfo;
 
-  // Health Module State & Actions
+  // Health Profile & Weight
   healthProfile: HealthProfile;
-  onboardHealth: (data: Partial<HealthProfile>) => Promise<void>;
   updateHealthProfile: (updates: Partial<HealthProfile>) => Promise<void>;
-
-  // Nutrition
-  foods: Food[];
-  foodLogs: FoodLog[];
-  todayMacros: TodayMacros;
-  addFood: (food: Omit<Food, 'id'>) => Promise<void>;
-  updateFood: (id: string, updates: Partial<Food>) => Promise<void>;
-  deleteFood: (id: string) => Promise<void>;
-  logFood: (foodId: string, servings?: number, date?: string) => Promise<void>;
-  deleteFoodLog: (id: string) => Promise<void>;
-  logStapleFast: (food: Food) => Promise<void>;
-
-  // Hydration & Creatine
-  dailyHealthStatus: DailyHealthStatus;
-  logWater: (amountMl: number) => Promise<void>;
-  toggleCreatine: () => Promise<void>;
-
-  // Weight Check-ins
   weightCheckins: WeightCheckin[];
   logWeight: (weight: number, date?: string, notes?: string) => Promise<void>;
   deleteWeightCheckin: (id: string) => Promise<void>;
 
-  // Workouts
-  workoutPlan: WorkoutPlan | null;
-  todayWorkoutDay: WorkoutDay | null;
-  todayWorkoutLogs: WorkoutLog[];
-  toggleWorkoutExercise: (workoutExerciseId: string, completed?: boolean, actualReps?: string, actualWeight?: number) => Promise<void>;
-  setWorkoutFrequency: (freq: number) => Promise<void>;
+  // Daily Meals
+  meals: DailyMeal[];
+  addMeal: (meal: Omit<DailyMeal, 'id'>) => Promise<DailyMeal>;
+  toggleMeal: (id: string, date?: string) => Promise<void>;
+  deleteMeal: (id: string) => Promise<void>;
+  updateMeal: (id: string, updates: Partial<DailyMeal>) => Promise<void>;
+  todaysMeals: DailyMeal[];
+  todaysMealsEatenCount: number;
+  todaysMealsTotalCount: number;
+
+  // Weekly Workouts & Calendar
+  weeklySchedule: WorkoutDayPlan[];
+  updateWorkoutDayPlan: (dayOfWeek: number, updates: Partial<WorkoutDayPlan>) => void;
+  addExerciseToDay: (dayOfWeek: number, exercise: Omit<WorkoutExerciseItem, 'id'>) => void;
+  deleteExerciseFromDay: (dayOfWeek: number, exerciseId: string) => void;
+  updateExerciseInDay: (dayOfWeek: number, exerciseId: string, updates: Partial<WorkoutExerciseItem>) => void;
+  workoutRecords: Record<string, DailyWorkoutRecord>;
+  toggleWorkoutDayCompleted: (date: string, completed?: boolean) => Promise<void>;
+  toggleExerciseCompleted: (date: string, exerciseId: string) => Promise<void>;
+  completedWorkoutDates: string[];
+  workoutStreak: number;
+  todaysWorkoutDay: WorkoutDayPlan;
+  isTodayWorkoutCompleted: boolean;
 
   // LifeScore & System
   lifeScore: LifeScoreBreakdown;
@@ -269,85 +166,138 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [habits, setHabits] = useState<Habit[]>(DEFAULT_DEMO_HABITS);
 
   const [healthProfile, setHealthProfile] = useState<HealthProfile>(DEFAULT_HEALTH_PROFILE);
-  const [foods, setFoods] = useState<Food[]>([]);
-  const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
   const [weightCheckins, setWeightCheckins] = useState<WeightCheckin[]>([]);
-  const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
-  const [todayWorkoutDay, setTodayWorkoutDay] = useState<WorkoutDay | null>(null);
-  const [todayWorkoutLogs, setTodayWorkoutLogs] = useState<WorkoutLog[]>([]);
-  const [dailyHealthStatus, setDailyHealthStatus] = useState<DailyHealthStatus>({
-    date: getTodayDateStr(),
-    water_ml: 0,
-    creatine_completed: false,
+  const [meals, setMeals] = useState<DailyMeal[]>([]);
+
+  // 7-day Sunday-to-Saturday schedule
+  const [weeklySchedule, setWeeklySchedule] = useState<WorkoutDayPlan[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('lifeos_weekly_workout_schedule');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return DEFAULT_WEEKLY_SCHEDULE;
+  });
+
+  // Daily workout records: date -> DailyWorkoutRecord
+  const [workoutRecords, setWorkoutRecords] = useState<Record<string, DailyWorkoutRecord>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('lifeos_workout_records');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return {};
   });
 
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
 
-  // Compute Today's Macros
-  const todayMacros: TodayMacros = useMemo(() => {
-    const todayStr = getTodayDateStr();
-    const todays = foodLogs.filter(fl => fl.date === todayStr);
+  // Sync workout schedule to local storage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('lifeos_weekly_workout_schedule', JSON.stringify(weeklySchedule));
+      } catch {}
+    }
+  }, [weeklySchedule]);
 
-    let calories = 0;
-    let protein = 0;
-    let carbs = 0;
-    let fat = 0;
+  // Sync workout records to local storage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('lifeos_workout_records', JSON.stringify(workoutRecords));
+      } catch {}
+    }
+  }, [workoutRecords]);
 
-    for (const log of todays) {
-      const food = log.food_details || foods.find(f => f.id === log.food);
-      if (food) {
-        calories += food.calories * log.servings;
-        protein += food.protein * log.servings;
-        carbs += food.carbs * log.servings;
-        fat += food.fat * log.servings;
+  // Today's Date String
+  const todayStr = getTodayDateStr();
+
+  // Today's Meals
+  const todaysMeals = useMemo(() => {
+    return meals.filter(m => m.date === todayStr);
+  }, [meals, todayStr]);
+
+  const todaysMealsEatenCount = useMemo(() => {
+    return todaysMeals.filter(m => m.completed).length;
+  }, [todaysMeals]);
+
+  const todaysMealsTotalCount = useMemo(() => {
+    return todaysMeals.length;
+  }, [todaysMeals]);
+
+  // Today's Workout Day from 7-day schedule (0 = Sunday, 6 = Saturday)
+  const currentDayOfWeek = useMemo(() => {
+    return new Date().getDay();
+  }, []);
+
+  const todaysWorkoutDay = useMemo(() => {
+    return weeklySchedule.find(w => w.day_of_week === currentDayOfWeek) || weeklySchedule[0] || DEFAULT_WEEKLY_SCHEDULE[0];
+  }, [weeklySchedule, currentDayOfWeek]);
+
+  const isTodayWorkoutCompleted = useMemo(() => {
+    return !!workoutRecords[todayStr]?.completed;
+  }, [workoutRecords, todayStr]);
+
+  // Array of completed workout date strings (for calendar green highlighting)
+  const completedWorkoutDates = useMemo(() => {
+    return Object.keys(workoutRecords).filter(d => workoutRecords[d]?.completed);
+  }, [workoutRecords]);
+
+  // Workout Streak calculation
+  const workoutStreak = useMemo(() => {
+    let streak = 0;
+    const checkDate = new Date();
+
+    while (true) {
+      const year = checkDate.getFullYear();
+      const month = String(checkDate.getMonth() + 1).padStart(2, '0');
+      const day = String(checkDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+
+      if (workoutRecords[dateStr]?.completed) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        if (streak === 0) {
+          checkDate.setDate(checkDate.getDate() - 1);
+          const y2 = checkDate.getFullYear();
+          const m2 = String(checkDate.getMonth() + 1).padStart(2, '0');
+          const d2 = String(checkDate.getDate()).padStart(2, '0');
+          if (workoutRecords[`${y2}-${m2}-${d2}`]?.completed) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+            continue;
+          }
+        }
+        break;
       }
     }
+    return streak;
+  }, [workoutRecords]);
 
-    return {
-      calories: Math.round(calories),
-      protein: Math.round(protein),
-      carbs: Math.round(carbs),
-      fat: Math.round(fat),
-      target_calories: healthProfile.target_calories || 2400,
-      target_protein: healthProfile.target_protein || 120,
-      target_carbs: healthProfile.target_carbs || 300,
-      target_fat: healthProfile.target_fat || 75,
-    };
-  }, [foodLogs, foods, healthProfile]);
-
-  // Unified 4-Pillar LifeScore
+  // 3-Pillar LifeScore: Tasks 35%, Habits 35%, Health 30%
   const lifeScore: LifeScoreBreakdown = useMemo(() => {
-    const todayStr = getTodayDateStr();
-
-    // 1. Tasks Score (25%)
+    // 1. Tasks Score (35%)
     const todayTasks = tasks.filter(t => !t.dueDate || t.dueDate === todayStr || t.completedAt === todayStr);
     const totalTodayTasks = todayTasks.length;
     const completedTasks = todayTasks.filter(t => t.completed).length;
     const tasksScore = totalTodayTasks > 0 ? Math.round((completedTasks / totalTodayTasks) * 100) : 85;
 
-    // 2. Habits Score (25%)
+    // 2. Habits Score (35%)
     const activeHabits = habits.filter(h => h.frequency === 'daily' || h.frequency === 'weekdays');
     const totalHabits = activeHabits.length;
     const completedHabits = activeHabits.filter(h => !!h.history[todayStr]).length;
     const habitsScore = totalHabits > 0 ? Math.round((completedHabits / totalHabits) * 100) : 80;
 
-    // 3. Health Consistency Score (25%)
-    const nutritionAdherence = Math.min(100, Math.round((todayMacros.calories / (healthProfile.target_calories || 2400)) * 100));
-    const proteinAdherence = Math.min(100, Math.round((todayMacros.protein / (healthProfile.target_protein || 120)) * 100));
-    const hydrationAdherence = Math.min(100, Math.round((dailyHealthStatus.water_ml / (healthProfile.target_water_ml || 2500)) * 100));
-    const creatineScore = dailyHealthStatus.creatine_completed ? 100 : 0;
+    // 3. Health Consistency Score (30%)
+    // Meal adherence: ratio of eaten meals
+    const mealScore = todaysMealsTotalCount > 0 ? Math.round((todaysMealsEatenCount / todaysMealsTotalCount) * 100) : 90;
+    // Workout adherence
+    const workoutScore = isTodayWorkoutCompleted ? 100 : (todaysWorkoutDay.is_rest_day ? 100 : 60);
 
-    const totalExercises = todayWorkoutDay?.exercises?.length || 0;
-    const completedExercises = todayWorkoutLogs.filter(wl => wl.completed).length;
-    const workoutScore = totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 100;
-
-    const healthScore = Math.round(
-      (nutritionAdherence * 0.25) +
-      (proteinAdherence * 0.25) +
-      (workoutScore * 0.25) +
-      (hydrationAdherence * 0.15) +
-      (creatineScore * 0.10)
-    );
+    const healthScore = Math.round((mealScore * 0.5) + (workoutScore * 0.5));
 
     const overall = Math.round(
       (tasksScore * 0.35) +
@@ -361,9 +311,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       habitsScore,
       healthScore,
       summary: overall >= 80 ? 'Exceptional momentum across all personal pillars.' : 'Consistent execution in progress.',
-      changeVsLastWeek: +3.2,
+      changeVsLastWeek: +2.5,
     };
-  }, [tasks, habits, todayMacros, healthProfile, dailyHealthStatus, todayWorkoutDay, todayWorkoutLogs]);
+  }, [tasks, habits, todayStr, todaysMealsTotalCount, todaysMealsEatenCount, isTodayWorkoutCompleted, todaysWorkoutDay]);
 
   // Fetch Workspace from API or fallback
   const refreshData = useCallback(async () => {
@@ -400,7 +350,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
               name: h.name,
               category: 'Health' as HabitCategory,
               frequency: (h.frequency || 'daily') as HabitFrequency,
-              color: '#e66b4b',
+              color: '#5f805d',
               history: hist,
               createdAt: h.created_at || getTodayDateStr(),
             };
@@ -409,26 +359,28 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (res.health_profile) {
           setHealthProfile(res.health_profile);
         }
-        if (res.foods && res.foods.length > 0) {
-          setFoods(res.foods);
-        }
-        if (res.food_logs_today) {
-          setFoodLogs(res.food_logs_today);
-        }
         if (res.weight_checkins && res.weight_checkins.length > 0) {
           setWeightCheckins(res.weight_checkins);
         }
-        if (res.workout_plan) {
-          setWorkoutPlan(res.workout_plan);
+        if (res.daily_meals_today && res.daily_meals_today.length > 0) {
+          setMeals(prev => {
+            const others = prev.filter(m => m.date !== todayStr);
+            return [...res.daily_meals_today, ...others];
+          });
         }
-        if (res.today_workout_day) {
-          setTodayWorkoutDay(res.today_workout_day);
-        }
-        if (res.today_workout_logs) {
-          setTodayWorkoutLogs(res.today_workout_logs);
-        }
-        if (res.daily_health_status) {
-          setDailyHealthStatus(res.daily_health_status);
+        if (res.daily_workout_logs && res.daily_workout_logs.length > 0) {
+          const recs: Record<string, DailyWorkoutRecord> = {};
+          res.daily_workout_logs.forEach((wl: any) => {
+            if (wl.date) {
+              recs[wl.date] = {
+                id: wl.id,
+                date: wl.date,
+                completed: !!wl.completed,
+                notes: wl.notes,
+              };
+            }
+          });
+          setWorkoutRecords(prev => ({ ...prev, ...recs }));
         }
       }
     } catch (err) {
@@ -436,7 +388,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoadingData(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, todayStr]);
 
   useEffect(() => {
     refreshData();
@@ -451,6 +403,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       createdAt: getTodayDateStr(),
     };
     setTasks(prev => [newTask, ...prev]);
+
     if (getAccessToken()) {
       try {
         await api.tasks.create({
@@ -458,9 +411,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           description: taskData.description,
           priority: taskData.priority,
           due_date: taskData.dueDate || null,
+          completed: taskData.completed,
         });
       } catch (err) {
-        console.error('Failed to save task to backend:', err);
+        console.error('Failed to create task on backend:', err);
       }
     }
   };
@@ -496,16 +450,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const toggleTask = async (id: string) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
-    const nextCompleted = !task.completed;
-    const completedAt = nextCompleted ? getTodayDateStr() : undefined;
-    setTasks(prev => prev.map(t => (t.id === id ? { ...t, completed: nextCompleted, completedAt } : t)));
-    if (getAccessToken()) {
-      try {
-        await api.tasks.update(id, { completed: nextCompleted });
-      } catch (err) {
-        console.error('Failed to toggle task:', err);
-      }
-    }
+    const completed = !task.completed;
+    const completedAt = completed ? getTodayDateStr() : undefined;
+    await updateTask(id, { completed, completedAt });
   };
 
   // Habits actions
@@ -517,11 +464,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       createdAt: getTodayDateStr(),
     };
     setHabits(prev => [newHabit, ...prev]);
+
     if (getAccessToken()) {
       try {
-        await api.habits.create({ name: habitData.name, frequency: habitData.frequency });
+        await api.habits.create({
+          name: habitData.name,
+          frequency: habitData.frequency,
+          active: true,
+        });
       } catch (err) {
-        console.error('Failed to create habit:', err);
+        console.error('Failed to create habit on backend:', err);
       }
     }
   };
@@ -530,7 +482,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setHabits(prev => prev.map(h => (h.id === id ? { ...h, ...updates } : h)));
     if (getAccessToken()) {
       try {
-        await api.habits.update(id, { name: updates.name, frequency: updates.frequency, active: updates.category ? true : undefined });
+        await api.habits.update(id, {
+          name: updates.name,
+          frequency: updates.frequency,
+        });
       } catch (err) {
         console.error('Failed to update habit:', err);
       }
@@ -621,23 +576,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return { currentStreak, longestStreak, consistency7d };
   };
 
-  // Health Profile & Onboarding
-  const onboardHealth = async (data: Partial<HealthProfile>) => {
-    const updated = { ...healthProfile, ...data, is_onboarded: true };
-    setHealthProfile(updated as HealthProfile);
-    if (getAccessToken()) {
-      try {
-        await api.health.onboard(data as any);
-        await refreshData();
-      } catch (err) {
-        console.error('Failed to submit health onboarding:', err);
-      }
-    }
-  };
-
+  // Health Profile & Weight
   const updateHealthProfile = async (updates: Partial<HealthProfile>) => {
     const updated = { ...healthProfile, ...updates };
-    setHealthProfile(updated as HealthProfile);
+    setHealthProfile(updated);
     if (getAccessToken() && healthProfile.id) {
       try {
         await api.health.updateProfile(healthProfile.id, updates);
@@ -647,103 +589,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Nutrition actions
-  const addFood = async (foodData: Omit<Food, 'id'>) => {
-    const newFood: Food = { ...foodData, id: 'f-' + Date.now() };
-    setFoods(prev => [newFood, ...prev]);
-    if (getAccessToken()) {
-      try {
-        await api.health.foods.create(foodData);
-      } catch (err) {
-        console.error('Failed to save food:', err);
-      }
-    }
-  };
-
-  const updateFood = async (id: string, updates: Partial<Food>) => {
-    setFoods(prev => prev.map(f => (f.id === id ? { ...f, ...updates } : f)));
-    if (getAccessToken()) {
-      try {
-        await api.health.foods.update(id, updates);
-      } catch (err) {
-        console.error('Failed to update food:', err);
-      }
-    }
-  };
-
-  const deleteFood = async (id: string) => {
-    setFoods(prev => prev.filter(f => f.id !== id));
-    if (getAccessToken()) {
-      try {
-        await api.health.foods.delete(id);
-      } catch (err) {
-        console.error('Failed to delete food:', err);
-      }
-    }
-  };
-
-  const logFood = async (foodId: string, servings = 1.0, date = getTodayDateStr()) => {
-    const food = foods.find(f => f.id === foodId);
-    const newLog: FoodLog = {
-      id: 'fl-' + Date.now(),
-      food: foodId,
-      food_details: food,
-      date,
-      servings,
-      logged_at: new Date().toISOString(),
-    };
-    setFoodLogs(prev => [newLog, ...prev]);
-    if (getAccessToken()) {
-      try {
-        await api.health.foodLogs.create({ food: foodId, date, servings });
-      } catch (err) {
-        console.error('Failed to log food:', err);
-      }
-    }
-  };
-
-  const logStapleFast = async (food: Food) => {
-    await logFood(food.id, 1.0, getTodayDateStr());
-  };
-
-  const deleteFoodLog = async (id: string) => {
-    setFoodLogs(prev => prev.filter(fl => fl.id !== id));
-    if (getAccessToken()) {
-      try {
-        await api.health.foodLogs.delete(id);
-      } catch (err) {
-        console.error('Failed to delete food log:', err);
-      }
-    }
-  };
-
-  // Hydration & Creatine
-  const logWater = async (amountMl: number) => {
-    const current = dailyHealthStatus.water_ml;
-    const next = Math.max(0, current + amountMl);
-    setDailyHealthStatus(prev => ({ ...prev, water_ml: next }));
-    if (getAccessToken() && dailyHealthStatus.id) {
-      try {
-        await api.health.dailyStatus.update(dailyHealthStatus.id, { water_ml: next });
-      } catch (err) {
-        console.error('Failed to update water:', err);
-      }
-    }
-  };
-
-  const toggleCreatine = async () => {
-    const next = !dailyHealthStatus.creatine_completed;
-    setDailyHealthStatus(prev => ({ ...prev, creatine_completed: next }));
-    if (getAccessToken() && dailyHealthStatus.id) {
-      try {
-        await api.health.dailyStatus.update(dailyHealthStatus.id, { creatine_completed: next });
-      } catch (err) {
-        console.error('Failed to toggle creatine:', err);
-      }
-    }
-  };
-
-  // Weight check-in actions
   const logWeight = async (weight: number, date = getTodayDateStr(), notes = '') => {
     const newCheckin: WeightCheckin = {
       id: 'w-' + Date.now(),
@@ -773,72 +618,172 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Workout actions
-  const toggleWorkoutExercise = async (
-    workoutExerciseId: string,
-    completed = true,
-    actualReps = '',
-    actualWeight = 0
-  ) => {
-    const todayStr = getTodayDateStr();
-    const existing = todayWorkoutLogs.find(wl => wl.workout_exercise === workoutExerciseId);
-
-    if (existing) {
-      const nextCompleted = completed !== undefined ? completed : !existing.completed;
-      setTodayWorkoutLogs(prev =>
-        prev.map(wl =>
-          wl.workout_exercise === workoutExerciseId
-            ? { ...wl, completed: nextCompleted, actual_reps: actualReps || wl.actual_reps, actual_weight: actualWeight || wl.actual_weight }
-            : wl
-        )
-      );
-    } else {
-      const newLog: WorkoutLog = {
-        id: 'wl-' + Date.now(),
-        workout_exercise: workoutExerciseId,
-        date: todayStr,
-        completed: true,
-        actual_reps: actualReps,
-        actual_weight: actualWeight,
-      };
-      setTodayWorkoutLogs(prev => [newLog, ...prev]);
-    }
+  // Daily Meals Actions
+  const addMeal = async (mealData: Omit<DailyMeal, 'id'>): Promise<DailyMeal> => {
+    const newMeal: DailyMeal = {
+      ...mealData,
+      id: 'meal-' + Date.now(),
+      created_at: new Date().toISOString(),
+    };
+    setMeals(prev => [newMeal, ...prev]);
 
     if (getAccessToken()) {
       try {
-        await api.health.workouts.logWorkout({
-          workout_exercise: workoutExerciseId,
-          date: todayStr,
-          completed: completed,
-          actual_reps: actualReps,
-          actual_weight: actualWeight,
-        });
+        const saved = await api.health.meals.create(mealData);
+        if (saved && saved.id) {
+          setMeals(prev => prev.map(m => m.id === newMeal.id ? { ...m, id: String(saved.id) } : m));
+        }
       } catch (err) {
-        console.error('Failed to log workout exercise:', err);
+        console.error('Failed to save meal:', err);
+      }
+    }
+    return newMeal;
+  };
+
+  const toggleMeal = async (id: string, date = getTodayDateStr()) => {
+    const meal = meals.find(m => m.id === id);
+    if (!meal) return;
+    const nextCompleted = !meal.completed;
+
+    setMeals(prev =>
+      prev.map(m => (m.id === id ? { ...m, completed: nextCompleted } : m))
+    );
+
+    if (getAccessToken()) {
+      try {
+        await api.health.meals.update(id, { completed: nextCompleted });
+      } catch (err) {
+        console.error('Failed to toggle meal:', err);
       }
     }
   };
 
-  const setWorkoutFrequency = async (freq: number) => {
-    const plan = generateWorkoutPlan(freq);
-    setWorkoutPlan(plan);
-    setTodayWorkoutDay(plan.days[0] || null);
-    await updateHealthProfile({ training_frequency: freq });
+  const deleteMeal = async (id: string) => {
+    setMeals(prev => prev.filter(m => m.id !== id));
     if (getAccessToken()) {
       try {
-        await api.health.onboard({ ...healthProfile, training_frequency: freq } as any);
-        await refreshData();
+        await api.health.meals.delete(id);
       } catch (err) {
-        console.error('Failed to change workout split:', err);
+        console.error('Failed to delete meal:', err);
       }
     }
+  };
+
+  const updateMeal = async (id: string, updates: Partial<DailyMeal>) => {
+    setMeals(prev => prev.map(m => (m.id === id ? { ...m, ...updates } : m)));
+    if (getAccessToken()) {
+      try {
+        await api.health.meals.update(id, updates);
+      } catch (err) {
+        console.error('Failed to update meal:', err);
+      }
+    }
+  };
+
+  // Weekly Workout Schedule Actions (Sunday to Saturday)
+  const updateWorkoutDayPlan = (dayOfWeek: number, updates: Partial<WorkoutDayPlan>) => {
+    setWeeklySchedule(prev =>
+      prev.map(d => (d.day_of_week === dayOfWeek ? { ...d, ...updates } : d))
+    );
+  };
+
+  const addExerciseToDay = (dayOfWeek: number, exercise: Omit<WorkoutExerciseItem, 'id'>) => {
+    const newEx: WorkoutExerciseItem = {
+      ...exercise,
+      id: 'ex-' + Date.now(),
+    };
+    setWeeklySchedule(prev =>
+      prev.map(d => {
+        if (d.day_of_week === dayOfWeek) {
+          return { ...d, exercises: [...d.exercises, newEx] };
+        }
+        return d;
+      })
+    );
+  };
+
+  const deleteExerciseFromDay = (dayOfWeek: number, exerciseId: string) => {
+    setWeeklySchedule(prev =>
+      prev.map(d => {
+        if (d.day_of_week === dayOfWeek) {
+          return { ...d, exercises: d.exercises.filter(ex => ex.id !== exerciseId) };
+        }
+        return d;
+      })
+    );
+  };
+
+  const updateExerciseInDay = (
+    dayOfWeek: number,
+    exerciseId: string,
+    updates: Partial<WorkoutExerciseItem>
+  ) => {
+    setWeeklySchedule(prev =>
+      prev.map(d => {
+        if (d.day_of_week === dayOfWeek) {
+          return {
+            ...d,
+            exercises: d.exercises.map(ex => (ex.id === exerciseId ? { ...ex, ...updates } : ex)),
+          };
+        }
+        return d;
+      })
+    );
+  };
+
+  // Workout Log & Completion Actions (Calendar & Streaks)
+  const toggleWorkoutDayCompleted = async (date = getTodayDateStr(), completed?: boolean) => {
+    const current = !!workoutRecords[date]?.completed;
+    const nextCompleted = completed !== undefined ? completed : !current;
+
+    setWorkoutRecords(prev => ({
+      ...prev,
+      [date]: {
+        ...prev[date],
+        date,
+        completed: nextCompleted,
+      },
+    }));
+
+    if (getAccessToken()) {
+      try {
+        await api.health.dailyWorkoutLogs.create({ date, completed: nextCompleted });
+      } catch (err) {
+        console.error('Failed to toggle workout day log:', err);
+      }
+    }
+  };
+
+  const toggleExerciseCompleted = async (date = getTodayDateStr(), exerciseId: string) => {
+    const currentRec = workoutRecords[date] || { date, completed: false, completed_exercises: [] };
+    const completedList = currentRec.completed_exercises || [];
+    const isCompleted = completedList.includes(exerciseId);
+    const updatedList = isCompleted
+      ? completedList.filter(id => id !== exerciseId)
+      : [...completedList, exerciseId];
+
+    // Find scheduled exercises for this day of week
+    const targetDow = new Date(date + 'T00:00:00').getDay();
+    const dayPlan = weeklySchedule.find(w => w.day_of_week === targetDow);
+    const totalExercises = dayPlan?.exercises?.length || 0;
+    const shouldMarkDayComplete = totalExercises > 0 && updatedList.length >= totalExercises;
+
+    setWorkoutRecords(prev => ({
+      ...prev,
+      [date]: {
+        ...currentRec,
+        completed: shouldMarkDayComplete || currentRec.completed,
+        completed_exercises: updatedList,
+      },
+    }));
   };
 
   const resetAllData = () => {
     setTasks([]);
     setHabits([]);
-    setFoodLogs([]);
+    setMeals([]);
     setWeightCheckins([]);
+    setWorkoutRecords({});
   };
 
   return (
@@ -858,32 +803,32 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         getHabitStreak,
 
         healthProfile,
-        onboardHealth,
         updateHealthProfile,
-
-        foods,
-        foodLogs,
-        todayMacros,
-        addFood,
-        updateFood,
-        deleteFood,
-        logFood,
-        deleteFoodLog,
-        logStapleFast,
-
-        dailyHealthStatus,
-        logWater,
-        toggleCreatine,
-
         weightCheckins,
         logWeight,
         deleteWeightCheckin,
 
-        workoutPlan,
-        todayWorkoutDay,
-        todayWorkoutLogs,
-        toggleWorkoutExercise,
-        setWorkoutFrequency,
+        meals,
+        addMeal,
+        toggleMeal,
+        deleteMeal,
+        updateMeal,
+        todaysMeals,
+        todaysMealsEatenCount,
+        todaysMealsTotalCount,
+
+        weeklySchedule,
+        updateWorkoutDayPlan,
+        addExerciseToDay,
+        deleteExerciseFromDay,
+        updateExerciseInDay,
+        workoutRecords,
+        toggleWorkoutDayCompleted,
+        toggleExerciseCompleted,
+        completedWorkoutDates,
+        workoutStreak,
+        todaysWorkoutDay,
+        isTodayWorkoutCompleted,
 
         lifeScore,
         isLoadingData,

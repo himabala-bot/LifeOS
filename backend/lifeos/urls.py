@@ -5,6 +5,8 @@ from core.views import (
     HabitViewSet,
     HabitCompletionViewSet,
     HealthProfileViewSet,
+    DailyMealViewSet,
+    DailyWorkoutLogViewSet,
     FoodViewSet,
     FoodLogViewSet,
     WeightCheckinViewSet,
@@ -31,6 +33,8 @@ router.register('habit-completions', HabitCompletionViewSet, basename='habit-com
 
 # Health & Strength endpoints
 router.register('health/profile', HealthProfileViewSet, basename='health-profile')
+router.register('health/meals', DailyMealViewSet, basename='health-meals')
+router.register('health/daily-workout-logs', DailyWorkoutLogViewSet, basename='health-daily-workout-logs')
 router.register('health/foods', FoodViewSet, basename='health-foods')
 router.register('health/food-logs', FoodLogViewSet, basename='health-food-logs')
 router.register('health/weight', WeightCheckinViewSet, basename='health-weight')

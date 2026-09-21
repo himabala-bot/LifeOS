@@ -1,31 +1,27 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity,
   Dumbbell,
   Apple,
   TrendingUp,
-  Droplets,
   Plus,
   Trash2,
   Check,
   Flame,
-  Target,
-  Sparkles,
+  Calendar as CalendarIcon,
+  ChevronLeft,
   ChevronRight,
-  Sliders,
-  Scale,
-  Calendar,
-  AlertCircle,
-  Zap,
-  Info,
-  Clock,
-  Edit2,
-  X,
-  Layers,
   Utensils,
+  Scale,
+  Sparkles,
+  Edit2,
+  CheckCircle2,
+  Circle,
+  X,
+  Target,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -36,168 +32,181 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import { useAuth } from '../../context/AuthContext';
 import { useData, getTodayDateStr } from '../../context/DataContext';
-import {
-  Food,
-  BiologicalSex,
-  ActivityLevel,
-  TrainingFocus,
-} from '../../types';
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export function HealthScreen() {
-  const { user } = useAuth();
   const {
     healthProfile,
-    onboardHealth,
     updateHealthProfile,
-    foods,
-    foodLogs,
-    todayMacros,
-    addFood,
-    deleteFood,
-    logFood,
-    deleteFoodLog,
-    logStapleFast,
-    dailyHealthStatus,
-    logWater,
-    toggleCreatine,
     weightCheckins,
     logWeight,
     deleteWeightCheckin,
-    workoutPlan,
-    todayWorkoutDay,
-    todayWorkoutLogs,
-    toggleWorkoutExercise,
-    setWorkoutFrequency,
+
+    meals,
+    addMeal,
+    toggleMeal,
+    deleteMeal,
+    updateMeal,
+
+    weeklySchedule,
+    updateWorkoutDayPlan,
+    addExerciseToDay,
+    deleteExerciseFromDay,
+    workoutRecords,
+    toggleWorkoutDayCompleted,
+    toggleExerciseCompleted,
+    completedWorkoutDates,
+    workoutStreak,
+    todaysWorkoutDay,
+    isTodayWorkoutCompleted,
   } = useData();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'nutrition' | 'workout' | 'progress' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'meals' | 'workouts' | 'weight'>('meals');
 
-  // Nutrition state
-  const [selectedFoodId, setSelectedFoodId] = useState<string>(foods[0]?.id || '');
-  const [servingsInput, setServingsInput] = useState<string>('1');
-  const [isFoodLibraryOpen, setIsFoodLibraryOpen] = useState(false);
-  const [isAddFoodOpen, setIsAddFoodOpen] = useState(false);
-  const [newFoodName, setNewFoodName] = useState('');
-  const [newFoodServing, setNewFoodServing] = useState('1 serving');
-  const [newFoodCals, setNewFoodCals] = useState('');
-  const [newFoodProtein, setNewFoodProtein] = useState('');
-  const [newFoodCarbs, setNewFoodCarbs] = useState('');
-  const [newFoodFat, setNewFoodFat] = useState('');
-  const [newFoodIsStaple, setNewFoodIsStaple] = useState(false);
+  // ==========================================
+  // DAILY MEALS STATE
+  // ==========================================
+  const todayStr = getTodayDateStr();
+  const [selectedMealDate, setSelectedMealDate] = useState<string>(todayStr);
+  const [newMealName, setNewMealName] = useState<string>('');
+  const [newMealType, setNewMealType] = useState<string>('Meal');
 
-  // Sync selected food if list changes
-  useEffect(() => {
-    if (foods.length > 0 && (!selectedFoodId || !foods.some(f => f.id === selectedFoodId))) {
-      setSelectedFoodId(foods[0].id);
+  const selectedDateMeals = useMemo(() => {
+    return meals.filter(m => m.date === selectedMealDate);
+  }, [meals, selectedMealDate]);
+
+  const selectedDateEatenCount = useMemo(() => {
+    return selectedDateMeals.filter(m => m.completed).length;
+  }, [selectedDateMeals]);
+
+  const selectedDateMealsCount = useMemo(() => {
+    return selectedDateMeals.length;
+  }, [selectedDateMeals]);
+
+  const handleAddMealSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMealName.trim()) return;
+    await addMeal({
+      name: newMealName.trim(),
+      date: selectedMealDate,
+      meal_type: newMealType,
+      completed: false,
+    });
+    setNewMealName('');
+  };
+
+  const handleDateShift = (deltaDays: number) => {
+    const d = new Date(selectedMealDate + 'T00:00:00');
+    d.setDate(d.getDate() + deltaDays);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    setSelectedMealDate(`${year}-${month}-${day}`);
+  };
+
+  // Format human readable date
+  const formatDisplayDate = (dateStr: string) => {
+    if (dateStr === todayStr) return 'Today';
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  // ==========================================
+  // WORKOUTS & CALENDAR STATE
+  // ==========================================
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
+  const [selectedDayOfWeek, setSelectedDayOfWeek] = useState<number>(new Date().getDay());
+
+  // Adding exercise modal/form state
+  const [isAddingExercise, setIsAddingExercise] = useState<number | null>(null);
+  const [newExName, setNewExName] = useState('');
+  const [newExSets, setNewExSets] = useState('3');
+  const [newExReps, setNewExReps] = useState('10');
+  const [newExWeight, setNewExWeight] = useState('');
+
+  // Editing day focus state
+  const [editingDayName, setEditingDayName] = useState<number | null>(null);
+  const [tempDayName, setTempDayName] = useState('');
+
+  const handleAddExerciseSubmit = (dayOfWeek: number, e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newExName.trim()) return;
+    addExerciseToDay(dayOfWeek, {
+      name: newExName.trim(),
+      target_sets: parseInt(newExSets) || 3,
+      target_reps: newExReps.trim() || '8-12',
+      target_weight: parseFloat(newExWeight) || 0,
+    });
+    setNewExName('');
+    setNewExSets('3');
+    setNewExReps('10');
+    setNewExWeight('');
+    setIsAddingExercise(null);
+  };
+
+  // Calendar calculations
+  const calendarDays = useMemo(() => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+
+    const firstDayOfMonth = new Date(year, month, 1);
+    const startingDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sunday
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const days: { dateStr: string; dayNum: number; isCurrentMonth: boolean }[] = [];
+
+    // Previous month padding
+    const prevMonthDays = new Date(year, month, 0).getDate();
+    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+      const d = prevMonthDays - i;
+      const prevDate = new Date(year, month - 1, d);
+      const y = prevDate.getFullYear();
+      const m = String(prevDate.getMonth() + 1).padStart(2, '0');
+      const day = String(d).padStart(2, '0');
+      days.push({ dateStr: `${y}-${m}-${day}`, dayNum: d, isCurrentMonth: false });
     }
-  }, [foods, selectedFoodId]);
 
-  // Weight check-in state
+    // Current month days
+    for (let i = 1; i <= daysInMonth; i++) {
+      const m = String(month + 1).padStart(2, '0');
+      const day = String(i).padStart(2, '0');
+      days.push({ dateStr: `${year}-${m}-${day}`, dayNum: i, isCurrentMonth: true });
+    }
+
+    // Next month padding to reach a full grid of 35 or 42
+    const totalSlots = days.length <= 35 ? 35 : 42;
+    const remaining = totalSlots - days.length;
+    for (let i = 1; i <= remaining; i++) {
+      const nextDate = new Date(year, month + 1, i);
+      const y = nextDate.getFullYear();
+      const m = String(nextDate.getMonth() + 1).padStart(2, '0');
+      const day = String(i).padStart(2, '0');
+      days.push({ dateStr: `${y}-${m}-${day}`, dayNum: i, isCurrentMonth: false });
+    }
+
+    return days;
+  }, [calendarMonth]);
+
+  // ==========================================
+  // WEIGHT JOURNEY STATE
+  // ==========================================
   const [weightInput, setWeightInput] = useState<string>('');
-  const [weightDateInput, setWeightDateInput] = useState<string>(getTodayDateStr());
+  const [goalWeightInput, setGoalWeightInput] = useState<string>(
+    healthProfile.goal_weight > 0 ? String(healthProfile.goal_weight) : ''
+  );
+  const [weightDateInput, setWeightDateInput] = useState<string>(todayStr);
   const [weightNotesInput, setWeightNotesInput] = useState<string>('');
 
-  // Workout state
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
-
-  // Health Setup / Settings form state
-  const [setupWeight, setSetupWeight] = useState<string>(healthProfile.current_weight > 0 ? String(healthProfile.current_weight) : '');
-  const [setupGoalWeight, setSetupGoalWeight] = useState<string>(healthProfile.goal_weight > 0 ? String(healthProfile.goal_weight) : '');
-  const [setupHeight, setSetupHeight] = useState<string>(healthProfile.height_cm > 0 ? String(healthProfile.height_cm) : '');
-  const [setupAge, setSetupAge] = useState<string>(healthProfile.age > 0 ? String(healthProfile.age) : '');
-  const [setupSex, setSetupSex] = useState<BiologicalSex>(healthProfile.biological_sex || 'male');
-  const [setupActivity, setSetupActivity] = useState<ActivityLevel>(healthProfile.activity_level || 'moderate');
-  const [setupFocus, setSetupFocus] = useState<TrainingFocus>(healthProfile.training_focus || 'hypertrophy');
-  const [setupFrequency, setSetupFrequency] = useState<number>(healthProfile.training_frequency || 4);
-  const [setupCalories, setSetupCalories] = useState<string>(healthProfile.target_calories > 0 ? String(healthProfile.target_calories) : '');
-  const [setupProtein, setSetupProtein] = useState<string>(healthProfile.target_protein > 0 ? String(healthProfile.target_protein) : '');
-  const [setupWater, setSetupWater] = useState<string>(healthProfile.target_water_ml > 0 ? String(healthProfile.target_water_ml) : '2500');
-
-  useEffect(() => {
-    if (healthProfile.current_weight > 0) setSetupWeight(String(healthProfile.current_weight));
-    if (healthProfile.goal_weight > 0) setSetupGoalWeight(String(healthProfile.goal_weight));
-    if (healthProfile.height_cm > 0) setSetupHeight(String(healthProfile.height_cm));
-    if (healthProfile.age > 0) setSetupAge(String(healthProfile.age));
-    if (healthProfile.target_calories > 0) setSetupCalories(String(healthProfile.target_calories));
-    if (healthProfile.target_protein > 0) setSetupProtein(String(healthProfile.target_protein));
-  }, [healthProfile]);
-
-  // Weight Journey Metrics
-  const startingWeight = useMemo(() => {
-    if (weightCheckins.length === 0) return healthProfile.current_weight;
-    const sorted = [...weightCheckins].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    return sorted[0].weight;
-  }, [weightCheckins, healthProfile.current_weight]);
-
-  const currentWeight = healthProfile.current_weight;
-  const goalWeight = healthProfile.goal_weight;
-  const totalWeightChange = startingWeight > 0 ? Math.round((currentWeight - startingWeight) * 10) / 10 : 0;
-  const remainingWeight = goalWeight > 0 ? Math.round(Math.max(0, goalWeight - currentWeight) * 10) / 10 : 0;
-  const weightJourneyProgress = useMemo(() => {
-    if (startingWeight <= 0 || goalWeight <= 0) return 0;
-    const totalDiff = goalWeight - startingWeight;
-    if (totalDiff <= 0) return 100;
-    const gained = currentWeight - startingWeight;
-    return Math.min(100, Math.max(0, Math.round((gained / totalDiff) * 100)));
-  }, [startingWeight, currentWeight, goalWeight]);
-
-  // Today's food logs
-  const todayStr = getTodayDateStr();
-  const todaysFoodLogs = useMemo(() => {
-    return foodLogs.filter(fl => fl.date === todayStr);
-  }, [foodLogs, todayStr]);
-
-  // Staple foods list
-  const stapleFoods = useMemo(() => {
-    return foods.filter(f => f.is_staple);
-  }, [foods]);
-
-  // Active workout day selection
-  const currentWorkoutDay = useMemo(() => {
-    if (!workoutPlan?.days || workoutPlan.days.length === 0) return null;
-    return workoutPlan.days[selectedDayIndex] || workoutPlan.days[0];
-  }, [workoutPlan, selectedDayIndex]);
-
-  // Weight chart data
   const weightChartData = useMemo(() => {
     const sorted = [...weightCheckins].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     return sorted.map(w => ({
       date: new Date(w.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       weight: w.weight,
-      goal: goalWeight > 0 ? goalWeight : undefined,
+      goal: healthProfile.goal_weight > 0 ? healthProfile.goal_weight : undefined,
     }));
-  }, [weightCheckins, goalWeight]);
-
-  // Handlers
-  const handleAddCustomFood = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newFoodName.trim()) return;
-    await addFood({
-      name: newFoodName.trim(),
-      serving_description: newFoodServing.trim() || '1 serving',
-      calories: parseFloat(newFoodCals) || 0,
-      protein: parseFloat(newFoodProtein) || 0,
-      carbs: parseFloat(newFoodCarbs) || 0,
-      fat: parseFloat(newFoodFat) || 0,
-      is_staple: newFoodIsStaple,
-    });
-    setNewFoodName('');
-    setNewFoodCals('');
-    setNewFoodProtein('');
-    setNewFoodCarbs('');
-    setNewFoodFat('');
-    setIsAddFoodOpen(false);
-  };
-
-  const handleLogFoodSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedFoodId) return;
-    const s = parseFloat(servingsInput) || 1.0;
-    await logFood(selectedFoodId, s, todayStr);
-    setServingsInput('1');
-  };
+  }, [weightCheckins, healthProfile.goal_weight]);
 
   const handleLogWeightSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,22 +217,11 @@ export function HealthScreen() {
     setWeightNotesInput('');
   };
 
-  const handleSaveHealthSettings = async (e: React.FormEvent) => {
+  const handleSetGoalWeight = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onboardHealth({
-      current_weight: parseFloat(setupWeight) || 0,
-      goal_weight: parseFloat(setupGoalWeight) || 0,
-      height_cm: parseFloat(setupHeight) || 0,
-      age: parseInt(setupAge) || 0,
-      biological_sex: setupSex,
-      activity_level: setupActivity,
-      training_focus: setupFocus,
-      training_frequency: setupFrequency,
-      target_calories: parseInt(setupCalories) || 0,
-      target_protein: parseInt(setupProtein) || 0,
-      target_water_ml: parseInt(setupWater) || 2500,
-    });
-    setActiveTab('overview');
+    const gw = parseFloat(goalWeightInput);
+    if (isNaN(gw) || gw <= 0) return;
+    await updateHealthProfile({ goal_weight: gw });
   };
 
   return (
@@ -233,36 +231,34 @@ export function HealthScreen() {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-subtle)] border border-[var(--accent)]/20 text-[var(--accent)] text-xs font-semibold uppercase tracking-wider mb-2">
             <Activity size={13} />
-            <span>Health & Strength Engine · Steady Architecture</span>
+            <span>Physical Architecture</span>
           </div>
           <h1 className="serif text-4xl sm:text-5xl font-normal">Physical Architecture<span className="text-[var(--accent)]">.</span></h1>
           <p className="text-sm text-[var(--muted)] mt-1.5 max-w-2xl">
-            Systematic nutrition, progressive hypertrophy, and compounded physical progress.
+            Log your daily nutrition, program your weekly training schedule, and compound your physical vitality.
           </p>
         </div>
 
-        {/* Sub-Navigation Tabs */}
+        {/* Navigation Tabs */}
         <div className="bg-[#ecebe4] p-1.5 rounded-2xl flex items-center gap-1 shrink-0 text-xs font-bold shadow-inner overflow-x-auto max-w-full">
           {[
-            { id: 'overview', label: 'Overview', icon: Sparkles },
-            { id: 'nutrition', label: 'Nutrition', icon: Apple },
-            { id: 'workout', label: 'Workout', icon: Dumbbell },
-            { id: 'progress', label: 'Progress', icon: Scale },
-            { id: 'settings', label: 'Settings', icon: Sliders },
+            { id: 'meals', label: 'Daily Meals', icon: Utensils },
+            { id: 'workouts', label: 'Workouts & Calendar', icon: Dumbbell },
+            { id: 'weight', label: 'Weight Journey', icon: Scale },
           ].map(tab => {
             const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+            const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-                  isActive
-                    ? 'bg-[var(--ink)] text-white shadow-md'
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                  active
+                    ? 'bg-white text-[var(--ink)] shadow-sm font-semibold'
                     : 'text-[var(--muted)] hover:text-[var(--ink)]'
                 }`}
               >
-                <Icon size={14} />
+                <Icon size={14} className={active ? 'text-[var(--accent)]' : ''} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -271,1074 +267,890 @@ export function HealthScreen() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 1. OVERVIEW TAB */}
+      {/* TAB 1: DAILY MEALS */}
       {/* ========================================================================= */}
-      {activeTab === 'overview' && (
-        <div className="space-y-8 animate-fadeIn">
-          {/* Top Row: Weight Journey & Today Nutrition */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Weight Journey Banner (7 cols) */}
-            <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-7 border border-[var(--line)] shadow-sm flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted)] flex items-center gap-1.5">
-                    <Scale size={14} className="text-[var(--accent)]" /> Weight Journey
-                  </span>
+      {activeTab === 'meals' && (
+        <div className="space-y-6">
+          {/* Date Navigator Bar */}
+          <div className="bg-white rounded-3xl p-5 border border-[var(--line)] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleDateShift(-1)}
+                className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center hover:bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+                title="Previous Day"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <div className="px-4 py-1.5 bg-[#f8f7f4] rounded-full border border-[var(--line)] text-xs font-bold text-[var(--ink)]">
+                {formatDisplayDate(selectedMealDate)} ({selectedMealDate})
+              </div>
+              <button
+                onClick={() => handleDateShift(1)}
+                className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center hover:bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+                title="Next Day"
+              >
+                <ChevronRight size={16} />
+              </button>
+              {selectedMealDate !== todayStr && (
+                <button
+                  onClick={() => setSelectedMealDate(todayStr)}
+                  className="text-xs font-bold text-[var(--accent)] hover:underline ml-2 cursor-pointer"
+                >
+                  Jump to Today
+                </button>
+              )}
+            </div>
+
+            {/* Adherence Pill */}
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-[var(--muted)]">Daily Meal Adherence:</span>
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#f1f0ea] text-[var(--ink)] border border-[var(--line)]">
+                {selectedDateEatenCount} / {selectedDateMealsCount} eaten
+                {selectedDateMealsCount > 0 ? ` (${Math.round((selectedDateEatenCount / selectedDateMealsCount) * 100)}%)` : ''}
+              </span>
+            </div>
+          </div>
+
+          {/* Quick Add Meal Bar */}
+          <form onSubmit={handleAddMealSubmit} className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] block mb-3">
+              Log What You Ate / Plan To Eat
+            </span>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              {/* Meal Type Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 shrink-0">
+                {['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Meal'].map(type => (
                   <button
-                    onClick={() => setActiveTab('progress')}
-                    className="text-xs font-semibold text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer"
+                    key={type}
+                    type="button"
+                    onClick={() => setNewMealType(type)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                      newMealType === type
+                        ? 'bg-[var(--ink)] text-white font-bold'
+                        : 'bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]'
+                    }`}
                   >
-                    Log check-in <ChevronRight size={13} />
+                    {type}
                   </button>
-                </div>
-
-                {currentWeight === 0 && weightCheckins.length === 0 ? (
-                  <div className="py-8 text-center bg-[#f8f7f4] rounded-2xl border border-dashed border-[var(--line)] mt-5">
-                    <Scale size={24} className="text-[var(--muted)] mx-auto mb-2" />
-                    <h4 className="serif text-xl font-normal text-[var(--ink)]">No Weight Logged Yet</h4>
-                    <p className="text-xs text-[var(--muted)] mt-1 max-w-sm mx-auto">
-                      Log your baseline weight and target goal to start tracking your physical compounding curve.
-                    </p>
-                    <button
-                      onClick={() => setActiveTab('progress')}
-                      className="mt-4 px-4 py-2 rounded-xl bg-[var(--ink)] text-white text-xs font-semibold uppercase tracking-wider hover:bg-black transition-colors cursor-pointer"
-                    >
-                      + Log First Weigh-In
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <div className="mt-5 grid grid-cols-3 gap-3 sm:gap-4 text-center">
-                      <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
-                        <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider block">Starting</span>
-                        <span className="serif text-xl sm:text-2xl font-normal text-[var(--ink)] mt-1 block">
-                          {startingWeight > 0 ? `${startingWeight} kg` : '--'}
-                        </span>
-                      </div>
-                      <div className="p-4 rounded-2xl bg-[var(--accent-subtle)] border border-[var(--accent)]/20">
-                        <span className="text-[10px] font-bold text-[var(--accent)] uppercase tracking-wider block">Current</span>
-                        <span className="serif text-2xl sm:text-3xl font-normal text-[var(--ink)] mt-0.5 block">
-                          {currentWeight > 0 ? `${currentWeight} kg` : '--'}
-                        </span>
-                        {totalWeightChange !== 0 && (
-                          <span className="text-[10px] font-bold text-[var(--sage)] mt-0.5 block">
-                            {totalWeightChange > 0 ? `+${totalWeightChange}` : totalWeightChange} kg
-                          </span>
-                        )}
-                      </div>
-                      <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
-                        <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider block">Goal</span>
-                        <span className="serif text-xl sm:text-2xl font-normal text-[var(--ink)] mt-1 block">
-                          {goalWeight > 0 ? `${goalWeight} kg` : '--'}
-                        </span>
-                        <span className="text-[10px] font-semibold text-[var(--muted)] mt-0.5 block">
-                          {remainingWeight > 0 ? `${remainingWeight} kg to go` : 'Goal set'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="mt-5">
-                      <div className="flex justify-between text-xs font-semibold mb-1.5">
-                        <span className="text-[var(--muted)]">Progress toward target</span>
-                        <span className="text-[var(--accent)] font-bold">{weightJourneyProgress}%</span>
-                      </div>
-                      <div className="w-full h-2.5 bg-[#ecebe4] rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-[var(--accent)] rounded-full transition-all duration-500"
-                          style={{ width: `${weightJourneyProgress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
+                ))}
               </div>
 
-              <div className="mt-6 pt-4 border-t border-[var(--line)] flex items-center justify-between text-xs text-[var(--muted)]">
-                <span>Phase: {healthProfile.training_focus === 'hypertrophy' ? 'Hypertrophy & Lean Mass' : 'Strength & Performance'}</span>
-                <span className="font-semibold text-[var(--ink)]">{healthProfile.training_frequency || 4}x Weekly Program</span>
+              {/* Input */}
+              <input
+                type="text"
+                value={newMealName}
+                onChange={e => setNewMealName(e.target.value)}
+                placeholder="e.g. Oatmeal with blueberries, Grilled chicken bowl, Salmon & quinoa..."
+                className="flex-1 px-4 py-2.5 rounded-xl bg-[#f8f7f4] border border-[var(--line)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"
+              />
+
+              {/* Add Button */}
+              <button
+                type="submit"
+                disabled={!newMealName.trim()}
+                className="px-5 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+              >
+                <Plus size={14} />
+                <span>Add Meal</span>
+              </button>
+            </div>
+          </form>
+
+          {/* Meals List / Empty State */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[var(--line)] shadow-sm">
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-[var(--line)]">
+              <div>
+                <h3 className="serif text-xl font-normal">Meals for {formatDisplayDate(selectedMealDate)}</h3>
+                <p className="text-xs text-[var(--muted)] mt-0.5">Check off each item once you have eaten it.</p>
+              </div>
+              <span className="text-xs font-bold text-[var(--muted)]">
+                {selectedDateMeals.length} item{selectedDateMeals.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {selectedDateMeals.length === 0 ? (
+              /* Clean Empty State */
+              <div className="py-14 px-6 text-center max-w-md mx-auto">
+                <div className="w-14 h-14 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] text-[var(--muted)] flex items-center justify-center mx-auto mb-4">
+                  <Utensils size={24} />
+                </div>
+                <h4 className="serif text-xl font-normal text-[var(--ink)] mb-1.5">No meals logged for {formatDisplayDate(selectedMealDate)}</h4>
+                <p className="text-xs text-[var(--muted)] leading-relaxed mb-6">
+                  Plan what you want to eat or log what you've eaten to track your daily nutrition without friction.
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {['+ Breakfast', '+ Lunch', '+ Dinner', '+ Snack'].map(label => {
+                    const type = label.replace('+ ', '');
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => {
+                          setNewMealType(type);
+                          setNewMealName(`${type}: `);
+                        }}
+                        className="px-3.5 py-1.5 rounded-full bg-[#f8f7f4] hover:bg-[#eae7e1] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] transition-colors cursor-pointer"
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              /* Meals List */
+              <div className="space-y-3">
+                {selectedDateMeals.map(meal => (
+                  <div
+                    key={meal.id}
+                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                      meal.completed
+                        ? 'bg-emerald-50/50 border-emerald-200'
+                        : 'bg-[#f8f7f4] border-[var(--line)] hover:border-[var(--accent)]'
+                    }`}
+                  >
+                    <div
+                      onClick={() => toggleMeal(meal.id, selectedMealDate)}
+                      className="flex items-center gap-3.5 flex-1 cursor-pointer"
+                    >
+                      <button
+                        type="button"
+                        className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
+                          meal.completed
+                            ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
+                            : 'bg-white border-[var(--line)] text-transparent hover:border-[var(--accent)]'
+                        }`}
+                      >
+                        <Check size={13} className={meal.completed ? 'block' : 'hidden'} />
+                      </button>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
+                            meal.completed ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-[var(--muted)] border border-[var(--line)]'
+                          }`}>
+                            {meal.meal_type || 'Meal'}
+                          </span>
+                          <span className={`text-sm font-medium ${meal.completed ? 'line-through text-[var(--muted)]' : 'text-[var(--ink)]'}`}>
+                            {meal.name}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleMeal(meal.id, selectedMealDate)}
+                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                          meal.completed
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-white border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
+                        }`}
+                      >
+                        {meal.completed ? 'Eaten ✓' : 'Mark Eaten'}
+                      </button>
+                      <button
+                        onClick={() => deleteMeal(meal.id)}
+                        className="p-1.5 rounded-lg text-[var(--muted)] hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        title="Delete meal"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 2: WORKOUTS & CALENDAR */}
+      {/* ========================================================================= */}
+      {activeTab === 'workouts' && (
+        <div className="space-y-8">
+          {/* Top Row: Streak & Today's Workout */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Workout Streak Card */}
+            <div className="bg-white rounded-3xl p-7 border border-[var(--line)] shadow-sm flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] block mb-1">
+                  Consistency Vector
+                </span>
+                <h3 className="serif text-2xl font-normal">Workout Streak</h3>
+                <p className="text-xs text-[var(--muted)] mt-1">Consecutive training days and historical completions.</p>
+              </div>
+
+              <div className="my-6 flex items-baseline gap-3">
+                <span className="text-5xl font-bold text-[var(--ink)] flex items-center gap-2">
+                  <Flame size={36} className="text-[#e66b4b]" />
+                  {workoutStreak}
+                </span>
+                <span className="text-sm font-semibold text-[var(--muted)]">Day{workoutStreak !== 1 ? 's' : ''} active streak</span>
+              </div>
+
+              <div className="pt-4 border-t border-[var(--line)] flex items-center justify-between text-xs">
+                <span className="text-[var(--muted)]">Total workouts logged:</span>
+                <span className="font-bold text-[var(--ink)]">{completedWorkoutDates.length} sessions</span>
               </div>
             </div>
 
-            {/* Today's Nutrition Snapshot (5 cols) */}
-            <div className="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-7 border border-[var(--line)] shadow-sm flex flex-col justify-between">
+            {/* Today's Workout Action Card */}
+            <div className={`rounded-3xl p-7 border transition-all flex flex-col justify-between ${
+              isTodayWorkoutCompleted
+                ? 'bg-emerald-50/70 border-emerald-200'
+                : 'bg-white border-[var(--line)] shadow-sm'
+            }`}>
               <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted)] flex items-center gap-1.5">
-                    <Apple size={14} className="text-[var(--accent)]" /> Today's Nutrition
+                <div className="flex justify-between items-start">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
+                    Today's Training Focus
                   </span>
-                  <button
-                    onClick={() => setActiveTab('nutrition')}
-                    className="text-xs font-semibold text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    Open log <ChevronRight size={13} />
-                  </button>
+                  {todaysWorkoutDay.is_rest_day ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#eae7e1] text-[var(--muted)]">
+                      Rest Day
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--accent-subtle)] text-[var(--accent)]">
+                      Active Workout
+                    </span>
+                  )}
                 </div>
 
-                {todaysFoodLogs.length === 0 && todayMacros.calories === 0 ? (
-                  <div className="py-8 text-center bg-[#f8f7f4] rounded-2xl border border-dashed border-[var(--line)] mt-4">
-                    <Apple size={24} className="text-[var(--muted)] mx-auto mb-2" />
-                    <h4 className="serif text-xl font-normal text-[var(--ink)]">No Foods Logged Today</h4>
-                    <p className="text-xs text-[var(--muted)] mt-1 max-w-xs mx-auto">
-                      Log meals or 1-tap staples to start tracking calories and protein intake.
-                    </p>
-                    <button
-                      onClick={() => setActiveTab('nutrition')}
-                      className="mt-4 px-4 py-2 rounded-xl bg-[var(--ink)] text-white text-xs font-semibold uppercase tracking-wider hover:bg-black transition-colors cursor-pointer"
-                    >
-                      + Log First Meal
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    {/* Calories Big Gauge */}
-                    <div className="mt-4 flex items-baseline justify-between border-b border-[var(--line)] pb-3">
-                      <div>
-                        <span className="serif text-3xl font-normal text-[var(--ink)]">{todayMacros.calories}</span>
-                        <span className="text-xs font-semibold text-[var(--muted)] ml-1">
-                          {todayMacros.target_calories > 0 ? `/ ${todayMacros.target_calories} kcal` : 'kcal'}
-                        </span>
-                      </div>
-                      {todayMacros.target_calories > 0 && (
-                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                          todayMacros.calories >= todayMacros.target_calories * 0.85
-                            ? 'bg-[var(--sage-light)] text-[var(--sage)] border border-[var(--sage)]/20'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                <h3 className="serif text-2xl font-normal mt-1">
+                  {todaysWorkoutDay.day_name}
+                </h3>
+                <p className="text-xs text-[var(--muted)] mt-1">
+                  {todaysWorkoutDay.exercises.length} planned exercise{todaysWorkoutDay.exercises.length !== 1 ? 's' : ''} for today.
+                </p>
+              </div>
+
+              <div className="my-6">
+                <button
+                  onClick={() => toggleWorkoutDayCompleted(todayStr)}
+                  className={`w-full py-3.5 px-6 rounded-2xl font-semibold text-sm transition-all shadow-sm flex items-center justify-center gap-2.5 cursor-pointer ${
+                    isTodayWorkoutCompleted
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      : 'bg-[var(--ink)] hover:bg-black text-white'
+                  }`}
+                >
+                  <Check size={16} />
+                  <span>{isTodayWorkoutCompleted ? "Workout Completed for Today ✓" : "Mark Today's Workout Complete"}</span>
+                </button>
+              </div>
+
+              <div className="pt-4 border-t border-[var(--line)]/60 text-xs text-[var(--muted)] flex items-center justify-between">
+                <span>Status:</span>
+                <span className={`font-bold ${isTodayWorkoutCompleted ? 'text-emerald-700' : 'text-[var(--muted)]'}`}>
+                  {isTodayWorkoutCompleted ? 'Completed' : 'Pending'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Workout Calendar with Dates When Worked Out Marked in Green */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[var(--line)] shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-[var(--line)]">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] block mb-0.5">
+                  Visual Adherence Grid
+                </span>
+                <h3 className="serif text-2xl font-normal">Workout Calendar</h3>
+                <p className="text-xs text-[var(--muted)] mt-0.5">
+                  Dates when you worked out are marked in green. Remaining dates stay neutral.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
+                  className="p-2 rounded-xl border border-[var(--line)] hover:bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+                  title="Previous Month"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="text-xs font-bold text-[var(--ink)] px-3 py-1 bg-[#f8f7f4] rounded-xl border border-[var(--line)]">
+                  {calendarMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </span>
+                <button
+                  onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
+                  className="p-2 rounded-xl border border-[var(--line)] hover:bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+                  title="Next Month"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Weekday Headers: Sunday to Saturday */}
+            <div className="grid grid-cols-7 gap-2 mb-2 text-center text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                <div key={d} className="py-1">
+                  {d}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Days Grid */}
+            <div className="grid grid-cols-7 gap-2">
+              {calendarDays.map((cd, i) => {
+                const isWorkedOut = !!workoutRecords[cd.dateStr]?.completed;
+                const isToday = cd.dateStr === todayStr;
+
+                return (
+                  <div
+                    key={i}
+                    onClick={() => toggleWorkoutDayCompleted(cd.dateStr)}
+                    className={`h-16 sm:h-20 rounded-2xl p-2 flex flex-col justify-between transition-all cursor-pointer border ${
+                      isWorkedOut
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm hover:bg-emerald-700'
+                        : isToday
+                        ? 'bg-[#f8f7f4] border-[var(--ink)] text-[var(--ink)] hover:border-emerald-500'
+                        : cd.isCurrentMonth
+                        ? 'bg-transparent border-transparent hover:bg-[#f8f7f4] text-[var(--ink)] hover:border-[var(--line)]'
+                        : 'bg-transparent border-transparent text-black/20'
+                    }`}
+                    title={isWorkedOut ? `Workout completed on ${cd.dateStr} (Click to toggle)` : `No workout on ${cd.dateStr} (Click to mark complete)`}
+                  >
+                    <div className="flex justify-between items-center text-xs">
+                      <span className={`font-semibold ${isWorkedOut ? 'text-white' : ''}`}>
+                        {cd.dayNum}
+                      </span>
+                      {isToday && (
+                        <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${
+                          isWorkedOut ? 'bg-white/20 text-white' : 'bg-[var(--ink)] text-white'
                         }`}>
-                          {Math.round((todayMacros.calories / todayMacros.target_calories) * 100)}% target
+                          Today
                         </span>
                       )}
                     </div>
 
-                    {/* Macro Bars */}
-                    <div className="mt-4 space-y-3">
-                      <div>
-                        <div className="flex justify-between text-xs font-semibold mb-1">
-                          <span className="text-[var(--ink)]">Protein</span>
-                          <span className="text-[var(--muted)]">
-                            {todayMacros.protein}g {todayMacros.target_protein > 0 ? `/ ${todayMacros.target_protein}g` : ''}
-                          </span>
-                        </div>
-                        <div className="w-full h-2 bg-[#ecebe4] rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-[var(--accent)] rounded-full"
-                            style={{ width: `${todayMacros.target_protein > 0 ? Math.min(100, (todayMacros.protein / todayMacros.target_protein) * 100) : 0}%` }}
-                          />
-                        </div>
+                    {isWorkedOut ? (
+                      <div className="flex items-center gap-1 text-[10px] font-bold text-white/90">
+                        <Check size={12} />
+                        <span className="hidden sm:inline">Done</span>
                       </div>
-
-                      <div>
-                        <div className="flex justify-between text-xs font-semibold mb-1">
-                          <span className="text-[var(--ink)]">Carbohydrates</span>
-                          <span className="text-[var(--muted)]">
-                            {todayMacros.carbs}g {todayMacros.target_carbs > 0 ? `/ ${todayMacros.target_carbs}g` : ''}
-                          </span>
-                        </div>
-                        <div className="w-full h-2 bg-[#ecebe4] rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-[var(--sage)] rounded-full"
-                            style={{ width: `${todayMacros.target_carbs > 0 ? Math.min(100, (todayMacros.carbs / todayMacros.target_carbs) * 100) : 0}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-xs font-semibold mb-1">
-                          <span className="text-[var(--ink)]">Fats</span>
-                          <span className="text-[var(--muted)]">
-                            {todayMacros.fat}g {todayMacros.target_fat > 0 ? `/ ${todayMacros.target_fat}g` : ''}
-                          </span>
-                        </div>
-                        <div className="w-full h-2 bg-[#ecebe4] rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-[#d97706] rounded-full"
-                            style={{ width: `${todayMacros.target_fat > 0 ? Math.min(100, (todayMacros.fat / todayMacros.target_fat) * 100) : 0}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* 1-Tap Quick Staples in Overview */}
-              {stapleFoods.length > 0 && (
-                <div className="mt-5 pt-4 border-t border-[var(--line)]">
-                  <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider block mb-2">1-Tap Staple Log</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {stapleFoods.slice(0, 4).map(food => (
-                      <button
-                        key={food.id}
-                        onClick={() => logStapleFast(food)}
-                        className="text-xs font-semibold px-2.5 py-1 rounded-xl bg-[#f8f7f4] hover:bg-[#f1f0ea] border border-[var(--line)] text-[var(--ink)] transition-colors cursor-pointer"
-                      >
-                        + {food.name.split(' ')[0]}
-                      </button>
-                    ))}
+                    ) : (
+                      <div className="text-[10px] text-transparent select-none">-</div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })}
             </div>
           </div>
 
-          {/* Middle Row: Hydration, Creatine, Today's Workout */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Hydration Card */}
-            <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted)] flex items-center gap-1.5">
-                    <Droplets size={14} className="text-blue-500" /> Hydration
-                  </span>
-                  <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-                    {(dailyHealthStatus.water_ml / 1000).toFixed(2)} L / {((healthProfile.target_water_ml || 2500) / 1000).toFixed(1)} L
-                  </span>
-                </div>
-
-                <div className="mt-4">
-                  <div className="w-full h-2.5 bg-[#ecebe4] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 rounded-full transition-all"
-                      style={{ width: `${Math.min(100, (dailyHealthStatus.water_ml / (healthProfile.target_water_ml || 2500)) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-[var(--line)] flex items-center gap-2">
-                <button
-                  onClick={() => logWater(250)}
-                  className="flex-1 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold transition-colors border border-blue-200 cursor-pointer"
-                >
-                  +250 ml
-                </button>
-                <button
-                  onClick={() => logWater(500)}
-                  className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors shadow-sm cursor-pointer"
-                >
-                  +500 ml
-                </button>
-              </div>
-            </div>
-
-            {/* Creatine Card */}
-            <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted)] flex items-center gap-1.5">
-                    <Zap size={14} className="text-purple-500" /> Creatine Daily
-                  </span>
-                  <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
-                    5g target
-                  </span>
-                </div>
-
-                <p className="text-xs text-[var(--muted)] mt-2 leading-relaxed">
-                  5 grams daily for phosphocreatine muscle saturation and power capacity.
-                </p>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-[var(--line)]">
-                <button
-                  onClick={toggleCreatine}
-                  className={`w-full py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    dailyHealthStatus.creatine_completed
-                      ? 'bg-purple-600 text-white shadow-sm'
-                      : 'bg-[#f8f7f4] text-[var(--ink)] border border-[var(--line)] hover:bg-[#f1f0ea]'
-                  }`}
-                >
-                  <Check size={14} className={dailyHealthStatus.creatine_completed ? 'text-white' : 'text-[var(--muted)]'} />
-                  <span>{dailyHealthStatus.creatine_completed ? 'Completed Today (5g)' : 'Mark 5g Completed'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Today's Workout Card */}
-            <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted)] flex items-center gap-1.5">
-                    <Dumbbell size={14} className="text-[var(--accent)]" /> Today's Split
-                  </span>
-                  <span className="text-xs font-bold text-[var(--ink)]">
-                    {todayWorkoutDay?.day_name.split(' ')[0] || (workoutPlan ? 'Rest / Active' : 'Unconfigured')}
-                  </span>
-                </div>
-
-                {!workoutPlan ? (
-                  <p className="text-xs text-[var(--muted)] mt-3">
-                    No workout plan initialized yet. Choose your training frequency in the Workout tab.
-                  </p>
-                ) : (
-                  <div className="mt-3">
-                    <span className="text-xs font-semibold text-[var(--muted)] block">
-                      {todayWorkoutLogs.filter(wl => wl.completed).length} / {todayWorkoutDay?.exercises?.length || 0} exercises completed
-                    </span>
-                    <div className="w-full h-2 bg-[#ecebe4] rounded-full overflow-hidden mt-1.5">
-                      <div
-                        className="h-full bg-[var(--accent)] rounded-full transition-all"
-                        style={{
-                          width: `${
-                            todayWorkoutDay?.exercises && todayWorkoutDay.exercises.length > 0
-                              ? (todayWorkoutLogs.filter(wl => wl.completed).length / todayWorkoutDay.exercises.length) * 100
-                              : 0
-                          }%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-[var(--line)]">
-                <button
-                  onClick={() => setActiveTab('workout')}
-                  className="w-full py-2.5 rounded-xl bg-[var(--ink)] text-white hover:bg-black font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
-                >
-                  <span>{workoutPlan ? 'Open Workout' : 'Configure Split'}</span>
-                  <ChevronRight size={13} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 2. NUTRITION TAB */}
-      {/* ========================================================================= */}
-      {activeTab === 'nutrition' && (
-        <div className="space-y-8 animate-fadeIn">
-          {/* 1-Tap Staple Bar */}
-          <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="serif text-2xl font-normal text-[var(--ink)]">1-Tap Staple Foods</h3>
-                <p className="text-xs text-[var(--muted)] mt-0.5">Log routine meals and snacks with a single touch</p>
-              </div>
-              <button
-                onClick={() => setIsFoodLibraryOpen(true)}
-                className="text-xs font-semibold text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                Food Library ({foods.length}) <ChevronRight size={13} />
-              </button>
-            </div>
-
-            {stapleFoods.length === 0 ? (
-              <div className="p-6 text-center bg-[#f8f7f4] rounded-2xl border border-dashed border-[var(--line)] mt-3">
-                <Utensils size={20} className="text-[var(--muted)] mx-auto mb-1.5" />
-                <p className="text-xs text-[var(--muted)]">No staple foods added yet. Open the Food Library to register items and mark them as 1-tap staples.</p>
-                <button
-                  onClick={() => { setIsFoodLibraryOpen(true); setIsAddFoodOpen(true); }}
-                  className="mt-3 px-4 py-2 rounded-xl bg-[var(--ink)] text-white text-xs font-semibold hover:bg-black transition-colors cursor-pointer"
-                >
-                  + Add Food to Library
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2 pt-2">
-                {stapleFoods.map(food => (
-                  <button
-                    key={food.id}
-                    onClick={() => logStapleFast(food)}
-                    className="group flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-[#f8f7f4] hover:bg-[var(--accent-subtle)] border border-[var(--line)] hover:border-[var(--accent)]/30 transition-all cursor-pointer text-left"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center font-bold text-xs group-hover:bg-[var(--accent)] group-hover:text-white transition-colors">
-                      +
-                    </div>
-                    <div>
-                      <span className="text-xs font-semibold text-[var(--ink)] block">{food.name}</span>
-                      <span className="text-[10px] text-[var(--muted)] font-medium">
-                        {food.calories} kcal · {food.protein}g protein
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Nutrition Grid: Logger & Today's Meals */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Custom Log Meal Form (5 cols) */}
-            <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
-              <h3 className="serif text-2xl font-normal text-[var(--ink)] mb-4">Log Food or Meal</h3>
-              
-              {foods.length === 0 ? (
-                <div className="p-6 text-center bg-[#f8f7f4] rounded-2xl border border-dashed border-[var(--line)]">
-                  <p className="text-xs text-[var(--muted)] mb-3">No foods in your library. Add your first food item (e.g. Eggs, Oats, Rice, Protein) to start logging.</p>
-                  <button
-                    onClick={() => { setIsFoodLibraryOpen(true); setIsAddFoodOpen(true); }}
-                    className="px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-xs font-semibold hover:bg-[var(--accent-hover)] transition-colors cursor-pointer"
-                  >
-                    + Add Food Item
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleLogFoodSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                      Select Food Item
-                    </label>
-                    <select
-                      value={selectedFoodId}
-                      onChange={e => setSelectedFoodId(e.target.value)}
-                      className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
-                    >
-                      {foods.map(f => (
-                        <option key={f.id} value={f.id}>
-                          {f.name} ({f.calories} kcal, {f.protein}g P)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                      Servings (e.g. 1, 2, 1.5)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.25"
-                      min="0.25"
-                      max="20"
-                      value={servingsInput}
-                      onChange={e => setServingsInput(e.target.value)}
-                      className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-2.5 rounded-xl bg-[var(--ink)] hover:bg-black text-white font-semibold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
-                  >
-                    Add to Daily Log
-                  </button>
-                </form>
-              )}
-            </div>
-
-            {/* Today's Meals List (7 cols) */}
-            <div className="lg:col-span-7 bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="serif text-2xl font-normal text-[var(--ink)]">Today's Logged Items</h3>
-                <span className="text-xs font-semibold text-[var(--muted)]">
-                  {todaysFoodLogs.length} items logged
-                </span>
-              </div>
-
-              {todaysFoodLogs.length === 0 ? (
-                <div className="p-8 text-center bg-[#f8f7f4] rounded-2xl border border-dashed border-[var(--line)]">
-                  <p className="text-xs text-[var(--muted)]">No foods logged today yet. Log a meal using the form or tap a staple above!</p>
-                </div>
-              ) : (
-                <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-                  {todaysFoodLogs.map(log => {
-                    const food = log.food_details || foods.find(f => f.id === log.food);
-                    if (!food) return null;
-                    const cals = Math.round(food.calories * log.servings);
-                    const prot = Math.round(food.protein * log.servings * 10) / 10;
-                    return (
-                      <div
-                        key={log.id}
-                        className="flex items-center justify-between p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] hover:border-[var(--accent)]/30 transition-all"
-                      >
-                        <div>
-                          <span className="text-xs font-bold text-[var(--ink)] block">
-                            {log.servings > 1 ? `${log.servings} × ` : ''}{food.name}
-                          </span>
-                          <span className="text-[11px] text-[var(--muted)] font-medium">
-                            {food.serving_description} · {cals} kcal · {prot}g protein
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => deleteFoodLog(log.id)}
-                          className="p-1.5 rounded-lg text-[var(--muted)] hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                          title="Remove item"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 3. WORKOUT TAB */}
-      {/* ========================================================================= */}
-      {activeTab === 'workout' && (
-        <div className="space-y-8 animate-fadeIn">
-          {/* Split Selector & Routine Settings */}
-          <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="serif text-2xl font-normal text-[var(--ink)]">Workout Routine & Split</h3>
-                <p className="text-xs text-[var(--muted)] mt-0.5">
-                  {workoutPlan ? `Active program: ${workoutPlan.name}` : 'Select your training frequency to initialize your split'}
-                </p>
-              </div>
-
-              {/* Frequency Selector */}
-              <div className="flex items-center gap-1 bg-[#ecebe4] p-1 rounded-xl shadow-inner self-start sm:self-auto">
-                {[3, 4, 5, 6].map(freq => (
-                  <button
-                    key={freq}
-                    onClick={() => setWorkoutFrequency(freq)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      healthProfile.training_frequency === freq && workoutPlan
-                        ? 'bg-[var(--ink)] text-white shadow-sm'
-                        : 'text-[var(--muted)] hover:text-[var(--ink)]'
-                    }`}
-                  >
-                    {freq}-Day
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Days Horizontal Tabs */}
-            {workoutPlan?.days && workoutPlan.days.length > 0 && (
-              <div className="flex items-center gap-2 mt-5 overflow-x-auto pb-1">
-                {workoutPlan.days.map((day, idx) => (
-                  <button
-                    key={day.id}
-                    onClick={() => setSelectedDayIndex(idx)}
-                    className={`px-4 py-2 rounded-2xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-                      selectedDayIndex === idx
-                        ? 'bg-[var(--ink)] text-white shadow-sm'
-                        : 'bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]'
-                    }`}
-                  >
-                    {day.day_name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Active Workout Day View */}
-          {!workoutPlan ? (
-            <div className="p-12 text-center bg-white rounded-3xl border border-[var(--line)] shadow-sm">
-              <div className="w-14 h-14 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center mx-auto mb-4">
-                <Dumbbell size={28} />
-              </div>
-              <h3 className="serif text-2xl font-normal text-[var(--ink)]">Initialize Your Training Split</h3>
-              <p className="text-xs text-[var(--muted)] mt-1.5 max-w-md mx-auto">
-                Select your preferred training schedule above to generate your customized hypertrophy workouts with compound and isolation movements.
+          {/* 7-Day Weekly Schedule (Sunday to Saturday) */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[var(--line)] shadow-sm">
+            <div className="pb-6 mb-6 border-b border-[var(--line)]">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] block mb-0.5">
+                Weekly Routine Architecture
+              </span>
+              <h3 className="serif text-2xl font-normal">7-Day Training Schedule</h3>
+              <p className="text-xs text-[var(--muted)] mt-0.5">
+                Customize your workout routine for each day from Sunday to Saturday. Add exercises as per your plan.
               </p>
-              <div className="flex flex-wrap justify-center gap-2 mt-5">
-                {[3, 4, 5, 6].map(f => (
-                  <button
-                    key={f}
-                    onClick={() => setWorkoutFrequency(f)}
-                    className="px-4 py-2 rounded-xl bg-[var(--ink)] text-white text-xs font-semibold hover:bg-black transition-colors cursor-pointer"
-                  >
-                    Generate {f}-Day Split
-                  </button>
-                ))}
-              </div>
             </div>
-          ) : (
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[var(--line)] shadow-sm">
-              <div className="flex items-center justify-between border-b border-[var(--line)] pb-4 mb-6">
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
-                    Day Focus
-                  </span>
-                  <h2 className="serif text-3xl font-normal text-[var(--ink)] mt-0.5">
-                    {currentWorkoutDay?.day_name || 'Workout Day'}
-                  </h2>
-                </div>
-                <span className="text-xs font-semibold text-[var(--muted)]">
-                  {currentWorkoutDay?.exercises?.length || 0} Exercises
-                </span>
-              </div>
 
-              {/* Exercises List */}
-              <div className="space-y-3">
-                {currentWorkoutDay?.exercises?.map((we, index) => {
-                  const exName = typeof we.exercise === 'string' ? (we.exercise_details?.name || 'Exercise') : we.exercise.name;
-                  const muscle = we.exercise_details?.muscle_group || 'Compound';
-                  const log = todayWorkoutLogs.find(l => l.workout_exercise === we.id);
-                  const isDone = !!log?.completed;
+            {/* 7-Day Tabs */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-8">
+              {weeklySchedule.map(day => {
+                const isSelected = selectedDayOfWeek === day.day_of_week;
+                const isToday = day.day_of_week === new Date().getDay();
 
-                  return (
-                    <div
-                      key={we.id}
-                      className={`p-4 sm:p-5 rounded-2xl border transition-all ${
-                        isDone
-                          ? 'bg-[var(--sage-light)]/40 border-[var(--sage)]/30'
-                          : 'bg-[#f8f7f4] border border-[var(--line)] hover:border-[var(--accent)]/30'
-                      }`}
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="flex items-start gap-3.5">
-                          <div className="w-7 h-7 rounded-full bg-white border border-[var(--line)] flex items-center justify-center font-bold text-xs text-[var(--ink)] shrink-0">
-                            {index + 1}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-sm font-semibold text-[var(--ink)]">{exName}</h4>
-                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[#ecebe4] text-[var(--muted)] uppercase">
-                                {muscle}
-                              </span>
-                            </div>
-                            <span className="text-xs text-[var(--muted)] font-medium mt-1 block">
-                              Target: {we.target_sets} sets × {we.target_reps} reps · {we.target_weight > 0 ? `${we.target_weight} kg` : 'Bodyweight / Progressive'}
-                            </span>
-                          </div>
-                        </div>
+                return (
+                  <button
+                    key={day.day_of_week}
+                    onClick={() => setSelectedDayOfWeek(day.day_of_week)}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      isSelected
+                        ? 'bg-[var(--ink)] text-white border-[var(--ink)] shadow-md'
+                        : 'bg-[#f8f7f4] text-[var(--ink)] border-[var(--line)] hover:border-[var(--accent)]'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-bold">{DAY_NAMES[day.day_of_week].slice(0, 3)}</span>
+                      {isToday && (
+                        <span className={`text-[9px] px-1 rounded font-bold ${
+                          isSelected ? 'bg-white/20 text-white' : 'bg-[var(--accent)] text-white'
+                        }`}>
+                          Today
+                        </span>
+                      )}
+                    </div>
+                    <span className={`text-[11px] truncate block ${
+                      isSelected ? 'text-white/80' : 'text-[var(--muted)]'
+                    }`}>
+                      {day.day_name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-                        {/* Right Action: Checkmark Complete */}
-                        <div className="flex items-center gap-3 self-end sm:self-auto">
+            {/* Selected Day Schedule Details */}
+            {(() => {
+              const currentDay = weeklySchedule.find(d => d.day_of_week === selectedDayOfWeek) || weeklySchedule[0];
+              const isToday = currentDay.day_of_week === new Date().getDay();
+              const todayRec = workoutRecords[todayStr];
+              const completedList = todayRec?.completed_exercises || [];
+
+              return (
+                <div className="space-y-6">
+                  {/* Day Header & Edit Focus */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-[var(--accent)] uppercase tracking-wider">
+                          {DAY_NAMES[currentDay.day_of_week]} Routine
+                        </span>
+                        {currentDay.is_rest_day && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#eae7e1] text-[var(--muted)]">
+                            Rest Day
+                          </span>
+                        )}
+                      </div>
+
+                      {editingDayName === currentDay.day_of_week ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <input
+                            type="text"
+                            value={tempDayName}
+                            onChange={e => setTempDayName(e.target.value)}
+                            placeholder="e.g. Chest & Triceps, Leg Day..."
+                            className="px-3 py-1.5 rounded-xl bg-white border border-[var(--line)] text-sm font-semibold text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"
+                          />
                           <button
-                            onClick={() => toggleWorkoutExercise(we.id, !isDone)}
-                            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                              isDone
-                                ? 'bg-[var(--sage)] text-white shadow-sm'
-                                : 'bg-white text-[var(--ink)] border border-[var(--line)] hover:bg-[#f1f0ea]'
-                            }`}
+                            onClick={() => {
+                              updateWorkoutDayPlan(currentDay.day_of_week, {
+                                day_name: tempDayName.trim() || currentDay.day_name,
+                              });
+                              setEditingDayName(null);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-[var(--ink)] text-white text-xs font-bold cursor-pointer"
                           >
-                            <Check size={14} />
-                            <span>{isDone ? 'Completed' : 'Mark Done'}</span>
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingDayName(null)}
+                            className="px-2 py-1.5 text-xs text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+                          >
+                            Cancel
                           </button>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <h4 className="serif text-2xl font-normal text-[var(--ink)]">{currentDay.day_name}</h4>
+                          <button
+                            onClick={() => {
+                              setTempDayName(currentDay.day_name);
+                              setEditingDayName(currentDay.day_of_week);
+                            }}
+                            className="p-1 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+                            title="Edit Focus Name"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => updateWorkoutDayPlan(currentDay.day_of_week, { is_rest_day: !currentDay.is_rest_day })}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                          currentDay.is_rest_day
+                            ? 'bg-[var(--ink)] text-white border-[var(--ink)]'
+                            : 'bg-white text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]'
+                        }`}
+                      >
+                        {currentDay.is_rest_day ? '✓ Marked as Rest Day' : 'Mark as Rest Day'}
+                      </button>
+
+                      <button
+                        onClick={() => setIsAddingExercise(currentDay.day_of_week)}
+                        className="px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Plus size={14} />
+                        <span>Add Exercise</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Add Exercise Modal / Form */}
+                  {isAddingExercise === currentDay.day_of_week && (
+                    <form
+                      onSubmit={e => handleAddExerciseSubmit(currentDay.day_of_week, e)}
+                      className="p-5 rounded-2xl bg-white border-2 border-[var(--accent)]/30 shadow-md space-y-4"
+                    >
+                      <div className="flex justify-between items-center pb-2 border-b border-[var(--line)]">
+                        <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">
+                          Add Exercise to {DAY_NAMES[currentDay.day_of_week]}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingExercise(null)}
+                          className="text-[var(--muted)] hover:text-[var(--ink)]"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+
+                      <div className="grid sm:grid-cols-4 gap-3">
+                        <div className="sm:col-span-2">
+                          <label className="text-[10px] font-bold text-[var(--muted)] uppercase block mb-1">Exercise Name</label>
+                          <input
+                            type="text"
+                            value={newExName}
+                            onChange={e => setNewExName(e.target.value)}
+                            placeholder="e.g. Incline Dumbbell Press"
+                            className="w-full px-3 py-2 rounded-xl bg-[#f8f7f4] border border-[var(--line)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-[var(--muted)] uppercase block mb-1">Sets × Reps</label>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              value={newExSets}
+                              onChange={e => setNewExSets(e.target.value)}
+                              placeholder="3"
+                              className="w-14 px-2 py-2 rounded-xl bg-[#f8f7f4] border border-[var(--line)] text-xs text-center"
+                            />
+                            <span className="text-xs text-[var(--muted)]">×</span>
+                            <input
+                              type="text"
+                              value={newExReps}
+                              onChange={e => setNewExReps(e.target.value)}
+                              placeholder="10"
+                              className="w-16 px-2 py-2 rounded-xl bg-[#f8f7f4] border border-[var(--line)] text-xs text-center"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-[var(--muted)] uppercase block mb-1">Target Weight (kg)</label>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={newExWeight}
+                            onChange={e => setNewExWeight(e.target.value)}
+                            placeholder="optional"
+                            className="w-full px-3 py-2 rounded-xl bg-[#f8f7f4] border border-[var(--line)] text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingExercise(null)}
+                          className="px-4 py-2 rounded-xl text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-5 py-2 rounded-xl bg-[var(--accent)] text-white text-xs font-bold cursor-pointer"
+                        >
+                          Add to Routine
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Exercises List or Empty State */}
+                  {currentDay.exercises.length === 0 ? (
+                    <div className="py-12 px-6 text-center max-w-md mx-auto">
+                      <div className="w-12 h-12 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] text-[var(--muted)] flex items-center justify-center mx-auto mb-3">
+                        <Dumbbell size={20} />
+                      </div>
+                      <h5 className="serif text-lg font-normal text-[var(--ink)] mb-1">
+                        No exercises planned for {DAY_NAMES[currentDay.day_of_week]}
+                      </h5>
+                      <p className="text-xs text-[var(--muted)] leading-relaxed mb-4">
+                        Build your routine by adding compound or isolation exercises for this day.
+                      </p>
+                      <button
+                        onClick={() => setIsAddingExercise(currentDay.day_of_week)}
+                        className="px-4 py-2 rounded-xl bg-[var(--ink)] text-white text-xs font-semibold hover:bg-black transition-all cursor-pointer inline-flex items-center gap-1.5"
+                      >
+                        <Plus size={13} />
+                        <span>+ Add First Exercise</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {currentDay.exercises.map(ex => {
+                        const isDone = isToday && completedList.includes(ex.id);
+
+                        return (
+                          <div
+                            key={ex.id}
+                            className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                              isDone
+                                ? 'bg-emerald-50/50 border-emerald-200'
+                                : 'bg-[#f8f7f4] border-[var(--line)] hover:border-[var(--line-focus)]'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3.5">
+                              {isToday && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleExerciseCompleted(todayStr, ex.id)}
+                                  className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
+                                    isDone
+                                      ? 'bg-emerald-600 border-emerald-600 text-white'
+                                      : 'bg-white border-[var(--line)] text-transparent hover:border-[var(--accent)]'
+                                  }`}
+                                >
+                                  <Check size={11} className={isDone ? 'block' : 'hidden'} />
+                                </button>
+                              )}
+                              <div>
+                                <span className={`text-sm font-semibold ${isDone ? 'line-through text-[var(--muted)]' : 'text-[var(--ink)]'}`}>
+                                  {ex.name}
+                                </span>
+                                <div className="flex items-center gap-2 text-xs text-[var(--muted)] mt-0.5">
+                                  <span>{ex.target_sets || 3} sets × {ex.target_reps || '8-12'}</span>
+                                  {ex.target_weight ? (
+                                    <span>· {ex.target_weight} kg target</span>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {isToday && (
+                                <button
+                                  onClick={() => toggleExerciseCompleted(todayStr, ex.id)}
+                                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                                    isDone
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : 'bg-white border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
+                                  }`}
+                                >
+                                  {isDone ? 'Done ✓' : 'Mark Done'}
+                                </button>
+                              )}
+                              <button
+                                onClick={() => deleteExerciseFromDay(currentDay.day_of_week, ex.id)}
+                                className="p-1.5 rounded-lg text-[var(--muted)] hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                title="Delete exercise"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* 4. PROGRESS TAB */}
+      {/* TAB 3: WEIGHT JOURNEY */}
       {/* ========================================================================= */}
-      {activeTab === 'progress' && (
-        <div className="space-y-8 animate-fadeIn">
-          {/* Top Log Weight Card & Summary */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Weight Checkin Form (5 cols) */}
-            <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
-              <h3 className="serif text-2xl font-normal text-[var(--ink)] mb-4">Log Weight Check-in</h3>
-              <form onSubmit={handleLogWeightSubmit} className="space-y-4">
+      {activeTab === 'weight' && (
+        <div className="space-y-8">
+          {/* Header Stats Banner */}
+          <div className="grid sm:grid-cols-3 gap-6">
+            <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] block mb-1">
+                Current Baseline
+              </span>
+              <span className="text-3xl font-bold text-[var(--ink)]">
+                {healthProfile.current_weight > 0 ? `${healthProfile.current_weight} kg` : '--'}
+              </span>
+              <p className="text-xs text-[var(--muted)] mt-1">Latest logged check-in</p>
+            </div>
+
+            <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] block mb-1">
+                Target Goal Weight
+              </span>
+              <span className="text-3xl font-bold text-[var(--accent)]">
+                {healthProfile.goal_weight > 0 ? `${healthProfile.goal_weight} kg` : '--'}
+              </span>
+              <p className="text-xs text-[var(--muted)] mt-1">Physical bodyweight goal</p>
+            </div>
+
+            <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] block mb-1">
+                Total Check-Ins
+              </span>
+              <span className="text-3xl font-bold text-[var(--ink)]">
+                {weightCheckins.length}
+              </span>
+              <p className="text-xs text-[var(--muted)] mt-1">Recorded weigh-in milestones</p>
+            </div>
+          </div>
+
+          {/* Form Row: Log Weight & Set Goal Weight */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Log Weight */}
+            <form onSubmit={handleLogWeightSubmit} className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm space-y-4">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] block">
+                Record New Weigh-In
+              </span>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
-                    Weight (kg)
-                  </label>
+                  <label className="text-xs font-semibold text-[var(--muted)] block mb-1">Weight (kg)</label>
                   <input
                     type="number"
                     step="0.1"
-                    min="30"
-                    max="200"
-                    placeholder="e.g. 70.5"
                     value={weightInput}
                     onChange={e => setWeightInput(e.target.value)}
-                    className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
+                    placeholder="e.g. 72.5"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#f8f7f4] border border-[var(--line)] text-sm focus:outline-none focus:border-[var(--accent)] font-semibold"
                     required
                   />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
-                    Date
-                  </label>
+                  <label className="text-xs font-semibold text-[var(--muted)] block mb-1">Date</label>
                   <input
                     type="date"
                     value={weightDateInput}
                     onChange={e => setWeightDateInput(e.target.value)}
-                    className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#f8f7f4] border border-[var(--line)] text-sm focus:outline-none focus:border-[var(--accent)]"
+                    required
                   />
                 </div>
-
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
-                    Notes (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Fasted morning weigh-in"
-                    value={weightNotesInput}
-                    onChange={e => setWeightNotesInput(e.target.value)}
-                    className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-2.5 rounded-xl bg-[var(--ink)] hover:bg-black text-white font-semibold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
-                >
-                  Save Check-in
-                </button>
-              </form>
-            </div>
-
-            {/* Weight Journey Stats (7 cols) */}
-            <div className="lg:col-span-7 bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
+              </div>
               <div>
-                <h3 className="serif text-2xl font-normal text-[var(--ink)] mb-4">Progression Metrics</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
-                    <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Start</span>
-                    <span className="serif text-xl font-normal text-[var(--ink)] mt-0.5 block">
-                      {startingWeight > 0 ? `${startingWeight} kg` : '--'}
-                    </span>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-[var(--accent-subtle)] border border-[var(--accent)]/20">
-                    <span className="text-[10px] font-bold text-[var(--accent)] uppercase block">Current</span>
-                    <span className="serif text-xl font-normal text-[var(--ink)] mt-0.5 block">
-                      {currentWeight > 0 ? `${currentWeight} kg` : '--'}
-                    </span>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
-                    <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Gained</span>
-                    <span className="serif text-xl font-normal text-[var(--sage)] mt-0.5 block">
-                      {totalWeightChange !== 0 ? `${totalWeightChange > 0 ? '+' : ''}${totalWeightChange} kg` : '--'}
-                    </span>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
-                    <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Target</span>
-                    <span className="serif text-xl font-normal text-[var(--ink)] mt-0.5 block">
-                      {goalWeight > 0 ? `${goalWeight} kg` : '--'}
-                    </span>
-                  </div>
-                </div>
+                <label className="text-xs font-semibold text-[var(--muted)] block mb-1">Notes (Optional)</label>
+                <input
+                  type="text"
+                  value={weightNotesInput}
+                  onChange={e => setWeightNotesInput(e.target.value)}
+                  placeholder="e.g. Fasted morning weigh-in, post-workout..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#f8f7f4] border border-[var(--line)] text-sm focus:outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+              >
+                Log Weight Entry
+              </button>
+            </form>
+
+            {/* Set Goal Weight */}
+            <form onSubmit={handleSetGoalWeight} className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm space-y-4 flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] block mb-1">
+                  Target Physique Goal
+                </span>
+                <p className="text-xs text-[var(--muted)]">
+                  Set your target body weight in kg. LifeOS will plot a reference target curve against your progress.
+                </p>
               </div>
 
-              {/* Trend Chart */}
-              <div className="mt-6 pt-4 border-t border-[var(--line)]">
-                <span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block mb-3">
-                  Historical Weight Trend (kg)
-                </span>
-                {weightChartData.length === 0 ? (
-                  <div className="h-44 w-full flex flex-col items-center justify-center bg-[#f8f7f4] rounded-2xl border border-dashed border-[var(--line)] text-center p-4">
-                    <Scale size={20} className="text-[var(--muted)] mb-1.5" />
-                    <p className="text-xs font-semibold text-[var(--ink)]">No Weight History Logged</p>
-                    <p className="text-[11px] text-[var(--muted)] mt-0.5">Log your weigh-ins on the left to plot your curve.</p>
-                  </div>
-                ) : (
-                  <div className="h-44 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={weightChartData}>
-                        <defs>
-                          <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="var(--accent)" stopOpacity={0.0} />
-                          </linearGradient>
-                        </defs>
-                        <XAxis dataKey="date" stroke="#797d77" fontSize={11} tickLine={false} axisLine={false} />
-                        <YAxis domain={['dataMin - 1', 'dataMax + 2']} stroke="#797d77" fontSize={11} tickLine={false} axisLine={false} />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: '#181a18',
-                            borderRadius: '12px',
-                            border: 'none',
-                            color: '#fff',
-                            fontSize: '12px',
-                          }}
-                        />
-                        {goalWeight > 0 && (
-                          <ReferenceLine y={goalWeight} stroke="#75926e" strokeDasharray="3 3" label={{ value: 'Target', position: 'insideTopRight', fill: '#75926e', fontSize: 10 }} />
-                        )}
-                        <Area type="monotone" dataKey="weight" stroke="var(--accent)" strokeWidth={2.5} fill="url(#weightGrad)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
+              <div>
+                <label className="text-xs font-semibold text-[var(--muted)] block mb-1">Target Weight (kg)</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={goalWeightInput}
+                  onChange={e => setGoalWeightInput(e.target.value)}
+                  placeholder="e.g. 75.0"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#f8f7f4] border border-[var(--line)] text-sm focus:outline-none focus:border-[var(--accent)] font-semibold"
+                  required
+                />
               </div>
-            </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl bg-[var(--ink)] hover:bg-black text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+              >
+                Update Target Goal
+              </button>
+            </form>
           </div>
 
-          {/* Historical Log Entries */}
-          <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
-            <h3 className="serif text-2xl font-normal text-[var(--ink)] mb-4">Recent Check-in Logs</h3>
-            {weightCheckins.length === 0 ? (
-              <div className="p-8 text-center bg-[#f8f7f4] rounded-2xl border border-dashed border-[var(--line)]">
-                <p className="text-xs text-[var(--muted)]">No check-in logs recorded yet. Log your morning weigh-in to build your history.</p>
+          {/* Weight History Chart & Logs */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[var(--line)] shadow-sm">
+            <div className="pb-6 mb-6 border-b border-[var(--line)]">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] block mb-0.5">
+                Physical Compounding
+              </span>
+              <h3 className="serif text-2xl font-normal">Weight Progression Curve</h3>
+            </div>
+
+            {weightChartData.length === 0 ? (
+              <div className="py-14 px-6 text-center max-w-md mx-auto">
+                <div className="w-12 h-12 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] text-[var(--muted)] flex items-center justify-center mx-auto mb-3">
+                  <Scale size={20} />
+                </div>
+                <h5 className="serif text-lg font-normal text-[var(--ink)] mb-1">
+                  No weigh-in entries recorded yet
+                </h5>
+                <p className="text-xs text-[var(--muted)] leading-relaxed">
+                  Log your baseline weight above to start tracking your physique progress and trajectory over time.
+                </p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {weightCheckins.map(w => (
-                  <div
-                    key={w.id}
-                    className="flex items-center justify-between p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] hover:border-[var(--accent)]/30 transition-all"
-                  >
-                    <div className="flex items-center gap-4">
-                      <span className="serif text-lg font-normal text-[var(--ink)]">{w.weight} kg</span>
-                      <span className="text-xs text-[var(--muted)]">{w.date}</span>
-                      {w.notes && <span className="text-xs text-[var(--muted)] italic">· {w.notes}</span>}
-                    </div>
-                    <button
-                      onClick={() => deleteWeightCheckin(w.id)}
-                      className="p-1.5 rounded-lg text-[var(--muted)] hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+              <div>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={weightChartData}>
+                      <defs>
+                        <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#5f805d" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#5f805d" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="date" stroke="#888" fontSize={11} tickLine={false} />
+                      <YAxis domain={['dataMin - 2', 'dataMax + 2']} stroke="#888" fontSize={11} tickLine={false} />
+                      <Tooltip />
+                      {healthProfile.goal_weight > 0 && (
+                        <ReferenceLine
+                          y={healthProfile.goal_weight}
+                          stroke="#e66b4b"
+                          strokeDasharray="3 3"
+                          label={{ value: 'Target Goal', fill: '#e66b4b', fontSize: 10, position: 'insideTopRight' }}
+                        />
+                      )}
+                      <Area type="monotone" dataKey="weight" stroke="#5f805d" strokeWidth={2.5} fillOpacity={1} fill="url(#weightGrad)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Log history list */}
+                <div className="mt-8 pt-6 border-t border-[var(--line)]">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-3">
+                    Recent Weight Logs
+                  </span>
+                  <div className="space-y-2">
+                    {weightCheckins.map(w => (
+                      <div key={w.id} className="flex items-center justify-between p-3 rounded-xl bg-[#f8f7f4] border border-[var(--line)]">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-bold text-[var(--ink)]">{w.weight} kg</span>
+                          <span className="text-xs text-[var(--muted)]">{w.date}</span>
+                          {w.notes && <span className="text-xs text-[var(--muted)] italic">({w.notes})</span>}
+                        </div>
+                        <button
+                          onClick={() => deleteWeightCheckin(w.id)}
+                          className="p-1 text-[var(--muted)] hover:text-rose-600 transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
             )}
           </div>
         </div>
       )}
-
-      {/* ========================================================================= */}
-      {/* 5. SETTINGS TAB */}
-      {/* ========================================================================= */}
-      {activeTab === 'settings' && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[var(--line)] shadow-sm max-w-3xl mx-auto animate-fadeIn">
-          <div className="border-b border-[var(--line)] pb-4 mb-6">
-            <h2 className="serif text-3xl font-normal text-[var(--ink)]">Health Profile & Macro Targets</h2>
-            <p className="text-xs text-[var(--muted)] mt-1">
-              Configure your biological stats, training frequency, and daily nutritional targets.
-            </p>
-          </div>
-
-          <form onSubmit={handleSaveHealthSettings} className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
-                  Current Weight (kg)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  placeholder="e.g. 70.0"
-                  value={setupWeight}
-                  onChange={e => setSetupWeight(e.target.value)}
-                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
-                  Goal Weight (kg)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  placeholder="e.g. 78.0"
-                  value={setupGoalWeight}
-                  onChange={e => setSetupGoalWeight(e.target.value)}
-                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
-                  Height (cm)
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g. 178"
-                  value={setupHeight}
-                  onChange={e => setSetupHeight(e.target.value)}
-                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
-                  Age
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g. 25"
-                  value={setupAge}
-                  onChange={e => setSetupAge(e.target.value)}
-                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
-                  Daily Calorie Target (kcal)
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g. 2500"
-                  value={setupCalories}
-                  onChange={e => setSetupCalories(e.target.value)}
-                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-1.5">
-                  Daily Protein Target (grams)
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g. 140"
-                  value={setupProtein}
-                  onChange={e => setSetupProtein(e.target.value)}
-                  className="w-full bg-[#f8f7f4] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--ink)] font-semibold focus:outline-none focus:border-[var(--accent)]"
-                />
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-[var(--line)] flex justify-end">
-              <button
-                type="submit"
-                className="px-6 py-2.5 rounded-xl bg-[var(--ink)] hover:bg-black text-white font-semibold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
-              >
-                Save Health Profile
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* FOOD LIBRARY MODAL */}
-      {/* ========================================================================= */}
-      <AnimatePresence>
-        {isFoodLibraryOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl border border-[var(--line)] shadow-2xl max-w-2xl w-full p-6 sm:p-7 max-h-[85vh] flex flex-col"
-            >
-              <div className="flex items-center justify-between border-b border-[var(--line)] pb-4 mb-4">
-                <div>
-                  <h3 className="serif text-2xl font-normal text-[var(--ink)]">Food Library</h3>
-                  <p className="text-xs text-[var(--muted)] mt-0.5">Manage your staples and custom nutritional foods</p>
-                </div>
-                <button
-                  onClick={() => setIsFoodLibraryOpen(false)}
-                  className="p-1.5 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[#f8f7f4] cursor-pointer"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-semibold text-[var(--muted)] uppercase">{foods.length} items registered</span>
-                <button
-                  onClick={() => setIsAddFoodOpen(!isAddFoodOpen)}
-                  className="text-xs font-semibold text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <Plus size={13} /> {isAddFoodOpen ? 'Close Form' : 'Add Custom Food'}
-                </button>
-              </div>
-
-              {/* Add Custom Food inline form */}
-              {isAddFoodOpen && (
-                <form onSubmit={handleAddCustomFood} className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] mb-4 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[10px] font-semibold text-[var(--muted)] uppercase block mb-1">Name</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Greek Yogurt (200g)"
-                        value={newFoodName}
-                        onChange={e => setNewFoodName(e.target.value)}
-                        className="w-full bg-white border border-[var(--line)] rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)]"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-semibold text-[var(--muted)] uppercase block mb-1">Serving Desc</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 1 bowl (200g)"
-                        value={newFoodServing}
-                        onChange={e => setNewFoodServing(e.target.value)}
-                        className="w-full bg-white border border-[var(--line)] rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)]"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-semibold text-[var(--muted)] uppercase block mb-1">Calories (kcal)</label>
-                      <input
-                        type="number"
-                        placeholder="e.g. 130"
-                        value={newFoodCals}
-                        onChange={e => setNewFoodCals(e.target.value)}
-                        className="w-full bg-white border border-[var(--line)] rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)]"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-semibold text-[var(--muted)] uppercase block mb-1">Protein (g)</label>
-                      <input
-                        type="number"
-                        placeholder="e.g. 20"
-                        value={newFoodProtein}
-                        onChange={e => setNewFoodProtein(e.target.value)}
-                        className="w-full bg-white border border-[var(--line)] rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)]"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <label className="flex items-center gap-2 text-xs font-semibold text-[var(--ink)] cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newFoodIsStaple}
-                        onChange={e => setNewFoodIsStaple(e.target.checked)}
-                        className="rounded text-[var(--accent)]"
-                      />
-                      <span>Mark as 1-Tap Staple</span>
-                    </label>
-                    <button
-                      type="submit"
-                      className="px-4 py-1.5 rounded-xl bg-[var(--ink)] text-white text-xs font-semibold cursor-pointer"
-                    >
-                      Save Food
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* Foods List */}
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-                {foods.length === 0 ? (
-                  <div className="p-8 text-center bg-[#f8f7f4] rounded-2xl border border-dashed border-[var(--line)]">
-                    <p className="text-xs text-[var(--muted)]">Your food library is currently empty. Click "Add Custom Food" above to add meals and ingredients!</p>
-                  </div>
-                ) : (
-                  foods.map(f => (
-                    <div
-                      key={f.id}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-[var(--ink)]">{f.name}</span>
-                          {f.is_staple && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--accent-subtle)] text-[var(--accent)] uppercase">
-                              Staple
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[11px] text-[var(--muted)]">
-                          {f.serving_description} · {f.calories} kcal · {f.protein}g P · {f.carbs}g C · {f.fat}g F
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => deleteFood(f.id)}
-                        className="p-1 rounded text-[var(--muted)] hover:text-red-600 cursor-pointer"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

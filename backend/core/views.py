@@ -18,6 +18,8 @@ from .models import (
     HealthProfile,
     Food,
     FoodLog,
+    DailyMeal,
+    DailyWorkoutLog,
     WeightCheckin,
     WorkoutPlan,
     WorkoutDay,
@@ -91,6 +93,20 @@ class FoodLogSerializer(ModelSerializer):
         model = FoodLog
         fields = '__all__'
         read_only_fields = ['id', 'user', 'logged_at', 'created_at', 'updated_at']
+
+
+class DailyMealSerializer(ModelSerializer):
+    class Meta:
+        model = DailyMeal
+        fields = '__all__'
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+
+
+class DailyWorkoutLogSerializer(ModelSerializer):
+    class Meta:
+        model = DailyWorkoutLog
+        fields = '__all__'
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
 
 
 class WeightCheckinSerializer(ModelSerializer):
@@ -411,6 +427,30 @@ class FoodLogViewSet(BaseUserOwnedViewSet):
         return qs.order_by('-logged_at')
 
 
+class DailyMealViewSet(BaseUserOwnedViewSet):
+    model = DailyMeal
+    serializer_class = DailyMealSerializer
+
+    def get_queryset(self):
+        qs = DailyMeal.objects.filter(user=self.request.user)
+        date_param = self.request.query_params.get('date')
+        if date_param:
+            qs = qs.filter(date=date_param)
+        return qs.order_by('date', 'order', 'created_at')
+
+
+class DailyWorkoutLogViewSet(BaseUserOwnedViewSet):
+    model = DailyWorkoutLog
+    serializer_class = DailyWorkoutLogSerializer
+
+    def get_queryset(self):
+        qs = DailyWorkoutLog.objects.filter(user=self.request.user)
+        date_param = self.request.query_params.get('date')
+        if date_param:
+            qs = qs.filter(date=date_param)
+        return qs.order_by('-date')
+
+
 class WeightCheckinViewSet(BaseUserOwnedViewSet):
     model = WeightCheckin
     serializer_class = WeightCheckinSerializer
@@ -649,39 +689,26 @@ class BootstrapView(APIView):
 
         # 2. Health Entities
         profile, _ = HealthProfile.objects.get_or_create(user=user)
-        foods = list(Food.objects.filter(user=user))
-        today_food_logs = list(FoodLog.objects.filter(user=user, date=today).select_related('food'))
+        daily_meals_today = list(DailyMeal.objects.filter(user=user, date=today))
+        daily_workout_logs = list(DailyWorkoutLog.objects.filter(user=user).order_by('-date')[:60])
         weight_checkins = list(WeightCheckin.objects.filter(user=user).order_by('-date')[:30])
-        daily_status, _ = DailyHealthStatus.objects.get_or_create(user=user, date=today)
 
         # Active workout plan and today's workout
         active_plan = WorkoutPlan.objects.filter(user=user, is_active=True).prefetch_related('days__exercises__exercise').first()
         today_dow = today.weekday()  # 0=Monday
         today_workout_day = None
         if active_plan:
-            # Match day of week or closest day
             today_workout_day = active_plan.days.filter(day_of_week=today_dow).first()
             if not today_workout_day and active_plan.days.exists():
-                # Fallback to day modulo count
                 day_count = active_plan.days.count()
                 if day_count > 0:
                     today_workout_day = active_plan.days.all()[today_dow % day_count]
 
-        today_workout_logs = list(WorkoutLog.objects.filter(user=user, date=today).select_related('workout_exercise__exercise'))
+        today_workout_exercise_logs = list(WorkoutLog.objects.filter(user=user, date=today).select_related('workout_exercise__exercise'))
+        today_workout_record = next((l for l in daily_workout_logs if l.date == today), None)
+        today_workout_completed = today_workout_record.completed if today_workout_record else False
 
-        # 3. Macro Calculations for Today
-        total_cals = 0.0
-        total_prot = 0.0
-        total_carbs = 0.0
-        total_fat = 0.0
-        for log in today_food_logs:
-            s = float(log.servings)
-            total_cals += float(log.food.calories) * s
-            total_prot += float(log.food.protein) * s
-            total_carbs += float(log.food.carbs) * s
-            total_fat += float(log.food.fat) * s
-
-        # 4. LifeScore Calculation (3 Pillars: Tasks, Habits, Health)
+        # 3. LifeScore Calculation (3 Pillars: Tasks, Habits, Health)
         tasks_total = len(tasks)
         tasks_completed = sum(1 for t in tasks if t.completed)
         task_score = (tasks_completed / tasks_total * 100.0) if tasks_total > 0 else 85.0
@@ -695,22 +722,17 @@ class BootstrapView(APIView):
                 habit_completions_today += 1
         habit_score = (habit_completions_today / habit_count * 100.0) if habit_count > 0 else 80.0
 
-        # Health Consistency Score
-        nutrition_adh = min(100.0, (total_cals / profile.target_calories * 100.0)) if profile.target_calories > 0 else 0
-        # Workout completion
-        workout_exercises_today = today_workout_day.exercises.count() if today_workout_day else 0
-        workout_done_today = sum(1 for wl in today_workout_logs if wl.completed)
-        workout_adh = (workout_done_today / workout_exercises_today * 100.0) if workout_exercises_today > 0 else 100.0
-        # Hydration
-        hydration_adh = min(100.0, (daily_status.water_ml / profile.target_water_ml * 100.0)) if profile.target_water_ml > 0 else 0
+        # Health Consistency Score (Meals adherence + Workout completion)
+        meals_total = len(daily_meals_today)
+        meals_eaten = sum(1 for m in daily_meals_today if m.completed)
+        meals_adh = (meals_eaten / meals_total * 100.0) if meals_total > 0 else 90.0
 
-        health_score = calculate_health_consistency_score(
-            nutrition_adherence=nutrition_adh,
-            workout_completion=workout_adh,
-            hydration_adherence=hydration_adh,
-            creatine_done=daily_status.creatine_completed
+        workout_adh = 100.0 if today_workout_completed else (
+            (sum(1 for wl in today_workout_exercise_logs if wl.completed) / max(1, today_workout_day.exercises.count()) * 100.0)
+            if today_workout_day and today_workout_day.exercises.exists() else 85.0
         )
 
+        health_score = round((meals_adh * 0.5) + (workout_adh * 0.5), 1)
         overall_lifescore = round((task_score * 0.35) + (habit_score * 0.35) + (health_score * 0.30), 1)
 
         user_data = UserSerializer(user).data
@@ -721,23 +743,12 @@ class BootstrapView(APIView):
             'tasks': TaskSerializer(tasks, many=True).data,
             'habits': HabitSerializer(habits, many=True).data,
             'health_profile': HealthProfileSerializer(profile).data,
-            'foods': FoodSerializer(foods, many=True).data,
-            'food_logs_today': FoodLogSerializer(today_food_logs, many=True).data,
+            'daily_meals_today': DailyMealSerializer(daily_meals_today, many=True).data,
+            'daily_workout_logs': DailyWorkoutLogSerializer(daily_workout_logs, many=True).data,
             'weight_checkins': WeightCheckinSerializer(weight_checkins, many=True).data,
             'workout_plan': WorkoutPlanSerializer(active_plan).data if active_plan else None,
             'today_workout_day': WorkoutDaySerializer(today_workout_day).data if today_workout_day else None,
-            'today_workout_logs': WorkoutLogSerializer(today_workout_logs, many=True).data,
-            'daily_health_status': DailyHealthStatusSerializer(daily_status).data,
-            'today_macros': {
-                'calories': round(total_cals, 1),
-                'protein': round(total_prot, 1),
-                'carbs': round(total_carbs, 1),
-                'fat': round(total_fat, 1),
-                'target_calories': profile.target_calories,
-                'target_protein': profile.target_protein,
-                'target_carbs': profile.target_carbs,
-                'target_fat': profile.target_fat,
-            },
+            'today_workout_logs': WorkoutLogSerializer(today_workout_exercise_logs, many=True).data,
             'lifescore': {
                 'overall': overall_lifescore,
                 'tasks_score': round(task_score, 1),
@@ -772,34 +783,25 @@ class AnalyticsView(APIView):
         habits = Habit.objects.filter(user=user, active=True)
         profile, _ = HealthProfile.objects.get_or_create(user=user)
 
-        # 7-day Health and Nutrition data
         seven_days_ago = today - datetime.timedelta(days=6)
-        recent_food_logs = FoodLog.objects.filter(user=user, date__gte=seven_days_ago).select_related('food')
-        recent_checkins = WeightCheckin.objects.filter(user=user, date__gte=seven_days_ago)
-        recent_statuses = DailyHealthStatus.objects.filter(user=user, date__gte=seven_days_ago)
-        recent_workout_logs = WorkoutLog.objects.filter(user=user, date__gte=seven_days_ago)
+        recent_meals = DailyMeal.objects.filter(user=user, date__gte=seven_days_ago)
+        recent_workout_logs = DailyWorkoutLog.objects.filter(user=user, date__gte=seven_days_ago)
 
-        # Build day-by-day health history for charts
         history = []
         for i in range(7):
             d = seven_days_ago + datetime.timedelta(days=i)
-            day_logs = [l for l in recent_food_logs if l.date == d]
-            day_cals = sum(float(l.food.calories) * float(l.servings) for l in day_logs)
-            day_prot = sum(float(l.food.protein) * float(l.servings) for l in day_logs)
-            day_status = next((s for s in recent_statuses if s.date == d), None)
-            water = day_status.water_ml if day_status else 0
-            w_logs = [wl for wl in recent_workout_logs if wl.date == d]
-            w_completed = sum(1 for wl in w_logs if wl.completed)
+            day_meals = [m for m in recent_meals if m.date == d]
+            meals_count = len(day_meals)
+            meals_done = sum(1 for m in day_meals if m.completed)
+            w_log = next((wl for wl in recent_workout_logs if wl.date == d), None)
+            w_completed = 1 if (w_log and w_log.completed) else 0
 
             history.append({
                 'date': d.strftime('%Y-%m-%d'),
                 'day': d.strftime('%a'),
-                'calories': round(day_cals, 0),
-                'protein': round(day_prot, 0),
-                'water_ml': water,
-                'target_calories': profile.target_calories,
-                'target_protein': profile.target_protein,
-                'exercises_completed': w_completed
+                'meals_total': meals_count,
+                'meals_eaten': meals_done,
+                'workout_completed': bool(w_completed),
             })
 
         tasks_total = tasks.count()

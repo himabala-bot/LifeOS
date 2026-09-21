@@ -106,6 +106,35 @@ class FoodLog(Base):
         return f"{self.servings}x {self.food.name} on {self.date}"
 
 
+class DailyMeal(Base):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='daily_meals')
+    name = models.CharField(max_length=250)
+    meal_type = models.CharField(max_length=50, blank=True, default='Meal')
+    date = models.DateField()
+    completed = models.BooleanField(default=False)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['date', 'order', 'created_at']
+
+    def __str__(self):
+        return f"{self.name} on {self.date} ({'Eaten' if self.completed else 'Planned'})"
+
+
+class DailyWorkoutLog(Base):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='daily_workout_logs')
+    date = models.DateField()
+    completed = models.BooleanField(default=False)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ('user', 'date')
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"Workout on {self.date}: {'Done' if self.completed else 'Missed'}"
+
+
 class WeightCheckin(Base):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='weight_checkins')
     date = models.DateField()

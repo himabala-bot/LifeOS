@@ -20,9 +20,9 @@ export default function Home() {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('today');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-  const [quickAddTab, setQuickAddTab] = useState<'task' | 'habit' | 'food' | 'weight' | 'water' | 'workout'>('task');
+  const [quickAddTab, setQuickAddTab] = useState<'task' | 'habit' | 'food' | 'meal' | 'weight' | 'workout'>('task');
 
-  const openQuickAdd = (tab: 'task' | 'habit' | 'food' | 'weight' | 'water' | 'workout' = 'task') => {
+  const openQuickAdd = (tab: 'task' | 'habit' | 'food' | 'meal' | 'weight' | 'workout' = 'task') => {
     setQuickAddTab(tab);
     setIsQuickAddOpen(true);
   };

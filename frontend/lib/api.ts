@@ -151,14 +151,12 @@ export const api = {
     tasks: any[];
     habits: any[];
     health_profile: any;
-    foods: any[];
-    food_logs_today: any[];
+    daily_meals_today?: any[];
+    daily_workout_logs?: any[];
     weight_checkins: any[];
     workout_plan: any;
     today_workout_day: any;
     today_workout_logs: any[];
-    daily_health_status: any;
-    today_macros: any;
     lifescore: any;
     analytics: any;
   }>('/api/bootstrap/'),
@@ -227,58 +225,36 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
-    onboard: (data: {
-      current_weight: number;
-      goal_weight: number;
-      height_cm: number;
-      age: number;
-      biological_sex: string;
-      activity_level: string;
-      training_focus: string;
-      training_frequency: number;
-      target_calories?: number;
-      target_protein?: number;
-      target_carbs?: number;
-      target_fat?: number;
-      target_water_ml?: number;
-    }) => apiFetch<any>('/api/health/onboard/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
 
-    foods: {
-      list: () => apiFetch<any[]>('/api/health/foods/'),
-      create: (food: {
-        name: string;
-        serving_description: string;
-        calories: number;
-        protein: number;
-        carbs: number;
-        fat: number;
-        is_staple?: boolean;
-      }) => apiFetch<any>('/api/health/foods/', {
-        method: 'POST',
-        body: JSON.stringify(food),
-      }),
-      update: (id: string, updates: any) => apiFetch<any>(`/api/health/foods/${id}/`, {
-        method: 'PATCH',
-        body: JSON.stringify(updates),
-      }),
-      delete: (id: string) => apiFetch(`/api/health/foods/${id}/`, {
+    meals: {
+      list: (date?: string) => apiFetch<any[]>(`/api/health/meals/${date ? `?date=${date}` : ''}`),
+      create: (meal: { name: string; date: string; meal_type?: string; completed?: boolean }) =>
+        apiFetch<any>('/api/health/meals/', {
+          method: 'POST',
+          body: JSON.stringify(meal),
+        }),
+      update: (id: string, updates: Partial<{ name: string; date: string; meal_type: string; completed: boolean }>) =>
+        apiFetch<any>(`/api/health/meals/${id}/`, {
+          method: 'PATCH',
+          body: JSON.stringify(updates),
+        }),
+      delete: (id: string) => apiFetch(`/api/health/meals/${id}/`, {
         method: 'DELETE',
       }),
     },
 
-    foodLogs: {
-      list: (date?: string) => apiFetch<any[]>(`/api/health/food-logs/${date ? `?date=${date}` : ''}`),
-      create: (log: { food: string; date: string; servings: number }) =>
-        apiFetch<any>('/api/health/food-logs/', {
+    dailyWorkoutLogs: {
+      list: () => apiFetch<any[]>('/api/health/daily-workout-logs/'),
+      create: (log: { date: string; completed: boolean; notes?: string }) =>
+        apiFetch<any>('/api/health/daily-workout-logs/', {
           method: 'POST',
           body: JSON.stringify(log),
         }),
-      delete: (id: string) => apiFetch(`/api/health/food-logs/${id}/`, {
-        method: 'DELETE',
-      }),
+      update: (id: string, updates: Partial<{ completed: boolean; notes: string }>) =>
+        apiFetch<any>(`/api/health/daily-workout-logs/${id}/`, {
+          method: 'PATCH',
+          body: JSON.stringify(updates),
+        }),
     },
 
     weight: {

@@ -22,36 +22,25 @@ export function AnalyticsScreen() {
     habits,
     healthProfile,
     weightCheckins,
-    foodLogs,
-    foods,
-    todayMacros,
+    meals,
+    workoutRecords,
     lifeScore,
   } = useData();
 
-  // 7-day Nutrition history for chart
-  const nutrition7dData = Array.from({ length: 7 }, (_, i) => {
+  // 7-day Meal & Workout history for chart
+  const health7dData = Array.from({ length: 7 }, (_, i) => {
     const dStr = getPastDateStr(6 - i);
-    const dateObj = new Date(dStr);
+    const dateObj = new Date(dStr + 'T00:00:00');
     const dayLabel = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
-    const dayLogs = foodLogs.filter(fl => fl.date === dStr);
-
-    let cals = 0;
-    let prot = 0;
-    dayLogs.forEach(log => {
-      const f = log.food_details || foods.find(food => food.id === log.food);
-      if (f) {
-        cals += f.calories * log.servings;
-        prot += f.protein * log.servings;
-      }
-    });
+    const dayMeals = meals.filter(m => m.date === dStr);
+    const mealsEaten = dayMeals.filter(m => m.completed).length;
+    const workedOut = workoutRecords[dStr]?.completed ? 1 : 0;
 
     return {
       day: dayLabel,
       date: dStr,
-      calories: Math.round(cals),
-      protein: Math.round(prot),
-      targetCalories: healthProfile.target_calories || 2400,
-      targetProtein: healthProfile.target_protein || 120,
+      mealsEaten: mealsEaten,
+      workedOut: workedOut,
     };
   });
 
@@ -69,7 +58,7 @@ export function AnalyticsScreen() {
 
   for (let i = 0; i < 28; i++) {
     const dStr = getPastDateStr(i);
-    const dayIdx = new Date(dStr).getDay();
+    const dayIdx = new Date(dStr + 'T00:00:00').getDay();
     const dName = dayNames[dayIdx];
     habits.forEach(h => {
       habitDayCount[dName].total++;
@@ -91,7 +80,7 @@ export function AnalyticsScreen() {
   const weightTrendData = sortedCheckins.map(w => ({
     date: new Date(w.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     weight: w.weight,
-    goal: healthProfile.goal_weight || 57.0,
+    goal: healthProfile.goal_weight > 0 ? healthProfile.goal_weight : undefined,
   }));
 
   return (
@@ -134,27 +123,27 @@ export function AnalyticsScreen() {
         </div>
       </div>
 
-      {/* Row 1: Nutrition Macro Consistency & Habit Consistency */}
+      {/* Row 1: Daily Meals & Habit Consistency */}
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* Nutrition 7-Day Consistency */}
+        {/* Meals 7-Day Consistency */}
         <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-xs uppercase tracking-wider font-semibold text-[var(--muted)]">Nutrition & Energy</p>
-              <h3 className="font-semibold text-lg text-[var(--ink)]">7-Day Calorie & Protein Adherence</h3>
+              <p className="text-xs uppercase tracking-wider font-semibold text-[var(--muted)]">Nutrition Consistency</p>
+              <h3 className="font-semibold text-lg text-[var(--ink)]">7-Day Daily Meals Eaten</h3>
             </div>
             <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200">
-              {todayMacros.calories} kcal today
+              Recent 7 Days
             </span>
           </div>
 
           <div className="h-56 w-full pt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={nutrition7dData}>
+              <BarChart data={health7dData}>
                 <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#797d77' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#797d77' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#797d77' }} allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="calories" name="Calories (kcal)" fill="#e66b4b" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="mealsEaten" name="Meals Eaten" fill="#e66b4b" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -194,27 +183,37 @@ export function AnalyticsScreen() {
               <p className="text-xs uppercase tracking-wider font-semibold text-[var(--muted)]">Physical Architecture</p>
               <h3 className="font-semibold text-lg text-[var(--ink)]">Weight Progression Curve</h3>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 bg-[var(--accent-subtle)] text-[var(--accent)] rounded-full">
-              Target: {healthProfile.goal_weight} kg
-            </span>
+            {healthProfile.goal_weight > 0 && (
+              <span className="text-xs font-semibold px-2.5 py-1 bg-[var(--accent-subtle)] text-[var(--accent)] rounded-full">
+                Target: {healthProfile.goal_weight} kg
+              </span>
+            )}
           </div>
 
           <div className="h-56 w-full pt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={weightTrendData}>
-                <defs>
-                  <linearGradient id="analyticsWeightGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="var(--accent)" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="date" stroke="#9ca3af" fontSize={11} tickLine={false} />
-                <YAxis domain={['dataMin - 1', 'dataMax + 2']} stroke="#9ca3af" fontSize={11} tickLine={false} />
-                <Tooltip />
-                <ReferenceLine y={healthProfile.goal_weight} stroke="#10b981" strokeDasharray="3 3" />
-                <Area type="monotone" dataKey="weight" name="Weight (kg)" stroke="var(--accent)" strokeWidth={2.5} fill="url(#analyticsWeightGrad)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {weightTrendData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-xs text-[var(--muted)]">
+                No weight check-ins recorded yet.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={weightTrendData}>
+                  <defs>
+                    <linearGradient id="analyticsWeightGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--accent)" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="date" stroke="#9ca3af" fontSize={11} tickLine={false} />
+                  <YAxis domain={['dataMin - 1', 'dataMax + 2']} stroke="#9ca3af" fontSize={11} tickLine={false} />
+                  <Tooltip />
+                  {healthProfile.goal_weight > 0 && (
+                    <ReferenceLine y={healthProfile.goal_weight} stroke="#10b981" strokeDasharray="3 3" />
+                  )}
+                  <Area type="monotone" dataKey="weight" name="Weight (kg)" stroke="var(--accent)" strokeWidth={2.5} fill="url(#analyticsWeightGrad)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 

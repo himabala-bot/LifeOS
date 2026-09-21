@@ -13,7 +13,7 @@ import { useData } from '../../context/DataContext';
 
 export function SettingsScreen() {
   const { user, updateProfile, logout } = useAuth();
-  const { healthProfile } = useData();
+  const { healthProfile, workoutStreak, todaysMealsTotalCount } = useData();
 
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -137,19 +137,23 @@ export function SettingsScreen() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
             <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Current Weight</span>
-            <span className="text-base font-bold text-[var(--ink)] mt-0.5 block">{healthProfile.current_weight} kg</span>
+            <span className="text-base font-bold text-[var(--ink)] mt-0.5 block">
+              {healthProfile.current_weight > 0 ? `${healthProfile.current_weight} kg` : '--'}
+            </span>
           </div>
           <div className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
             <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Goal Weight</span>
-            <span className="text-base font-bold text-[var(--ink)] mt-0.5 block">{healthProfile.goal_weight} kg</span>
+            <span className="text-base font-bold text-[var(--ink)] mt-0.5 block">
+              {healthProfile.goal_weight > 0 ? `${healthProfile.goal_weight} kg` : '--'}
+            </span>
           </div>
           <div className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
-            <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Daily Calories</span>
-            <span className="text-base font-bold text-[var(--ink)] mt-0.5 block">{healthProfile.target_calories} kcal</span>
+            <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Workout Streak</span>
+            <span className="text-base font-bold text-[var(--ink)] mt-0.5 block">{workoutStreak} days</span>
           </div>
           <div className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
-            <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Daily Protein</span>
-            <span className="text-base font-bold text-[var(--ink)] mt-0.5 block">{healthProfile.target_protein} g</span>
+            <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Today's Meals</span>
+            <span className="text-base font-bold text-[var(--ink)] mt-0.5 block">{todaysMealsTotalCount} logged</span>
           </div>
         </div>
       </div>

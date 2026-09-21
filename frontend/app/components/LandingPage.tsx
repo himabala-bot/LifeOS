@@ -170,7 +170,7 @@ export function LandingPage() {
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-3">Habits & Physical Check</span>
               <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-xs font-bold text-[var(--ink)]">Hydration & Nutrition (2.5L / 120g P)</span>
+                  <span className="text-xs font-bold text-[var(--ink)]">Daily Meals & Training Consistency</span>
                   <span className="text-xs font-bold text-[var(--accent)] flex items-center gap-1">
                     <Flame size={13} /> {demoStreak}d streak
                   </span>
@@ -214,7 +214,7 @@ export function LandingPage() {
               </div>
               <h3 className="serif text-2xl font-normal mb-3">Health & Physical Architecture</h3>
               <p className="text-sm text-[var(--muted)] leading-relaxed">
-                Track lean muscle progression, 1-tap food staple logging, daily macro targets (Calories, Protein, Carbs, Fat), hydration, and creatine.
+                Log daily meals, build custom 7-day workout splits from Sunday to Saturday, monitor workout streaks, and track bodyweight progression.
               </p>
             </div>
             <div className="mt-8 pt-4 border-t border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">

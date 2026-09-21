@@ -6,11 +6,11 @@ import {
   X,
   ListTodo,
   Flame,
-  Apple,
+  Utensils,
   Scale,
-  Droplets,
   Dumbbell,
   Plus,
+  Check,
 } from 'lucide-react';
 import { useData, getTodayDateStr } from '../context/DataContext';
 import { TaskPriority, TaskTag, HabitCategory, HabitFrequency } from '../types';
@@ -18,23 +18,22 @@ import { TaskPriority, TaskTag, HabitCategory, HabitFrequency } from '../types';
 interface QuickAddModalProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultTab?: 'task' | 'habit' | 'food' | 'weight' | 'water' | 'workout';
+  defaultTab?: 'task' | 'habit' | 'food' | 'meal' | 'weight' | 'workout';
 }
 
 export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAddModalProps) {
   const {
     addTask,
     addHabit,
-    foods,
-    logFood,
+    addMeal,
     logWeight,
-    logWater,
-    workoutPlan,
-    todayWorkoutDay,
-    toggleWorkoutExercise,
+    todaysWorkoutDay,
+    toggleWorkoutDayCompleted,
+    isTodayWorkoutCompleted,
   } = useData();
 
-  const [tab, setTab] = useState<'task' | 'habit' | 'food' | 'weight' | 'water' | 'workout'>(defaultTab);
+  const initialTab = defaultTab === 'food' ? 'meal' : (defaultTab as 'task' | 'habit' | 'meal' | 'weight' | 'workout');
+  const [tab, setTab] = useState<'task' | 'habit' | 'meal' | 'weight' | 'workout'>(initialTab);
 
   // Task form
   const [taskTitle, setTaskTitle] = useState('');
@@ -47,22 +46,15 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
   const [habitCategory, setHabitCategory] = useState<HabitCategory>('Health');
   const [habitFreq, setHabitFreq] = useState<HabitFrequency>('daily');
 
-  // Food form
-  const [selectedFoodId, setSelectedFoodId] = useState<string>(foods[0]?.id || '');
-  const [servings, setServings] = useState('1');
+  // Meal form
+  const [mealName, setMealName] = useState('');
+  const [mealType, setMealType] = useState('Meal');
+  const [mealDate, setMealDate] = useState(getTodayDateStr());
 
   // Weight form
   const [weight, setWeight] = useState('');
   const [weightDate, setWeightDate] = useState(getTodayDateStr());
   const [weightNotes, setWeightNotes] = useState('');
-
-  // Water form
-  const [waterAmount, setWaterAmount] = useState('250');
-
-  // Workout form
-  const [selectedWorkoutExerciseId, setSelectedWorkoutExerciseId] = useState<string>(
-    todayWorkoutDay?.exercises?.[0]?.id || ''
-  );
 
   if (!isOpen) return null;
 
@@ -91,12 +83,16 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
     onClose();
   };
 
-  const handleLogFood = (e: React.FormEvent) => {
+  const handleCreateMeal = (e: React.FormEvent) => {
     e.preventDefault();
-    const foodId = selectedFoodId || foods[0]?.id;
-    if (!foodId) return;
-    const s = parseFloat(servings) || 1.0;
-    logFood(foodId, s, getTodayDateStr());
+    if (!mealName.trim()) return;
+    addMeal({
+      name: mealName.trim(),
+      date: mealDate,
+      meal_type: mealType,
+      completed: false,
+    });
+    setMealName('');
     onClose();
   };
 
@@ -109,18 +105,8 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
     onClose();
   };
 
-  const handleLogWater = (e: React.FormEvent) => {
-    e.preventDefault();
-    const ml = parseInt(waterAmount) || 250;
-    logWater(ml);
-    onClose();
-  };
-
-  const handleLogWorkout = (e: React.FormEvent) => {
-    e.preventDefault();
-    const weId = selectedWorkoutExerciseId || todayWorkoutDay?.exercises?.[0]?.id;
-    if (!weId) return;
-    toggleWorkoutExercise(weId, true);
+  const handleToggleWorkout = () => {
+    toggleWorkoutDayCompleted(getTodayDateStr());
     onClose();
   };
 
@@ -148,37 +134,36 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-white transition-colors cursor-pointer"
+              className="p-1 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           </div>
 
           {/* Tab Selector */}
-          <div className="px-6 pt-4 pb-2 flex gap-2 overflow-x-auto">
+          <div className="flex border-b border-[var(--line)] bg-[#f1f0ea] p-1 gap-1">
             {[
               { id: 'task', label: 'Task', icon: ListTodo },
               { id: 'habit', label: 'Habit', icon: Flame },
-              { id: 'food', label: 'Food', icon: Apple },
-              { id: 'weight', label: 'Weight', icon: Scale },
-              { id: 'water', label: 'Water', icon: Droplets },
+              { id: 'meal', label: 'Meal', icon: Utensils },
               { id: 'workout', label: 'Workout', icon: Dumbbell },
-            ].map(item => {
-              const Icon = item.icon;
-              const isActive = tab === item.id;
+              { id: 'weight', label: 'Weight', icon: Scale },
+            ].map(t => {
+              const Icon = t.icon;
+              const active = tab === t.id;
               return (
                 <button
-                  key={item.id}
-                  onClick={() => setTab(item.id as any)}
-                  className={`
-                    px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer
-                    ${isActive
-                      ? 'bg-[var(--ink)] text-white shadow-sm'
-                      : 'bg-white text-[var(--muted)] border border-[var(--line)] hover:text-[var(--ink)]'}
-                  `}
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTab(t.id as any)}
+                  className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    active
+                      ? 'bg-white text-[var(--ink)] shadow-sm'
+                      : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                  }`}
                 >
-                  <Icon size={14} />
-                  <span>{item.label}</span>
+                  <Icon size={14} className={active ? 'text-[var(--accent)]' : ''} />
+                  <span>{t.label}</span>
                 </button>
               );
             })}
@@ -196,14 +181,14 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                     type="text"
                     value={taskTitle}
                     onChange={e => setTaskTitle(e.target.value)}
-                    placeholder="e.g., Deliver wireframes to client"
+                    placeholder="What needs to be executed?"
                     className="w-full px-4 py-2.5 bg-white rounded-xl border border-[var(--line)] text-sm focus:outline-none focus:border-[var(--accent)]"
                     autoFocus
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
                       Tag
@@ -213,8 +198,8 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                       onChange={e => setTaskTag(e.target.value as TaskTag)}
                       className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs font-medium focus:outline-none"
                     >
-                      {['Work', 'Wellbeing', 'Admin', 'Learning', 'Personal', 'Creative'].map(t => (
-                        <option key={t} value={t}>{t}</option>
+                      {['Work', 'Personal', 'Health', 'Learning', 'Finance', 'Wellbeing'].map(tag => (
+                        <option key={tag} value={tag}>{tag}</option>
                       ))}
                     </select>
                   </div>
@@ -226,26 +211,26 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                     <select
                       value={taskPriority}
                       onChange={e => setTaskPriority(e.target.value as TaskPriority)}
-                      className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs font-medium focus:outline-none capitalize"
+                      className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs font-medium focus:outline-none"
                     >
-                      <option value="urgent">Urgent</option>
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
                       <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
                     </select>
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                      Due Date
-                    </label>
-                    <input
-                      type="date"
-                      value={taskDueDate}
-                      onChange={e => setTaskDueDate(e.target.value)}
-                      className="w-full px-2 py-2 bg-white rounded-xl border border-[var(--line)] text-xs font-medium focus:outline-none"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={taskDueDate}
+                    onChange={e => setTaskDueDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs focus:outline-none"
+                  />
                 </div>
 
                 <button
@@ -319,39 +304,51 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
               </form>
             )}
 
-            {/* FOOD LOG FORM */}
-            {tab === 'food' && (
-              <form onSubmit={handleLogFood} className="space-y-4">
+            {/* MEAL FORM */}
+            {tab === 'meal' && (
+              <form onSubmit={handleCreateMeal} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                    Select Food
-                  </label>
-                  <select
-                    value={selectedFoodId}
-                    onChange={e => setSelectedFoodId(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white rounded-xl border border-[var(--line)] text-xs font-semibold"
-                  >
-                    {foods.map(f => (
-                      <option key={f.id} value={f.id}>
-                        {f.name} ({f.calories} kcal, {f.protein}g P)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                    Servings
+                    What are you eating?
                   </label>
                   <input
-                    type="number"
-                    step="0.25"
-                    min="0.25"
-                    max="10"
-                    value={servings}
-                    onChange={e => setServings(e.target.value)}
-                    className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs font-semibold"
+                    type="text"
+                    value={mealName}
+                    onChange={e => setMealName(e.target.value)}
+                    placeholder="e.g., Oatmeal with blueberries, Grilled chicken bowl"
+                    className="w-full px-4 py-2.5 bg-white rounded-xl border border-[var(--line)] text-sm focus:outline-none focus:border-[var(--accent)]"
+                    autoFocus
+                    required
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
+                      Meal Type
+                    </label>
+                    <select
+                      value={mealType}
+                      onChange={e => setMealType(e.target.value)}
+                      className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs font-semibold"
+                    >
+                      {['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Meal'].map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
+                      Date
+                    </label>
+                    <input
+                      type="date"
+                      value={mealDate}
+                      onChange={e => setMealDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs"
+                    />
+                  </div>
                 </div>
 
                 <button
@@ -359,9 +356,39 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                   className="w-full py-3 rounded-xl bg-[#e66b4b] hover:bg-[#d05c3d] text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-md mt-2 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Plus size={16} />
-                  <span>Log Food</span>
+                  <span>Add Meal to Log</span>
                 </button>
               </form>
+            )}
+
+            {/* WORKOUT FORM */}
+            {tab === 'workout' && (
+              <div className="space-y-5 text-center py-2">
+                <div className="w-12 h-12 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center mx-auto">
+                  <Dumbbell size={22} />
+                </div>
+                <div>
+                  <h4 className="serif text-xl font-normal text-[var(--ink)]">
+                    {todaysWorkoutDay?.day_name || 'Today\'s Training Session'}
+                  </h4>
+                  <p className="text-xs text-[var(--muted)] mt-1">
+                    {todaysWorkoutDay?.is_rest_day ? 'Rest & Recovery Day' : `${todaysWorkoutDay?.exercises?.length || 0} planned exercises for today`}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleToggleWorkout}
+                  className={`w-full py-3.5 rounded-xl text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer ${
+                    isTodayWorkoutCompleted
+                      ? 'bg-emerald-600 hover:bg-emerald-700'
+                      : 'bg-[var(--ink)] hover:bg-black'
+                  }`}
+                >
+                  <Check size={16} />
+                  <span>{isTodayWorkoutCompleted ? 'Workout Marked Completed ✓' : 'Mark Today\'s Workout Completed'}</span>
+                </button>
+              </div>
             )}
 
             {/* WEIGHT FORM */}
@@ -376,7 +403,7 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                     step="0.1"
                     min="30"
                     max="200"
-                    placeholder="e.g., 49.5"
+                    placeholder="e.g., 72.5"
                     value={weight}
                     onChange={e => setWeight(e.target.value)}
                     className="w-full px-4 py-2.5 bg-white rounded-xl border border-[var(--line)] text-sm font-bold"
@@ -385,17 +412,31 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                    Notes
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Morning weigh-in"
-                    value={weightNotes}
-                    onChange={e => setWeightNotes(e.target.value)}
-                    className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
+                      Date
+                    </label>
+                    <input
+                      type="date"
+                      value={weightDate}
+                      onChange={e => setWeightDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
+                      Notes
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Morning weigh-in"
+                      value={weightNotes}
+                      onChange={e => setWeightNotes(e.target.value)}
+                      className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs"
+                    />
+                  </div>
                 </div>
 
                 <button
@@ -404,69 +445,6 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                 >
                   <Plus size={16} />
                   <span>Save Check-in</span>
-                </button>
-              </form>
-            )}
-
-            {/* WATER FORM */}
-            {tab === 'water' && (
-              <form onSubmit={handleLogWater} className="space-y-4">
-                <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                  Quick Log Water
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {['250', '500', '750'].map(ml => (
-                    <button
-                      key={ml}
-                      type="button"
-                      onClick={() => setWaterAmount(ml)}
-                      className={`py-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                        waterAmount === ml
-                          ? 'bg-blue-500 text-white border-blue-500'
-                          : 'bg-white text-[var(--ink)] border-[var(--line)] hover:bg-blue-50'
-                      }`}
-                    >
-                      +{ml} ml
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-md mt-2 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Plus size={16} />
-                  <span>Log {waterAmount} ml Water</span>
-                </button>
-              </form>
-            )}
-
-            {/* WORKOUT FORM */}
-            {tab === 'workout' && (
-              <form onSubmit={handleLogWorkout} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                    Today's Exercise ({todayWorkoutDay?.day_name || 'Workout'})
-                  </label>
-                  <select
-                    value={selectedWorkoutExerciseId}
-                    onChange={e => setSelectedWorkoutExerciseId(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white rounded-xl border border-[var(--line)] text-xs font-semibold"
-                  >
-                    {todayWorkoutDay?.exercises?.map(we => (
-                      <option key={we.id} value={we.id}>
-                        {typeof we.exercise === 'string' ? we.exercise_details?.name : we.exercise.name} ({we.target_sets}x{we.target_reps} @ {we.target_weight}kg)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-md mt-2 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Plus size={16} />
-                  <span>Mark Exercise Completed</span>
                 </button>
               </form>
             )}
