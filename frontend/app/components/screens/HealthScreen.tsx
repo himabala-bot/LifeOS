@@ -553,6 +553,7 @@ export function HealthScreen() {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
+                              setCustomTypeInput('');
                               setSettingTypeDow(isSettingType ? null : dayInfo.dow);
                             }}
                             className="px-3 py-1.5 rounded-xl bg-[var(--ink)] hover:bg-black text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
@@ -572,6 +573,18 @@ export function HealthScreen() {
                             >
                               Open Exercises ({dayPlan.exercises.length})
                             </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCustomTypeInput(dayPlan.day_name || '');
+                                setSettingTypeDow(isSettingType ? null : dayInfo.dow);
+                              }}
+                              className="p-2 rounded-xl bg-white border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[#eae7e1] transition-colors cursor-pointer"
+                              title={`Edit ${dayInfo.name} workout type`}
+                            >
+                              <Edit2 size={13} />
+                            </button>
                           </div>
                         )}
                       </div>
@@ -582,11 +595,12 @@ export function HealthScreen() {
                       <div className="mt-2 p-5 bg-white rounded-2xl border border-[var(--line)] shadow-sm space-y-3">
                         <div className="flex justify-between items-center">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
-                            Choose Workout Type for {dayInfo.name}
+                            {hasWorkoutType ? `Edit Workout Type for ${dayInfo.name}` : `Choose Workout Type for ${dayInfo.name}`}
                           </span>
                           <button
+                            type="button"
                             onClick={() => setSettingTypeDow(null)}
-                            className="text-[var(--muted)] hover:text-[var(--ink)]"
+                            className="text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
                           >
                             <X size={15} />
                           </button>
