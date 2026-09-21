@@ -52,21 +52,21 @@ class HabitCompletion(Base):
 
 class HealthProfile(Base):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='health_profile')
-    age = models.PositiveIntegerField(default=25)
-    biological_sex = models.CharField(max_length=10, default='male')  # 'male' | 'female'
-    height_cm = models.FloatField(default=175.0)
-    current_weight = models.FloatField(default=68.0)
-    goal_weight = models.FloatField(default=75.0)
-    activity_level = models.CharField(max_length=20, default='moderate')  # 'sedentary', 'light', 'moderate', 'active', 'very_active'
-    training_focus = models.CharField(max_length=30, default='hypertrophy')  # 'hypertrophy', 'strength', 'endurance', 'general_fitness'
-    training_frequency = models.PositiveIntegerField(default=4)  # 3, 4, 5, 6
+    age = models.PositiveIntegerField(default=0)
+    biological_sex = models.CharField(max_length=10, default='', blank=True)  # 'male' | 'female'
+    height_cm = models.FloatField(default=0.0)
+    current_weight = models.FloatField(default=0.0)
+    goal_weight = models.FloatField(default=0.0)
+    activity_level = models.CharField(max_length=20, default='', blank=True)
+    training_focus = models.CharField(max_length=30, default='', blank=True)
+    training_frequency = models.PositiveIntegerField(default=0)
     
-    # Nutritional & Hydration Targets (calculated or overridden)
-    target_calories = models.PositiveIntegerField(default=2400)
-    target_protein = models.PositiveIntegerField(default=140)  # grams
-    target_carbs = models.PositiveIntegerField(default=280)    # grams
-    target_fat = models.PositiveIntegerField(default=75)       # grams
-    target_water_ml = models.PositiveIntegerField(default=3000)  # ml
+    # Nutritional & Hydration Targets
+    target_calories = models.PositiveIntegerField(default=0)
+    target_protein = models.PositiveIntegerField(default=0)  # grams
+    target_carbs = models.PositiveIntegerField(default=0)    # grams
+    target_fat = models.PositiveIntegerField(default=0)       # grams
+    target_water_ml = models.PositiveIntegerField(default=0)  # ml
     creatine_target_g = models.PositiveIntegerField(default=5)   # grams
     
     is_onboarded = models.BooleanField(default=False)

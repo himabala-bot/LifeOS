@@ -344,14 +344,14 @@ class HealthOnboardingView(APIView):
         user = request.user
         data = request.data
 
-        current_weight = float(data.get('current_weight', 68.0))
-        goal_weight = float(data.get('goal_weight', 75.0))
-        height_cm = float(data.get('height_cm', 175.0))
-        age = int(data.get('age', 25))
-        biological_sex = str(data.get('biological_sex', 'male')).lower()
-        activity_level = str(data.get('activity_level', 'moderate'))
-        training_focus = str(data.get('training_focus', 'hypertrophy'))
-        training_frequency = int(data.get('training_frequency', 4))
+        current_weight = float(data.get('current_weight', 0.0))
+        goal_weight = float(data.get('goal_weight', 0.0))
+        height_cm = float(data.get('height_cm', 0.0))
+        age = int(data.get('age', 0))
+        biological_sex = str(data.get('biological_sex', '')).lower()
+        activity_level = str(data.get('activity_level', ''))
+        training_focus = str(data.get('training_focus', ''))
+        training_frequency = int(data.get('training_frequency', 0))
 
         # Calculate targets automatically using service
         targets = calculate_health_targets(
@@ -688,7 +688,10 @@ class BootstrapView(APIView):
         habits = list(Habit.objects.filter(user=user).prefetch_related('habitcompletion_set').order_by('-created_at'))
 
         # 2. Health Entities
-        profile, _ = HealthProfile.objects.get_or_create(user=user)
+        profile, _ = HealthProfile.objects.get_or_create(user=user, defaults={'current_weight': 0.0, 'goal_weight': 0.0})
+        if not WeightCheckin.objects.filter(user=user).exists() and profile.current_weight == 68.0:
+            profile.current_weight = 0.0
+            profile.save(update_fields=['current_weight'])
         daily_meals_today = list(DailyMeal.objects.filter(user=user, date=today))
         daily_workout_logs = list(DailyWorkoutLog.objects.filter(user=user).order_by('-date')[:60])
         weight_checkins = list(WeightCheckin.objects.filter(user=user).order_by('-date')[:30])
