@@ -17,6 +17,7 @@ import {
   X,
   Target,
   Sparkles,
+  RotateCcw,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -77,6 +78,8 @@ export function HealthScreen() {
     workoutStreak,
     todaysWorkoutDay,
     isTodayWorkoutCompleted,
+    resetWorkoutStreak,
+    resetMealStreak,
   } = useData();
 
   // 1. Workouts first, then Meals, then Weight
@@ -442,7 +445,16 @@ export function HealthScreen() {
                   </h3>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={resetWorkoutStreak}
+                    className="flex items-center gap-1 text-[10px] font-bold text-[var(--muted)] hover:text-rose-600 px-2.5 py-1.5 rounded-lg border border-[var(--line)] hover:border-rose-200 bg-white hover:bg-rose-50/50 transition-colors cursor-pointer"
+                    title="Reset streak and workout calendar logs"
+                  >
+                    <RotateCcw size={11} />
+                    <span>Reset Streak</span>
+                  </button>
                   <button
                     onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
                     className="p-1.5 rounded-lg border border-[var(--line)] hover:bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
@@ -1130,7 +1142,16 @@ export function HealthScreen() {
                   </h3>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={resetMealStreak}
+                    className="flex items-center gap-1 text-[10px] font-bold text-[var(--muted)] hover:text-rose-600 px-2.5 py-1.5 rounded-lg border border-[var(--line)] hover:border-rose-200 bg-white hover:bg-rose-50/50 transition-colors cursor-pointer"
+                    title="Reset meal completion calendar & streak"
+                  >
+                    <RotateCcw size={11} />
+                    <span>Reset Streak</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => setMealsCalendarMonth(new Date(mealsCalendarMonth.getFullYear(), mealsCalendarMonth.getMonth() - 1, 1))}

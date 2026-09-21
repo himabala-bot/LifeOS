@@ -164,6 +164,8 @@ interface DataContextType {
   workoutStreak: number;
   todaysWorkoutDay: WorkoutDayPlan;
   isTodayWorkoutCompleted: boolean;
+  resetWorkoutStreak: () => void;
+  resetMealStreak: () => void;
 
   // LifeScore & System
   lifeScore: LifeScoreBreakdown;
@@ -944,6 +946,24 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setWorkoutRecords({});
   };
 
+  const resetWorkoutStreak = () => {
+    setWorkoutRecords({});
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('lifeos_workout_records');
+      } catch {}
+    }
+  };
+
+  const resetMealStreak = () => {
+    setEatenMealsByDate({});
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('lifeos_eaten_meals_by_date');
+      } catch {}
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -999,6 +1019,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         workoutStreak,
         todaysWorkoutDay,
         isTodayWorkoutCompleted,
+        resetWorkoutStreak,
+        resetMealStreak,
 
         lifeScore,
         isLoadingData,
