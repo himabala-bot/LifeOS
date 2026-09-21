@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity,
@@ -194,28 +194,137 @@ export function HealthScreen() {
   }, [selectedModalDow]);
 
   // ==========================================
-  // DAILY MEALS STATE (MASTER FIXED LIST + DAILY EATEN CHECKLIST)
+  // DAILY MEALS STATE (MASTER FIXED LIST + POP-UP CHECKLIST)
   // ==========================================
   const [selectedMealDate, setSelectedMealDate] = useState<string>(todayStr);
+  const [selectedMealModalDate, setSelectedMealModalDate] = useState<string | null>(null);
   const [newMealName, setNewMealName] = useState<string>('');
-  const [newMealType, setNewMealType] = useState<string>('Meal');
+  const [isAddingMealInModal, setIsAddingMealInModal] = useState(false);
+  const [newModalMealInput, setNewModalMealInput] = useState('');
 
-  const selectedDateEatenIds = useMemo(() => {
-    return eatenMealsByDate[selectedMealDate] || [];
-  }, [eatenMealsByDate, selectedMealDate]);
+  // Meals Calendar Month State
+  const [mealsCalendarMonth, setMealsCalendarMonth] = useState<Date>(() => new Date());
 
-  const selectedDateEatenCount = useMemo(() => {
-    return masterMeals.filter(m => selectedDateEatenIds.includes(m.id)).length;
-  }, [masterMeals, selectedDateEatenIds]);
+  // Compute dates for the current week (Monday to Sunday)
+  const currentWeekDays = useMemo(() => {
+    const today = new Date();
+    const currentDay = today.getDay(); // 0 = Sun, 1 = Mon...
+    const distanceToMonday = (currentDay + 6) % 7;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - distanceToMonday);
+
+    return ORDERED_DAYS.map((d, index) => {
+      const dayDate = new Date(monday);
+      dayDate.setDate(monday.getDate() + index);
+      const year = dayDate.getFullYear();
+      const month = String(dayDate.getMonth() + 1).padStart(2, '0');
+      const day = String(dayDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      return {
+        ...d,
+        dateStr,
+        isToday: dateStr === todayStr,
+      };
+    });
+  }, [todayStr]);
+
+  // Meals Calendar calculations (Monday to Sunday)
+  const mealsCalendarDays = useMemo(() => {
+    const year = mealsCalendarMonth.getFullYear();
+    const month = mealsCalendarMonth.getMonth();
+
+    const firstDayOfMonth = new Date(year, month, 1);
+    const startingDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
+
+    const days: { dateStr: string; dayNum: number; isCurrentMonth: boolean }[] = [];
+
+    // Previous month padding
+    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+      const d = prevMonthDays - i;
+      const prevDate = new Date(year, month - 1, d);
+      const y = prevDate.getFullYear();
+      const m = String(prevDate.getMonth() + 1).padStart(2, '0');
+      const day = String(d).padStart(2, '0');
+      days.push({ dateStr: `${y}-${m}-${day}`, dayNum: d, isCurrentMonth: false });
+    }
+
+    // Current month days
+    for (let i = 1; i <= daysInMonth; i++) {
+      const m = String(month + 1).padStart(2, '0');
+      const day = String(i).padStart(2, '0');
+      days.push({ dateStr: `${year}-${m}-${day}`, dayNum: i, isCurrentMonth: true });
+    }
+
+    // Next month padding
+    const totalSlots = days.length <= 35 ? 35 : 42;
+    const remaining = totalSlots - days.length;
+    for (let i = 1; i <= remaining; i++) {
+      const nextDate = new Date(year, month + 1, i);
+      const y = nextDate.getFullYear();
+      const m = String(nextDate.getMonth() + 1).padStart(2, '0');
+      const day = String(i).padStart(2, '0');
+      days.push({ dateStr: `${y}-${m}-${day}`, dayNum: i, isCurrentMonth: false });
+    }
+
+    return days;
+  }, [mealsCalendarMonth]);
+
+  // Helper to check if all decided meals are eaten for any date
+  const isDateMealsCompleted = useCallback((dateStr: string) => {
+    if (masterMeals.length === 0) return false;
+    const eatenList = eatenMealsByDate[dateStr] || [];
+    return eatenList.length >= masterMeals.length;
+  }, [masterMeals, eatenMealsByDate]);
+
+  const activeModalDate = selectedMealModalDate || selectedMealDate;
+  const activeModalEatenIds = useMemo(() => {
+    return eatenMealsByDate[activeModalDate] || [];
+  }, [eatenMealsByDate, activeModalDate]);
+
+  const activeModalEatenCount = useMemo(() => {
+    return masterMeals.filter(m => activeModalEatenIds.includes(m.id)).length;
+  }, [masterMeals, activeModalEatenIds]);
 
   const handleAddMealSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMealName.trim()) return;
     addMasterMealItem({
       name: newMealName.trim(),
-      meal_type: newMealType,
     });
     setNewMealName('');
+  };
+
+  const handleAddModalMealSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newModalMealInput.trim()) return;
+    addMasterMealItem({
+      name: newModalMealInput.trim(),
+    });
+    setNewModalMealInput('');
+    setIsAddingMealInModal(false);
+  };
+
+  const handleToggleAllMealsForDate = (dateStr: string) => {
+    const currentEaten = eatenMealsByDate[dateStr] || [];
+    const allDone = masterMeals.length > 0 && currentEaten.length >= masterMeals.length;
+
+    if (allDone) {
+      // Mark all as pending
+      masterMeals.forEach(m => {
+        if (currentEaten.includes(m.id)) {
+          toggleDailyMealEaten(dateStr, m.id);
+        }
+      });
+    } else {
+      // Mark all as eaten
+      masterMeals.forEach(m => {
+        if (!currentEaten.includes(m.id)) {
+          toggleDailyMealEaten(dateStr, m.id);
+        }
+      });
+    }
   };
 
   const handleDateShift = (deltaDays: number) => {
@@ -1008,208 +1117,509 @@ export function HealthScreen() {
       {/* TAB 2: DAILY MEALS (SECOND TAB) */}
       {/* ========================================================================= */}
       {activeTab === 'meals' && (
-        <div className="space-y-6">
-          {/* Date Navigator Bar */}
-          <div className="bg-white rounded-3xl p-5 border border-[var(--line)] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleDateShift(-1)}
-                className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center hover:bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
-                title="Previous Day"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <div className="px-4 py-1.5 bg-[#f8f7f4] rounded-full border border-[var(--line)] text-xs font-bold text-[var(--ink)]">
-                {formatDisplayDate(selectedMealDate)} ({selectedMealDate})
-              </div>
-              <button
-                type="button"
-                onClick={() => handleDateShift(1)}
-                className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center hover:bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
-                title="Next Day"
-              >
-                <ChevronRight size={16} />
-              </button>
-              {selectedMealDate !== todayStr && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedMealDate(todayStr)}
-                  className="text-xs font-bold text-[var(--accent)] hover:underline ml-2 cursor-pointer"
-                >
-                  Jump to Today
-                </button>
-              )}
-            </div>
+        <div className="space-y-8">
+          {/* Top Row: Meals Activity Calendar (Left) & Today's Nutrition + Simplified Add To Blueprint (Right) */}
+          <div className="grid md:grid-cols-2 gap-6 items-stretch">
+            {/* Meals Compact Activity Calendar */}
+            <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between pb-3 mb-2 border-b border-[var(--line)]">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] block">
+                    Nutrition Calendar
+                  </span>
+                  <h3 className="serif text-xl font-normal text-[var(--ink)]">
+                    {mealsCalendarMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </h3>
+                </div>
 
-            {/* Adherence Pill */}
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-[var(--muted)]">Daily Meal Adherence:</span>
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#f1f0ea] text-[var(--ink)] border border-[var(--line)]">
-                {selectedDateEatenCount} / {masterMeals.length} eaten
-                {masterMeals.length > 0 ? ` (${Math.round((selectedDateEatenCount / masterMeals.length) * 100)}%)` : ''}
-              </span>
-            </div>
-          </div>
-
-          {/* Add Item to Fixed Daily Meal Plan Bar */}
-          <form onSubmit={handleAddMealSubmit} className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] block mb-3">
-              Add To Daily Meal Blueprint (Fixed Master List)
-            </span>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              {/* Meal Type Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 shrink-0">
-                {['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Meal'].map(type => (
+                <div className="flex items-center gap-1">
                   <button
-                    key={type}
                     type="button"
-                    onClick={() => setNewMealType(type)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
-                      newMealType === type
-                        ? 'bg-[var(--ink)] text-white font-bold'
-                        : 'bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]'
-                    }`}
+                    onClick={() => setMealsCalendarMonth(new Date(mealsCalendarMonth.getFullYear(), mealsCalendarMonth.getMonth() - 1, 1))}
+                    className="p-1.5 rounded-lg border border-[var(--line)] hover:bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+                    title="Previous Month"
                   >
-                    {type}
+                    <ChevronLeft size={14} />
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setMealsCalendarMonth(new Date(mealsCalendarMonth.getFullYear(), mealsCalendarMonth.getMonth() + 1, 1))}
+                    className="p-1.5 rounded-lg border border-[var(--line)] hover:bg-[#f8f7f4] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+                    title="Next Month"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Weekday Headers: Mon to Sun */}
+              <div className="grid grid-cols-7 gap-1 text-center text-[9px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1">
+                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                  <div key={i} className="py-0.5">
+                    {d}
+                  </div>
                 ))}
               </div>
 
-              {/* Input */}
-              <input
-                type="text"
-                value={newMealName}
-                onChange={e => setNewMealName(e.target.value)}
-                placeholder="e.g. 4 Eggs + Sourdough, Chicken & Jasmine Rice, Whey Shake..."
-                className="flex-1 px-4 py-2.5 rounded-xl bg-[#f8f7f4] border border-[var(--line)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"
-              />
-
-              {/* Add Button */}
-              <button
-                type="submit"
-                disabled={!newMealName.trim()}
-                className="px-5 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
-              >
-                <Plus size={14} />
-                <span>Add To Daily Plan</span>
-              </button>
-            </div>
-          </form>
-
-          {/* Master Meals List / Empty State */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[var(--line)] shadow-sm">
-            <div className="flex items-center justify-between pb-4 mb-4 border-b border-[var(--line)]">
-              <div>
-                <h3 className="serif text-xl font-normal">Daily Meals Checklist · {formatDisplayDate(selectedMealDate)}</h3>
-                <p className="text-xs text-[var(--muted)] mt-0.5">Your fixed daily meal routine. Mark each item eaten for {formatDisplayDate(selectedMealDate)}.</p>
-              </div>
-              <span className="text-xs font-bold text-[var(--muted)]">
-                {masterMeals.length} item{masterMeals.length !== 1 ? 's' : ''} in blueprint
-              </span>
-            </div>
-
-            {masterMeals.length === 0 ? (
-              /* Clean Empty State */
-              <div className="py-14 px-6 text-center max-w-md mx-auto">
-                <div className="w-14 h-14 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] text-[var(--muted)] flex items-center justify-center mx-auto mb-4">
-                  <Utensils size={24} />
-                </div>
-                <h4 className="serif text-xl font-normal text-[var(--ink)] mb-1.5">No meals in your daily blueprint yet</h4>
-                <p className="text-xs text-[var(--muted)] leading-relaxed mb-6">
-                  Add the meals you eat daily above. They will stay fixed on your daily checklist every single day so you can mark them off with 1 tap.
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  {['+ Breakfast', '+ Lunch', '+ Dinner', '+ Snack'].map(label => {
-                    const type = label.replace('+ ', '');
-                    return (
-                      <button
-                        key={label}
-                        type="button"
-                        onClick={() => {
-                          setNewMealType(type);
-                          setNewMealName(`${type}: `);
-                        }}
-                        className="px-3.5 py-1.5 rounded-full bg-[#f8f7f4] hover:bg-[#eae7e1] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] transition-colors cursor-pointer"
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              /* Meals List */
-              <div className="space-y-3">
-                {masterMeals.map(meal => {
-                  const isEaten = selectedDateEatenIds.includes(meal.id);
+              {/* Compact Days Grid: Green if all meals eaten, No color otherwise */}
+              <div className="grid grid-cols-7 gap-1">
+                {mealsCalendarDays.map((cd, i) => {
+                  const isDone = isDateMealsCompleted(cd.dateStr);
+                  const isToday = cd.dateStr === todayStr;
 
                   return (
-                    <div
-                      key={meal.id}
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                        isEaten
-                          ? 'bg-emerald-50/50 border-emerald-200'
-                          : 'bg-[#f8f7f4] border-[var(--line)] hover:border-[var(--accent)]'
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setSelectedMealModalDate(cd.dateStr)}
+                      className={`h-7 sm:h-8 rounded-lg flex items-center justify-center text-xs font-semibold transition-all cursor-pointer ${
+                        isDone
+                          ? 'bg-emerald-600 text-white shadow-xs font-bold hover:bg-emerald-700'
+                          : isToday
+                          ? 'bg-[#f1f0ea] text-[var(--ink)] border border-[var(--ink)] font-bold'
+                          : cd.isCurrentMonth
+                          ? 'bg-transparent text-[var(--ink)] hover:bg-[#f8f7f4]'
+                          : 'bg-transparent text-black/15'
                       }`}
+                      title={isDone ? `All meals completed on ${cd.dateStr}` : `Meals logged for ${cd.dateStr}`}
                     >
-                      <div
-                        onClick={() => toggleDailyMealEaten(selectedMealDate, meal.id)}
-                        className="flex items-center gap-3.5 flex-1 cursor-pointer"
+                      {cd.dayNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-3 pt-2.5 border-t border-[var(--line)] flex items-center justify-between text-[11px] text-[var(--muted)]">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                  <span>Meals Completed (Green)</span>
+                </div>
+                <span>{Object.keys(eatenMealsByDate).filter(d => isDateMealsCompleted(d)).length} adherence days</span>
+              </div>
+            </div>
+
+            {/* Right Column: Today's Nutrition & Simplified Add to Blueprint (Halved & Stacked) */}
+            <div className="flex flex-col gap-4 justify-between">
+              {/* Card 1: Today's Nutrition Status (Top Half) */}
+              <div className={`rounded-3xl p-5 border transition-all flex flex-col justify-between flex-1 ${
+                isDateMealsCompleted(todayStr)
+                  ? 'bg-emerald-50/70 border-emerald-200'
+                  : 'bg-white border-[var(--line)] shadow-sm'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
+                    Today's Nutrition Status
+                  </span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    isDateMealsCompleted(todayStr)
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-[#eae7e1] text-[var(--muted)]'
+                  }`}>
+                    {isDateMealsCompleted(todayStr)
+                      ? 'All Completed ✓'
+                      : `${(eatenMealsByDate[todayStr]?.length || 0)} / ${masterMeals.length} Eaten`}
+                  </span>
+                </div>
+
+                <div className="my-2">
+                  <h4 className="serif text-xl font-normal text-[var(--ink)]">
+                    {masterMeals.length === 0
+                      ? 'No Meal Blueprint Created'
+                      : isDateMealsCompleted(todayStr)
+                      ? 'All Daily Meals Completed'
+                      : `${(eatenMealsByDate[todayStr]?.length || 0)} of ${masterMeals.length} Meals Eaten`}
+                  </h4>
+                  <p className="text-[11px] text-[var(--muted)] mt-0.5">
+                    {masterMeals.length === 0
+                      ? 'Add your daily meals below to start tracking adherence.'
+                      : 'Tap to open today\'s nutrition pop-up and check off meals.'}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedMealModalDate(todayStr)}
+                  className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer ${
+                    isDateMealsCompleted(todayStr)
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      : 'bg-[var(--ink)] hover:bg-black text-white'
+                  }`}
+                >
+                  <Utensils size={14} />
+                  <span>Open Today's Meal Checklist</span>
+                </button>
+              </div>
+
+              {/* Card 2: Add To Daily Meal Blueprint (Bottom Half) - Simple input without bf/lunch pills */}
+              <form
+                onSubmit={handleAddMealSubmit}
+                className="bg-white rounded-3xl p-5 border border-[var(--line)] shadow-sm flex flex-col justify-between flex-1"
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
+                      Daily Meal Blueprint (Fixed List)
+                    </span>
+                    <span className="text-[10px] font-bold text-[var(--muted)]">
+                      {masterMeals.length} items
+                    </span>
+                  </div>
+                  <h4 className="serif text-xl font-normal text-[var(--ink)] mt-1">
+                    Add Meal Item
+                  </h4>
+                  <p className="text-[11px] text-[var(--muted)] mt-0.5 mb-2">
+                    Enter items you eat daily. They stay fixed on your checklist for all 7 days.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={newMealName}
+                    onChange={e => setNewMealName(e.target.value)}
+                    placeholder="e.g. 4 Eggs + Toast, Chicken Rice, Whey Shake..."
+                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#f8f7f4] border border-[var(--line)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newMealName.trim()}
+                    className="px-4 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer flex items-center gap-1 shrink-0"
+                  >
+                    <Plus size={13} />
+                    <span>Add Item</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          {/* 7-Day Weekly Meals Schedule: Mon to Sun */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[var(--line)] shadow-sm space-y-6">
+            <div className="pb-4 border-b border-[var(--line)]">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] block mb-0.5">
+                Weekly Routine
+              </span>
+              <h3 className="serif text-2xl font-normal">7-Day Nutrition Schedule (Mon – Sun)</h3>
+              <p className="text-xs text-[var(--muted)] mt-0.5">
+                Click on any day to open its daily meals checklist pop-up and mark what you ate.
+              </p>
+            </div>
+
+            {/* List of 7 Days: Mon to Sun */}
+            <div className="space-y-3">
+              {currentWeekDays.map(dayInfo => {
+                const eatenList = eatenMealsByDate[dayInfo.dateStr] || [];
+                const eatenCount = masterMeals.filter(m => eatenList.includes(m.id)).length;
+                const isAllDone = masterMeals.length > 0 && eatenCount >= masterMeals.length;
+
+                return (
+                  <div
+                    key={dayInfo.dow}
+                    onClick={() => setSelectedMealModalDate(dayInfo.dateStr)}
+                    className={`p-4 sm:p-5 rounded-2xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      dayInfo.isToday
+                        ? 'border-[var(--ink)] bg-[#fdfdfc] shadow-xs'
+                        : isAllDone
+                        ? 'border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50/70'
+                        : 'border-[var(--line)] bg-[#f8f7f4]/60 hover:bg-[#f8f7f4] hover:border-[var(--accent)]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs ${
+                        dayInfo.isToday
+                          ? 'bg-[var(--ink)] text-white'
+                          : isAllDone
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-white border border-[var(--line)] text-[var(--ink)]'
+                      }`}>
+                        {dayInfo.short}
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-[var(--ink)]">{dayInfo.name}</span>
+                          <span className="text-xs text-[var(--muted)] font-medium">({dayInfo.dateStr})</span>
+                          {dayInfo.isToday && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--accent)] text-white">
+                              Today
+                            </span>
+                          )}
+                          {isAllDone && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                              All Eaten ✓
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-xs text-[var(--muted)] mt-0.5">
+                          {masterMeals.length === 0
+                            ? 'No meals in blueprint'
+                            : `${eatenCount} of ${masterMeals.length} meals completed`}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right Action CTA */}
+                    <div className="flex items-center gap-2 self-end sm:self-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedMealModalDate(dayInfo.dateStr);
+                        }}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                          isAllDone
+                            ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                            : 'bg-white border border-[var(--line)] text-[var(--ink)] hover:bg-[#eae7e1]'
+                        }`}
                       >
-                        <button
-                          type="button"
-                          className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
+                        <Utensils size={13} />
+                        <span>Open Checklist ({eatenCount}/{masterMeals.length})</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* BEAUTIFUL DAILY MEALS POP-UP / MODAL */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {selectedMealModalDate !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setSelectedMealModalDate(null);
+                setIsAddingMealInModal(false);
+              }}
+              className="absolute inset-0 bg-black/50 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative w-full max-w-xl bg-white rounded-3xl border border-[var(--line)] shadow-2xl overflow-hidden z-10 max-h-[90vh] flex flex-col"
+            >
+              {/* Pop-up Header */}
+              <div className="p-6 border-b border-[var(--line)] bg-[#f8f7f4] flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
+                      Daily Meals Checklist
+                    </span>
+                    {selectedMealModalDate === todayStr && (
+                      <span className="text-[9px] font-bold px-2 py-0.2 rounded-full bg-[var(--accent)] text-white">
+                        Today
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="serif text-2xl font-normal text-[var(--ink)] mt-0.5">
+                    {formatDisplayDate(selectedMealModalDate)} ({selectedMealModalDate})
+                  </h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedMealModalDate(null);
+                    setIsAddingMealInModal(false);
+                  }}
+                  className="p-2 rounded-xl bg-white border border-[var(--line)] text-xs text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Pop-up Content */}
+              <div className="p-6 overflow-y-auto space-y-6 flex-1">
+                {/* Status & Add Bar */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+                      Fixed Meals Blueprint ({masterMeals.length})
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#f1f0ea] text-[var(--ink)]">
+                      {activeModalEatenCount} / {masterMeals.length} eaten
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingMealInModal(!isAddingMealInModal)}
+                    className="px-3 py-1.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus size={13} />
+                    <span>Add Meal</span>
+                  </button>
+                </div>
+
+                {/* Inline Add Meal inside modal */}
+                {isAddingMealInModal && (
+                  <form
+                    onSubmit={handleAddModalMealSubmit}
+                    className="p-4 rounded-2xl bg-[#f8f7f4] border-2 border-[var(--accent)]/30 space-y-3"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">
+                        Add New Item to Daily Blueprint
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingMealInModal(false)}
+                        className="text-[var(--muted)] hover:text-[var(--ink)]"
+                      >
+                        <X size={15} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newModalMealInput}
+                        onChange={e => setNewModalMealInput(e.target.value)}
+                        placeholder="e.g. 4 Eggs + Toast, Grilled Salmon & Quinoa..."
+                        className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-[var(--line)] text-xs font-semibold focus:outline-none focus:border-[var(--accent)]"
+                        autoFocus
+                        required
+                      />
+                      <button
+                        type="submit"
+                        disabled={!newModalMealInput.trim()}
+                        className="px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-xs font-bold disabled:opacity-50 cursor-pointer shrink-0"
+                      >
+                        Save Item
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Master Meals Checklist */}
+                {masterMeals.length === 0 ? (
+                  <div className="py-12 px-6 text-center max-w-sm mx-auto">
+                    <div className="w-12 h-12 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] text-[var(--muted)] flex items-center justify-center mx-auto mb-3">
+                      <Utensils size={22} />
+                    </div>
+                    <h5 className="serif text-lg font-normal text-[var(--ink)] mb-1">
+                      No meals in blueprint yet
+                    </h5>
+                    <p className="text-xs text-[var(--muted)] leading-relaxed mb-4">
+                      Add the meals you eat daily to create your fixed nutrition checklist.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingMealInModal(true)}
+                      className="px-4 py-2 rounded-xl bg-[var(--ink)] text-white text-xs font-semibold hover:bg-black transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                    >
+                      <Plus size={14} />
+                      <span>+ Add First Meal</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {masterMeals.map(meal => {
+                      const isEaten = activeModalEatenIds.includes(meal.id);
+
+                      return (
+                        <div
+                          key={meal.id}
+                          className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
                             isEaten
-                              ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
-                              : 'bg-white border-[var(--line)] text-transparent hover:border-[var(--accent)]'
+                              ? 'bg-emerald-50/60 border-emerald-200'
+                              : 'bg-[#f8f7f4] border-[var(--line)] hover:border-[var(--accent)]'
                           }`}
                         >
-                          <Check size={13} className={isEaten ? 'block' : 'hidden'} />
-                        </button>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
-                              isEaten ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-[var(--muted)] border border-[var(--line)]'
-                            }`}>
-                              {meal.meal_type || 'Meal'}
-                            </span>
+                          <div
+                            onClick={() => toggleDailyMealEaten(activeModalDate, meal.id)}
+                            className="flex items-center gap-3.5 flex-1 cursor-pointer"
+                          >
+                            <button
+                              type="button"
+                              className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
+                                isEaten
+                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs'
+                                  : 'bg-white border-[var(--line)] text-transparent hover:border-[var(--accent)]'
+                              }`}
+                            >
+                              <Check size={13} className={isEaten ? 'block' : 'hidden'} />
+                            </button>
+
                             <span className={`text-sm font-medium ${isEaten ? 'line-through text-[var(--muted)]' : 'text-[var(--ink)]'}`}>
                               {meal.name}
                             </span>
                           </div>
-                        </div>
-                      </div>
 
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => toggleDailyMealEaten(selectedMealDate, meal.id)}
-                          className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                            isEaten
-                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                              : 'bg-white border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
-                          }`}
-                        >
-                          {isEaten ? 'Eaten ✓' : 'Mark Eaten'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => deleteMasterMealItem(meal.id)}
-                          className="p-1.5 rounded-lg text-[var(--muted)] hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                          title="Remove from daily meal plan"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleDailyMealEaten(activeModalDate, meal.id)}
+                              className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                                isEaten
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : 'bg-white border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
+                              }`}
+                            >
+                              {isEaten ? 'Eaten ✓' : 'Mark Eaten'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteMasterMealItem(meal.id)}
+                              className="p-1.5 rounded-lg text-[var(--muted)] hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Delete from blueprint"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* Pop-up Footer */}
+              <div className="p-4 border-t border-[var(--line)] bg-[#f8f7f4] flex items-center justify-between">
+                <span className="text-xs text-[var(--muted)] font-medium">
+                  {activeModalEatenCount} of {masterMeals.length} meals completed
+                </span>
+
+                <div className="flex items-center gap-2">
+                  {masterMeals.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleToggleAllMealsForDate(activeModalDate)}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        isDateMealsCompleted(activeModalDate)
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-[var(--ink)] hover:bg-black text-white'
+                      }`}
+                    >
+                      {isDateMealsCompleted(activeModalDate) ? 'Mark All Pending' : 'Mark All Eaten ✓'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMealModalDate(null);
+                      setIsAddingMealInModal(false);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-white border border-[var(--line)] text-xs font-bold text-[var(--ink)] hover:bg-[#eae7e1] transition-colors cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* ========================================================================= */}
       {/* TAB 3: WEIGHT JOURNEY (THIRD TAB) */}
