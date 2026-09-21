@@ -240,7 +240,7 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                       onChange={e => setTaskTag(e.target.value as TaskTag)}
                       className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs font-medium focus:outline-none"
                     >
-                      {['Work', 'Wellbeing', 'Admin', 'Learning', 'Personal', 'Finance', 'Creative'].map(t => (
+                      {['Work', 'Wellbeing', 'Admin', 'Learning', 'Personal', 'Creative'].map(t => (
                         <option key={t} value={t}>{t}</option>
                       ))}
                     </select>
@@ -374,7 +374,7 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                       onChange={e => setGoalCategory(e.target.value as GoalCategory)}
                       className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs font-medium focus:outline-none"
                     >
-                      {['Career', 'Wealth', 'Health', 'Personal', 'Travel', 'Creative'].map(c => (
+                      {['Career', 'Health', 'Personal', 'Travel', 'Creative'].map(c => (
                         <option key={c} value={c}>{c}</option>
                       ))}
                     </select>

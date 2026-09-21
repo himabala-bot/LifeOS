@@ -143,7 +143,7 @@ export function TasksScreen() {
             onChange={e => setNewTag(e.target.value as TaskTag)}
             className="px-3 py-2 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-xs font-semibold text-[var(--ink)] focus:outline-none"
           >
-            {['Work', 'Wellbeing', 'Admin', 'Learning', 'Personal', 'Finance', 'Creative'].map(t => (
+            {['Work', 'Wellbeing', 'Admin', 'Learning', 'Personal', 'Creative'].map(t => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
@@ -206,7 +206,7 @@ export function TasksScreen() {
             className="px-3 py-1.5 bg-white rounded-xl border border-[var(--line)] text-xs font-semibold text-[var(--muted)] focus:outline-none shrink-0"
           >
             <option value="All">All Tags</option>
-            {['Work', 'Wellbeing', 'Admin', 'Learning', 'Personal', 'Finance', 'Creative'].map(t => (
+            {['Work', 'Wellbeing', 'Admin', 'Learning', 'Personal', 'Creative'].map(t => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
@@ -404,7 +404,7 @@ export function TasksScreen() {
                     onChange={e => setEditingTask({ ...editingTask, tag: e.target.value as TaskTag })}
                     className="w-full px-3 py-2 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-xs font-medium"
                   >
-                    {['Work', 'Wellbeing', 'Admin', 'Learning', 'Personal', 'Finance', 'Creative'].map(t => (
+                    {['Work', 'Wellbeing', 'Admin', 'Learning', 'Personal', 'Creative'].map(t => (
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>

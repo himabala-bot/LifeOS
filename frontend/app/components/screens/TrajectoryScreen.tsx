@@ -8,11 +8,12 @@ import {
   Clock,
   Flame,
   Target,
-  CircleDollarSign,
+  Utensils,
   Sliders,
   Brain,
   AlertTriangle,
   RotateCcw,
+  BookOpen,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -33,47 +34,37 @@ export function TrajectoryScreen() {
     lifeScore,
   } = useData();
 
-  const currency = user?.currency || '₹';
-
   const [horizonYears, setHorizonYears] = useState<number>(3);
 
   const [extraFocusMins, setExtraFocusMins] = useState<number>(30);
-  const [extraMonthlySavings, setExtraMonthlySavings] = useState<number>(user?.currency === '₹' ? 5000 : 100);
+  const [nutritionDiscipline, setNutritionDiscipline] = useState<number>(90);
   const [habitDisciplineRate, setHabitDisciplineRate] = useState<number>(85);
   const [readingPagesDaily, setReadingPagesDaily] = useState<number>(15);
 
   const baseAvgFocusMinutes = 90;
-  const baseMonthlySavings = user?.currency === '₹' ? 8000 : 200;
 
   const activeHabitsCount = Math.max(1, habits.length);
   const activeGoalsCount = Math.max(1, goals.length);
 
   const simulation = useMemo(() => {
-    const days = horizonYears * 365;
-    const months = horizonYears * 12;
+    const days = Math.round(horizonYears * 365);
+    const months = Math.round(horizonYears * 12);
 
     const totalDailyFocus = baseAvgFocusMinutes + extraFocusMins;
     const totalDeepHoursAlpha = Math.round((totalDailyFocus * days) / 60);
     const booksReadAlpha = Math.round((readingPagesDaily * days) / 250);
 
-    const totalMonthlyInvestment = baseMonthlySavings + extraMonthlySavings;
-    const monthlyRate = 0.10 / 12;
-    let netWealthAlpha = 0;
-    for (let m = 0; m < months; m++) {
-      netWealthAlpha = (netWealthAlpha + totalMonthlyInvestment) * (1 + monthlyRate);
-    }
-    netWealthAlpha = Math.round(netWealthAlpha);
-
+    const cleanFuelDaysAlpha = Math.round(days * (nutritionDiscipline / 100));
     const workoutsAlpha = Math.round((days * (habitDisciplineRate / 100)) * (4 / 7));
     const goalsCompletedAlpha = Math.min(activeGoalsCount, Math.round(activeGoalsCount * (horizonYears >= 3 ? 0.95 : horizonYears >= 1 ? 0.75 : 0.45)));
 
     const totalDeepHoursBeta = Math.round((Math.max(20, baseAvgFocusMinutes - 30) * days) / 60);
     const booksReadBeta = Math.round(horizonYears * 1.5);
-    const netWealthBeta = Math.round(baseMonthlySavings * 0.2 * months);
+    const metabolicDragDaysBeta = Math.round(days * 0.65);
     const workoutsBeta = Math.round((days * 0.35) * (2 / 7));
     const goalsCompletedBeta = Math.round(activeGoalsCount * 0.15);
 
-    const lostFrictionHours = Math.round((2.5 * days));
+    const lostFrictionHours = Math.round(2.5 * days);
 
     const chartData = [];
     const steps = 10;
@@ -86,7 +77,7 @@ export function TrajectoryScreen() {
 
       const alphaScore = Math.min(100, Math.round(
         (lifeScore.overall || 65) +
-        (35 * Math.pow(progressRatio, 0.8) * (habitDisciplineRate / 100))
+        (35 * Math.pow(progressRatio, 0.8) * ((habitDisciplineRate + nutritionDiscipline) / 200))
       ));
 
       const betaScore = Math.max(20, Math.round(
@@ -99,8 +90,6 @@ export function TrajectoryScreen() {
         month: curM,
         alpha: alphaScore,
         beta: betaScore,
-        alphaWealth: Math.round(netWealthAlpha * Math.pow(progressRatio, 1.4)),
-        betaWealth: Math.round(netWealthBeta * progressRatio),
       });
     }
 
@@ -111,19 +100,19 @@ export function TrajectoryScreen() {
     return {
       totalDeepHoursAlpha,
       booksReadAlpha,
-      netWealthAlpha,
+      cleanFuelDaysAlpha,
       workoutsAlpha,
       goalsCompletedAlpha,
       totalDeepHoursBeta,
       booksReadBeta,
-      netWealthBeta,
+      metabolicDragDaysBeta,
       workoutsBeta,
       goalsCompletedBeta,
       lostFrictionHours,
       chartData,
       divergencePct,
     };
-  }, [horizonYears, extraFocusMins, extraMonthlySavings, habitDisciplineRate, readingPagesDaily, baseAvgFocusMinutes, baseMonthlySavings, activeHabitsCount, activeGoalsCount, lifeScore.overall]);
+  }, [horizonYears, extraFocusMins, nutritionDiscipline, habitDisciplineRate, readingPagesDaily, baseAvgFocusMinutes, activeHabitsCount, activeGoalsCount, lifeScore.overall]);
 
   const targetYear = new Date().getFullYear() + Math.round(horizonYears);
   const userFirstName = user?.name ? user.name.split(' ')[0] : 'Explorer';
@@ -138,7 +127,7 @@ export function TrajectoryScreen() {
           </div>
           <h1 className="serif text-4xl sm:text-5xl font-normal">The "Future You" Simulator<span className="text-[var(--accent)]">.</span></h1>
           <p className="text-sm text-[var(--muted)] mt-1.5 max-w-2xl">
-            Simulate where your current habits, focus hours, and physical discipline will take you. See the staggering mathematical divergence between intentional compounding vs status-quo drift.
+            Simulate where your current habits, focus hours, nutrition, and physical discipline will take you. See the staggering mathematical divergence between intentional compounding vs status-quo drift.
           </p>
         </div>
 
@@ -287,13 +276,13 @@ export function TrajectoryScreen() {
 
               <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <CircleDollarSign size={20} className="text-amber-600" />
+                  <Utensils size={20} className="text-emerald-600" />
                   <div>
-                    <p className="text-xs text-[var(--muted)] font-semibold uppercase tracking-wider">Compounded Wealth</p>
-                    <p className="text-sm font-bold text-[var(--ink)] mt-0.5">{currency}{simulation.netWealthAlpha.toLocaleString()}</p>
+                    <p className="text-xs text-[var(--muted)] font-semibold uppercase tracking-wider">Metabolic Fuel & Nutrition</p>
+                    <p className="text-sm font-bold text-[var(--ink)] mt-0.5">{simulation.cleanFuelDaysAlpha.toLocaleString()} Clean Fuel Days</p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-amber-700">Financial Fortress</span>
+                <span className="text-xs font-bold text-emerald-700">Peak Vitality</span>
               </div>
 
               <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex items-center justify-between">
@@ -357,13 +346,13 @@ export function TrajectoryScreen() {
 
               <div className="p-4 rounded-2xl bg-white border border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <CircleDollarSign size={20} className="text-[var(--muted)]" />
+                  <Utensils size={20} className="text-[var(--muted)]" />
                   <div>
-                    <p className="text-xs text-[var(--muted)] font-semibold uppercase tracking-wider">Runway Erosion</p>
-                    <p className="text-sm font-bold text-[var(--ink)] mt-0.5">{currency}{simulation.netWealthBeta.toLocaleString()}</p>
+                    <p className="text-xs text-[var(--muted)] font-semibold uppercase tracking-wider">Metabolic Drag</p>
+                    <p className="text-sm font-bold text-[var(--ink)] mt-0.5">{simulation.metabolicDragDaysBeta.toLocaleString()} Days Sluggish</p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-red-600">80% Lost to Leaks</span>
+                <span className="text-xs font-bold text-red-600">Brain Fog & Fatigue</span>
               </div>
 
               <div className="p-4 rounded-2xl bg-white border border-[var(--line)] flex items-center justify-between">
@@ -411,7 +400,7 @@ export function TrajectoryScreen() {
           <button
             onClick={() => {
               setExtraFocusMins(30);
-              setExtraMonthlySavings(user?.currency === '₹' ? 5000 : 100);
+              setNutritionDiscipline(90);
               setHabitDisciplineRate(85);
               setReadingPagesDaily(15);
             }}
@@ -446,20 +435,20 @@ export function TrajectoryScreen() {
           <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Extra Monthly Savings</span>
-                <span className="text-xs font-bold text-amber-600">+{currency}{extraMonthlySavings.toLocaleString()}</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Nutrition Adherence</span>
+                <span className="text-xs font-bold text-emerald-600">{nutritionDiscipline}%</span>
               </div>
-              <p className="text-[11px] text-[var(--muted)]">Invested at 10% annual compounding</p>
+              <p className="text-[11px] text-[var(--muted)]">Clean fuel, protein targets & hydration</p>
             </div>
 
             <input
               type="range"
-              min="0"
-              max={user?.currency === '₹' ? 25000 : 1000}
-              step={user?.currency === '₹' ? 1000 : 50}
-              value={extraMonthlySavings}
-              onChange={(e) => setExtraMonthlySavings(parseInt(e.target.value))}
-              className="w-full mt-4 accent-amber-600 cursor-pointer"
+              min="50"
+              max="100"
+              step="5"
+              value={nutritionDiscipline}
+              onChange={(e) => setNutritionDiscipline(parseInt(e.target.value))}
+              className="w-full mt-4 accent-emerald-600 cursor-pointer"
             />
           </div>
 
@@ -525,11 +514,12 @@ export function TrajectoryScreen() {
             <p>
               It did. That compounding curve was real. Because you chose not to drift, we accumulated over
               <strong className="text-[var(--accent)]"> {simulation.totalDeepHoursAlpha.toLocaleString()} hours of mastery</strong>, read
-              <strong className="text-[var(--ink)]"> {simulation.booksReadAlpha} mind-expanding books</strong>, and built a financial runway of
-              <strong className="text-amber-700"> {currency}{simulation.netWealthAlpha.toLocaleString()}</strong>.
+              <strong className="text-[var(--ink)]"> {simulation.booksReadAlpha} mind-expanding books</strong>, achieved
+              <strong className="text-emerald-700"> {nutritionDiscipline}% nutritional precision</strong>, and built boundless physical strength with
+              <strong className="text-[var(--sage)]"> {simulation.workoutsAlpha} logged workouts</strong>.
             </p>
             <p className="text-[var(--ink)] font-medium">
-              Don't break the chain today. Today's task checklist and habits are the exact bricks that built our freedom.
+              Don't break the chain today. Today's task checklist, workouts, and nutrition logs are the exact bricks that built our vitality.
             </p>
           </div>
 

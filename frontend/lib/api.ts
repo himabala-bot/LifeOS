@@ -128,7 +128,7 @@ export const api = {
         body: JSON.stringify({ username, password: credentials.password || '' }),
       });
     },
-    signup: (data: { name: string; email: string; password?: string; currency?: string }) => {
+    signup: (data: { name: string; email: string; password?: string }) => {
       return apiFetch<{ user: any; access: string; refresh: string }>('/api/register/', {
         method: 'POST',
         body: JSON.stringify({

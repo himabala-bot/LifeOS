@@ -9,7 +9,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (emailOrUsername: string, password?: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (name: string, email: string, password?: string, currency?: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (name: string, email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   loginAsDemo: () => Promise<void>;
   logout: () => void;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
@@ -17,7 +17,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function mapBackendUserToProfile(backendUser: any, currency = '₹'): UserProfile {
+function mapBackendUserToProfile(backendUser: any): UserProfile {
   const avatarColors = ['#e66b4b', '#5f805d', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b'];
   const charCode = (backendUser.username || backendUser.email || 'A').charCodeAt(0);
   const avatar = avatarColors[charCode % avatarColors.length];
@@ -28,7 +28,6 @@ function mapBackendUserToProfile(backendUser: any, currency = '₹'): UserProfil
     email: backendUser.email || backendUser.username || '',
     avatar: avatar,
     bio: 'Focused builder & high-agency individual',
-    currency: currency,
     dailyFocusTargetMinutes: 180,
     theme: 'warm-paper',
     createdAt: backendUser.date_joined || new Date().toISOString(),
@@ -159,8 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (
     name: string,
     email: string,
-    password = '',
-    currency = '₹'
+    password = ''
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true);
@@ -168,12 +166,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name,
         email,
         password: password || 'LifeOS_User_2026!',
-        currency,
       });
 
       if (res.access) {
         setTokens(res.access, res.refresh);
-        const profile = mapBackendUserToProfile(res.user || { first_name: name, email }, currency);
+        const profile = mapBackendUserToProfile(res.user || { first_name: name, email });
         setUser(profile);
         setCachedUser(profile);
         return { success: true };
@@ -194,7 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const loginRes = await login(demoEmail, demoPassword);
       if (!loginRes.success) {
-        const signupRes = await signup('Aisha Sharma', demoEmail, demoPassword, '₹');
+        const signupRes = await signup('Aisha Sharma', demoEmail, demoPassword);
         if (!signupRes.success) {
           await login(demoEmail, demoPassword);
         }

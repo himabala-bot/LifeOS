@@ -9,7 +9,7 @@ export type ScreenType =
   | 'settings';
 
 export type TaskPriority = 'urgent' | 'high' | 'medium' | 'low';
-export type TaskTag = 'Work' | 'Wellbeing' | 'Admin' | 'Learning' | 'Personal' | 'Finance' | 'Creative';
+export type TaskTag = 'Work' | 'Wellbeing' | 'Admin' | 'Learning' | 'Personal' | 'Creative';
 
 export interface Task {
   id: string;
@@ -44,7 +44,7 @@ export interface Milestone {
   dueDate?: string;
 }
 
-export type GoalCategory = 'Career' | 'Wealth' | 'Health' | 'Personal' | 'Travel' | 'Creative';
+export type GoalCategory = 'Career' | 'Health' | 'Personal' | 'Travel' | 'Creative';
 export type GoalStatus = 'active' | 'on_track' | 'behind' | 'completed' | 'paused';
 
 export interface Goal {
@@ -181,7 +181,6 @@ export interface UserProfile {
   email: string;
   avatar: string;
   bio?: string;
-  currency: string;
   dailyFocusTargetMinutes: number;
   theme: 'warm-paper' | 'dark-slate' | 'minimal-light';
   createdAt: string;

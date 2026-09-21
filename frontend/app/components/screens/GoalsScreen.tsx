@@ -105,7 +105,7 @@ export function GoalsScreen() {
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto">
-          {['All', 'Career', 'Wealth', 'Health', 'Personal', 'Travel', 'Creative'].map(cat => (
+          {['All', 'Career', 'Health', 'Personal', 'Travel', 'Creative'].map(cat => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
@@ -163,7 +163,7 @@ export function GoalsScreen() {
                 onChange={e => setNewCategory(e.target.value as GoalCategory)}
                 className="w-full px-3 py-2.5 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-xs font-medium focus:outline-none"
               >
-                {['Career', 'Wealth', 'Health', 'Personal', 'Travel', 'Creative'].map(c => (
+                {['Career', 'Health', 'Personal', 'Travel', 'Creative'].map(c => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>

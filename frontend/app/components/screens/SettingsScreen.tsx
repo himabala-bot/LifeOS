@@ -18,7 +18,6 @@ export function SettingsScreen() {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [bio, setBio] = useState(user?.bio || '');
-  const [currency, setCurrency] = useState(user?.currency || '₹');
   const [dailyFocusTarget, setDailyFocusTarget] = useState(String(user?.dailyFocusTargetMinutes || 180));
 
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -29,7 +28,6 @@ export function SettingsScreen() {
       name: name.trim(),
       email: email.trim(),
       bio: bio.trim(),
-      currency,
       dailyFocusTargetMinutes: parseInt(dailyFocusTarget) || 180,
     });
     setSaveSuccess(true);
@@ -90,24 +88,7 @@ export function SettingsScreen() {
             />
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4 pt-2">
-            <div>
-              <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                Currency Symbol
-              </label>
-              <select
-                value={currency}
-                onChange={e => setCurrency(e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-sm font-semibold focus:outline-none"
-              >
-                <option value="₹">₹ (INR - Indian Rupee)</option>
-                <option value="$">$ (USD - US Dollar)</option>
-                <option value="€">€ (EUR - Euro)</option>
-                <option value="£">£ (GBP - British Pound)</option>
-                <option value="¥">¥ (JPY / CNY)</option>
-              </select>
-            </div>
-
+          <div className="pt-2">
             <div>
               <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
                 Daily Focus Target (Mins)
@@ -117,7 +98,7 @@ export function SettingsScreen() {
                 step="15"
                 value={dailyFocusTarget}
                 onChange={e => setDailyFocusTarget(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-sm font-semibold focus:outline-none focus:border-[var(--accent)]"
+                className="w-full max-w-sm px-4 py-2.5 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-sm font-semibold focus:outline-none focus:border-[var(--accent)]"
               />
             </div>
           </div>
