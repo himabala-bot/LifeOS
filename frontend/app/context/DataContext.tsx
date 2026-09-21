@@ -42,13 +42,13 @@ const DEFAULT_HEALTH_PROFILE: HealthProfile = {
 };
 
 const DEFAULT_WEEKLY_SCHEDULE: WorkoutDayPlan[] = [
-  { id: 'w-0', day_of_week: 0, day_name: 'Rest & Recovery', is_rest_day: true, exercises: [] },
-  { id: 'w-1', day_of_week: 1, day_name: 'Chest & Triceps', is_rest_day: false, exercises: [] },
-  { id: 'w-2', day_of_week: 2, day_name: 'Back & Biceps', is_rest_day: false, exercises: [] },
-  { id: 'w-3', day_of_week: 3, day_name: 'Rest & Active Recovery', is_rest_day: true, exercises: [] },
-  { id: 'w-4', day_of_week: 4, day_name: 'Shoulders & Core', is_rest_day: false, exercises: [] },
-  { id: 'w-5', day_of_week: 5, day_name: 'Legs & Lower Body', is_rest_day: false, exercises: [] },
-  { id: 'w-6', day_of_week: 6, day_name: 'Cardio & Mobility', is_rest_day: true, exercises: [] },
+  { id: 'w-1', day_of_week: 1, day_name: '', is_rest_day: false, exercises: [] },
+  { id: 'w-2', day_of_week: 2, day_name: '', is_rest_day: false, exercises: [] },
+  { id: 'w-3', day_of_week: 3, day_name: '', is_rest_day: false, exercises: [] },
+  { id: 'w-4', day_of_week: 4, day_name: '', is_rest_day: false, exercises: [] },
+  { id: 'w-5', day_of_week: 5, day_name: '', is_rest_day: false, exercises: [] },
+  { id: 'w-6', day_of_week: 6, day_name: '', is_rest_day: false, exercises: [] },
+  { id: 'w-0', day_of_week: 0, day_name: '', is_rest_day: false, exercises: [] },
 ];
 
 const DEFAULT_DEMO_TASKS: Task[] = [
