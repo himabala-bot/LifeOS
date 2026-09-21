@@ -15,6 +15,8 @@ import { AnalyticsScreen } from './components/screens/AnalyticsScreen';
 import { SettingsScreen } from './components/screens/SettingsScreen';
 import { Menu, Plus } from 'lucide-react';
 
+import { MobileNav } from './components/MobileNav';
+
 export default function Home() {
   const { isAuthenticated, isLoading } = useAuth();
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('today');
@@ -46,7 +48,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex bg-[#f8f7f4] text-[#181a18]">
-      {/* Sidebar Navigation */}
+      {/* Sidebar Navigation (Desktop Drawer & Mobile Full Drawer) */}
       <Sidebar
         currentScreen={currentScreen}
         onSelectScreen={setCurrentScreen}
@@ -57,27 +59,34 @@ export default function Home() {
 
       <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
         {/* Mobile Header */}
-        <header className="md:hidden sticky top-0 z-30 bg-[#f8f7f4]/90 backdrop-blur-md border-b border-[var(--line)] px-5 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <header className="md:hidden sticky top-0 z-30 bg-[#f8f7f4]/90 backdrop-blur-md border-b border-[var(--line)] px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="w-9 h-9 rounded-xl border border-[var(--line)] bg-white flex items-center justify-center text-[var(--ink)] shadow-sm cursor-pointer"
+              className="w-8 h-8 rounded-xl border border-[var(--line)] bg-white flex items-center justify-center text-[var(--ink)] shadow-xs cursor-pointer active:scale-95 transition-transform"
+              title="Open Navigation Drawer"
             >
-              <Menu size={18} />
+              <Menu size={16} />
             </button>
-            <span className="font-bold text-sm tracking-wider uppercase">{currentScreen}</span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
+              <span className="font-bold text-xs tracking-wider uppercase text-[var(--ink)]">{currentScreen}</span>
+            </div>
           </div>
 
-          <button
-            onClick={() => openQuickAdd('task')}
-            className="w-8 h-8 rounded-full bg-[var(--accent)] text-white flex items-center justify-center shadow-sm cursor-pointer"
-          >
-            <Plus size={16} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => openQuickAdd('task')}
+              className="px-3 py-1.5 rounded-full bg-[var(--ink)] hover:bg-black text-white flex items-center gap-1.5 text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition-transform"
+            >
+              <Plus size={13} />
+              <span>Create</span>
+            </button>
+          </div>
         </header>
 
         {/* Main Content Viewport */}
-        <main className="flex-1 px-5 sm:px-8 md:px-12 py-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 px-4 sm:px-8 md:px-12 py-5 sm:py-8 pb-28 md:pb-12 max-w-7xl w-full mx-auto">
           {currentScreen === 'today' && (
             <TodayScreen
               onNavigate={setCurrentScreen}
@@ -98,6 +107,14 @@ export default function Home() {
           {currentScreen === 'settings' && <SettingsScreen />}
         </main>
       </div>
+
+      {/* Modern Fixed Mobile Bottom Navigation Bar */}
+      <MobileNav
+        currentScreen={currentScreen}
+        onSelectScreen={setCurrentScreen}
+        onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+        onOpenQuickAdd={() => openQuickAdd('task')}
+      />
 
       <QuickAddModal
         isOpen={isQuickAddOpen}

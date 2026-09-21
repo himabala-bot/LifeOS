@@ -378,26 +378,26 @@ export function HealthScreen() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-16 animate-fadeIn text-[#181a18]">
+    <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 pb-16 animate-fadeIn text-[#181a18]">
       {/* Top Header with Tab Selector & Small Streak Badge */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="serif text-4xl sm:text-5xl font-normal">
+            <h1 className="serif text-3xl sm:text-5xl font-normal">
               Physical Architecture<span className="text-[var(--accent)]">.</span>
             </h1>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-sm font-bold shadow-xs">
-              <Flame size={15} className="text-[#e66b4b]" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs sm:text-sm font-bold shadow-xs">
+              <Flame size={14} className="text-[#e66b4b]" />
               <span>{workoutStreak}</span>
             </div>
           </div>
-          <p className="text-sm text-[var(--muted)] mt-1.5 max-w-2xl">
+          <p className="text-xs sm:text-sm text-[var(--muted)] mt-1.5 max-w-2xl">
             Program your weekly training schedule, log daily meals, and compound your physical vitality.
           </p>
         </div>
 
         {/* Tab Ordering: 1. Workouts, 2. Meals, 3. Weight */}
-        <div className="bg-[#ecebe4] p-1.5 rounded-2xl flex items-center gap-1 shrink-0 text-xs font-bold shadow-inner overflow-x-auto max-w-full">
+        <div className="bg-[#ecebe4] p-1 rounded-2xl flex items-center gap-1 shrink-0 text-xs font-bold shadow-inner overflow-x-auto no-scrollbar w-full sm:w-auto">
           {[
             { id: 'workouts', label: 'Workouts & Calendar', icon: Dumbbell },
             { id: 'meals', label: 'Daily Meals', icon: Utensils },
@@ -409,9 +409,9 @@ export function HealthScreen() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap text-xs ${
                   active
-                    ? 'bg-white text-[var(--ink)] shadow-sm font-semibold'
+                    ? 'bg-white text-[var(--ink)] shadow-xs font-semibold'
                     : 'text-[var(--muted)] hover:text-[var(--ink)]'
                 }`}
               >

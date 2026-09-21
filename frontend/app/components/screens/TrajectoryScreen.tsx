@@ -130,7 +130,7 @@ export function TrajectoryScreen() {
           </p>
         </div>
 
-        <div className="bg-[#ecebe4] p-1.5 rounded-2xl flex items-center gap-1 shrink-0 text-xs font-bold shadow-inner">
+        <div className="bg-[#ecebe4] p-1.5 rounded-2xl flex items-center gap-1 shrink-0 text-xs font-bold shadow-inner overflow-x-auto no-scrollbar max-w-full">
           {[
             { label: '6 Months', value: 0.5 },
             { label: '1 Year', value: 1 },
@@ -141,7 +141,7 @@ export function TrajectoryScreen() {
             <button
               key={h.value}
               onClick={() => setHorizonYears(h.value)}
-              className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
+              className={`px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                 horizonYears === h.value
                   ? 'bg-[var(--ink)] text-white shadow-md'
                   : 'text-[var(--muted)] hover:text-[var(--ink)]'

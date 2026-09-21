@@ -107,41 +107,41 @@ export function TasksScreen() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-[var(--line)] shadow-sm">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[var(--line)] shadow-xs">
           <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--muted)]">Total Tasks</p>
-          <p className="text-3xl font-bold mt-1 text-[var(--ink)]">{totalCount}</p>
+          <p className="text-2xl sm:text-3xl font-bold mt-1 text-[var(--ink)]">{totalCount}</p>
         </div>
-        <div className="p-5 rounded-2xl bg-white border border-[var(--line)] shadow-sm">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[var(--line)] shadow-xs">
           <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--muted)]">Pending Action</p>
-          <p className="text-3xl font-bold mt-1 text-[var(--accent)]">{pendingCount}</p>
+          <p className="text-2xl sm:text-3xl font-bold mt-1 text-[var(--accent)]">{pendingCount}</p>
         </div>
-        <div className="p-5 rounded-2xl bg-white border border-[var(--line)] shadow-sm">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[var(--line)] shadow-xs">
           <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--muted)]">Completed</p>
-          <p className="text-3xl font-bold mt-1 text-[var(--sage)]">{completedCount}</p>
+          <p className="text-2xl sm:text-3xl font-bold mt-1 text-[var(--sage)]">{completedCount}</p>
         </div>
-        <div className="p-5 rounded-2xl bg-white border border-[var(--line)] shadow-sm">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[var(--line)] shadow-xs">
           <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--muted)]">Overdue</p>
-          <p className={`text-3xl font-bold mt-1 ${overdueCount > 0 ? 'text-red-500' : 'text-[var(--muted)]'}`}>
+          <p className={`text-2xl sm:text-3xl font-bold mt-1 ${overdueCount > 0 ? 'text-red-500' : 'text-[var(--muted)]'}`}>
             {overdueCount}
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleCreate} className="p-4 bg-white rounded-2xl border border-[var(--line)] shadow-sm flex flex-col md:flex-row gap-3 items-center">
+      <form onSubmit={handleCreate} className="p-3.5 sm:p-4 bg-white rounded-2xl border border-[var(--line)] shadow-xs flex flex-col md:flex-row gap-3 items-stretch md:items-center">
         <input
           type="text"
           value={newTitle}
           onChange={e => setNewTitle(e.target.value)}
           placeholder="Add a new high-leverage task..."
-          className="w-full md:flex-1 px-4 py-2.5 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-sm focus:outline-none focus:border-[var(--accent)]"
+          className="w-full md:flex-1 px-3.5 py-2.5 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-sm focus:outline-none focus:border-[var(--accent)]"
         />
 
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full md:w-auto">
           <select
             value={newTag}
             onChange={e => setNewTag(e.target.value as TaskTag)}
-            className="px-3 py-2 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-xs font-semibold text-[var(--ink)] focus:outline-none"
+            className="flex-1 sm:flex-none px-3 py-2 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-xs font-semibold text-[var(--ink)] focus:outline-none"
           >
             {['Work', 'Wellbeing', 'Admin', 'Learning', 'Personal', 'Creative'].map(t => (
               <option key={t} value={t}>{t}</option>
@@ -151,7 +151,7 @@ export function TasksScreen() {
           <select
             value={newPriority}
             onChange={e => setNewPriority(e.target.value as TaskPriority)}
-            className="px-3 py-2 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-xs font-semibold text-[var(--ink)] focus:outline-none capitalize"
+            className="flex-1 sm:flex-none px-3 py-2 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-xs font-semibold text-[var(--ink)] focus:outline-none capitalize"
           >
             <option value="urgent">Urgent</option>
             <option value="high">High</option>
@@ -163,12 +163,12 @@ export function TasksScreen() {
             type="date"
             value={newDueDate}
             onChange={e => setNewDueDate(e.target.value)}
-            className="px-3 py-2 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-xs font-semibold text-[var(--ink)] focus:outline-none"
+            className="flex-1 sm:flex-none px-2.5 py-2 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-xs font-semibold text-[var(--ink)] focus:outline-none"
           />
 
           <button
             type="submit"
-            className="px-5 py-2.5 rounded-xl bg-[var(--ink)] hover:bg-black text-white text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 shadow-sm cursor-pointer ml-auto md:ml-0"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[var(--ink)] hover:bg-black text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
           >
             <Plus size={16} />
             <span>Add</span>
@@ -176,8 +176,7 @@ export function TasksScreen() {
         </div>
       </form>
 
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
           <input
@@ -189,12 +188,12 @@ export function TasksScreen() {
           />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
           {(['all', 'pending', 'completed'] as const).map(s => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize shrink-0 transition-all cursor-pointer ${statusFilter === s ? 'bg-[var(--accent)] text-white shadow-sm' : 'bg-white border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'}`}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize shrink-0 transition-all cursor-pointer ${statusFilter === s ? 'bg-[var(--accent)] text-white shadow-xs' : 'bg-white border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'}`}
             >
               {s}
             </button>
@@ -214,10 +213,10 @@ export function TasksScreen() {
       </div>
 
       {viewMode === 'list' && (
-        <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
+        <div className="bg-white rounded-3xl p-4 sm:p-6 border border-[var(--line)] shadow-xs">
           {filteredTasks.length === 0 ? (
-            <div className="py-16 text-center text-[var(--muted)]">
-              <p className="text-sm">No tasks matching your filters.</p>
+            <div className="py-14 text-center text-[var(--muted)]">
+              <p className="text-sm font-medium">No tasks matching your filters.</p>
               <p className="text-xs mt-1">Clear your search query or add a new task above.</p>
             </div>
           ) : (
@@ -228,25 +227,25 @@ export function TasksScreen() {
                   <motion.div
                     layout
                     key={task.id}
-                    className="py-4 flex items-center justify-between gap-4 group hover:bg-[#faf9f6] px-3 -mx-3 rounded-2xl transition-colors"
+                    className="py-3.5 sm:py-4 flex items-center justify-between gap-3 group hover:bg-[#faf9f6] px-2 sm:px-3 -mx-2 sm:-mx-3 rounded-2xl transition-colors"
                   >
-                    <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
                       <button
                         onClick={() => toggleTask(task.id)}
-                        className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all cursor-pointer ${task.completed ? 'bg-[var(--accent)] border-[var(--accent)] text-white shadow-sm' : 'border-[var(--line)] hover:border-[var(--accent)]'}`}
+                        className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 mt-0.5 sm:mt-0 transition-all cursor-pointer ${task.completed ? 'bg-[var(--accent)] border-[var(--accent)] text-white shadow-xs' : 'border-[var(--line)] hover:border-[var(--accent)] bg-white'}`}
                       >
                         {task.completed && <Check size={13} />}
                       </button>
 
-                      <div className="min-w-0">
-                        <p className={`text-sm leading-snug transition-all ${task.completed ? 'line-through text-[var(--muted)]' : 'font-medium text-[var(--ink)]'}`}>
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-sm leading-snug break-words transition-all ${task.completed ? 'line-through text-[var(--muted)]' : 'font-semibold text-[var(--ink)]'}`}>
                           {task.title}
                         </p>
                         {task.description && (
                           <p className="text-xs text-[var(--muted)] mt-0.5">{task.description}</p>
                         )}
-                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#f1f0ea] text-[var(--muted)] font-medium">
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#f1f0ea] text-[var(--muted)] font-semibold">
                             {task.tag}
                           </span>
                           {task.priority === 'urgent' && (
@@ -269,7 +268,7 @@ export function TasksScreen() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => setEditingTask(task)}
                         className="p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[#ecebe4] transition-colors cursor-pointer"

@@ -125,12 +125,12 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          className="relative w-full max-w-lg bg-[#f8f7f4] rounded-3xl border border-[var(--line)] shadow-2xl overflow-hidden z-10"
+          className="relative w-full max-w-lg bg-[#f8f7f4] rounded-3xl border border-[var(--line)] shadow-2xl overflow-hidden z-10 max-h-[90vh] flex flex-col"
         >
-          <div className="p-6 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="p-4 sm:p-6 border-b border-[var(--line)] flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />
-              <h3 className="font-semibold text-base">Quick Create</h3>
+              <h3 className="font-semibold text-base text-[var(--ink)]">Quick Create</h3>
             </div>
             <button
               onClick={onClose}
@@ -141,7 +141,7 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
           </div>
 
           {/* Tab Selector */}
-          <div className="flex border-b border-[var(--line)] bg-[#f1f0ea] p-1 gap-1">
+          <div className="flex border-b border-[var(--line)] bg-[#f1f0ea] p-1 gap-1 overflow-x-auto no-scrollbar shrink-0">
             {[
               { id: 'task', label: 'Task', icon: ListTodo },
               { id: 'habit', label: 'Habit', icon: Flame },
@@ -156,9 +156,9 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                   key={t.id}
                   type="button"
                   onClick={() => setTab(t.id as any)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  className={`flex-1 min-w-[64px] py-2 px-1 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                     active
-                      ? 'bg-white text-[var(--ink)] shadow-sm'
+                      ? 'bg-white text-[var(--ink)] shadow-xs'
                       : 'text-[var(--muted)] hover:text-[var(--ink)]'
                   }`}
                 >
@@ -169,7 +169,7 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
             })}
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6 overflow-y-auto">
             {/* TASK FORM */}
             {tab === 'task' && (
               <form onSubmit={handleCreateTask} className="space-y-4">

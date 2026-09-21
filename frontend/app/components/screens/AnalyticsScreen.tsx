@@ -87,37 +87,37 @@ export function AnalyticsScreen() {
     <div className="max-w-6xl mx-auto space-y-8 pb-16 animate-fadeIn">
       <div>
         <p className="text-xs uppercase tracking-[0.2em] font-semibold text-[var(--muted)] mb-1">Deep Intelligence</p>
-        <h1 className="serif text-4xl sm:text-5xl font-normal">Analytics & Life Vectors<span className="text-[var(--accent)]">.</span></h1>
+        <h1 className="serif text-3xl sm:text-5xl font-normal">Analytics & Life Vectors<span className="text-[var(--accent)]">.</span></h1>
       </div>
 
       {/* Alignment Synthesis Banner */}
-      <div className="bg-[var(--ink)] text-white rounded-3xl p-8 relative overflow-hidden shadow-xl">
+      <div className="bg-[var(--ink)] text-white rounded-3xl p-5 sm:p-8 relative overflow-hidden shadow-xl">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
             <span className="text-[10px] uppercase tracking-[0.25em] text-[#bdd0b5] font-semibold">Alignment Synthesis</span>
-            <div className="text-5xl sm:text-6xl serif mt-2 font-normal">
-              {lifeScore.overall}<span className="text-2xl text-white/40"> / 100</span>
+            <div className="text-4xl sm:text-6xl serif mt-2 font-normal">
+              {lifeScore.overall}<span className="text-xl sm:text-2xl text-white/40"> / 100</span>
             </div>
             <p className="text-xs text-white/70 max-w-md mt-2">
               {lifeScore.summary}
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-sm">
-            <div className="p-3">
-              <p className="text-[10px] uppercase tracking-wider text-white/50">Task Output</p>
-              <p className="text-2xl font-bold mt-1 text-white">{lifeScore.tasksScore}%</p>
-              <p className="text-[10px] text-white/40 mt-0.5">Weight: 35%</p>
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 bg-white/5 p-3 sm:p-4 rounded-2xl border border-white/10 backdrop-blur-sm text-center sm:text-left">
+            <div className="p-2 sm:p-3">
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-white/50">Task Output</p>
+              <p className="text-xl sm:text-2xl font-bold mt-1 text-white">{lifeScore.tasksScore}%</p>
+              <p className="text-[9px] sm:text-[10px] text-white/40 mt-0.5">Weight: 35%</p>
             </div>
-            <div className="p-3">
-              <p className="text-[10px] uppercase tracking-wider text-white/50">Habit Loops</p>
-              <p className="text-2xl font-bold mt-1 text-[#bdd0b5]">{lifeScore.habitsScore}%</p>
-              <p className="text-[10px] text-white/40 mt-0.5">Weight: 35%</p>
+            <div className="p-2 sm:p-3">
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-white/50">Habit Loops</p>
+              <p className="text-xl sm:text-2xl font-bold mt-1 text-[#bdd0b5]">{lifeScore.habitsScore}%</p>
+              <p className="text-[9px] sm:text-[10px] text-white/40 mt-0.5">Weight: 35%</p>
             </div>
-            <div className="p-3">
-              <p className="text-[10px] uppercase tracking-wider text-white/50">Health & Strength</p>
-              <p className="text-2xl font-bold mt-1 text-emerald-300">{lifeScore.healthScore}%</p>
-              <p className="text-[10px] text-white/40 mt-0.5">Weight: 30%</p>
+            <div className="p-2 sm:p-3">
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-white/50">Health & Strength</p>
+              <p className="text-xl sm:text-2xl font-bold mt-1 text-emerald-300">{lifeScore.healthScore}%</p>
+              <p className="text-[9px] sm:text-[10px] text-white/40 mt-0.5">Weight: 30%</p>
             </div>
           </div>
         </div>

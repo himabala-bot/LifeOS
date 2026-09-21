@@ -77,15 +77,15 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
   const last7DateStrs = Array.from({ length: 7 }, (_, i) => getPastDateStr(6 - i));
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 pb-16 animate-fadeIn">
+    <div className="max-w-6xl mx-auto space-y-6 sm:space-y-10 pb-16 animate-fadeIn">
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)] mb-2">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)] mb-1.5">
             <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
-            <span>{formattedDate}</span>
+            <span className="text-[11px] sm:text-xs">{formattedDate}</span>
           </div>
-          <h1 className="serif text-4xl sm:text-5xl font-normal tracking-tight text-[var(--ink)]">
+          <h1 className="serif text-3xl sm:text-5xl font-normal tracking-tight text-[var(--ink)]">
             {greeting}, {firstName}<span className="text-[var(--accent)]">.</span>
           </h1>
         </div>
@@ -93,14 +93,14 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => onOpenQuickAdd('task')}
-            className="px-4 py-2 rounded-xl bg-white border border-[var(--line)] hover:bg-[#ecebe4] text-xs font-semibold flex items-center gap-2 text-[var(--ink)] transition-colors shadow-sm cursor-pointer"
+            className="flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-xl bg-white border border-[var(--line)] hover:bg-[#ecebe4] text-xs font-semibold flex items-center justify-center gap-1.5 text-[var(--ink)] transition-colors shadow-xs cursor-pointer"
           >
             <Plus size={14} className="text-[var(--accent)]" />
             <span>New Task</span>
           </button>
           <button
             onClick={() => onNavigate('health')}
-            className="px-4 py-2 rounded-xl bg-white border border-[var(--line)] hover:bg-[#ecebe4] text-xs font-semibold flex items-center gap-2 text-[var(--ink)] transition-colors shadow-sm cursor-pointer"
+            className="flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-xl bg-white border border-[var(--line)] hover:bg-[#ecebe4] text-xs font-semibold flex items-center justify-center gap-1.5 text-[var(--ink)] transition-colors shadow-xs cursor-pointer"
           >
             <Plus size={14} className="text-[#e66b4b]" />
             <span>Add Meal</span>
@@ -109,57 +109,57 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
       </header>
 
       {/* Top Grid: LifeScore Alignment & Health Snapshot */}
-      <section className="grid lg:grid-cols-2 gap-8">
+      <section className="grid lg:grid-cols-2 gap-5 sm:gap-8">
         {/* Alignment Center / LifeScore */}
-        <div className="bg-[var(--ink)] text-white rounded-3xl p-7 relative overflow-hidden flex flex-col justify-between shadow-xl">
+        <div className="bg-[var(--ink)] text-white rounded-3xl p-5 sm:p-7 relative overflow-hidden flex flex-col justify-between shadow-xl">
           <div className="relative z-10 flex justify-between items-start">
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#bdd0b5]">Holistic Balance</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               </div>
-              <h2 className="serif text-3xl font-normal mt-1 text-white">Daily LifeScore</h2>
+              <h2 className="serif text-2xl sm:text-3xl font-normal mt-1 text-white">Daily LifeScore</h2>
             </div>
             <div className="text-right">
-              <span className="serif text-4xl sm:text-5xl font-normal text-white">
+              <span className="serif text-3xl sm:text-5xl font-normal text-white">
                 {lifeScore.overall}%
               </span>
-              <p className="text-[10px] text-white/60 uppercase tracking-widest mt-1">Unified Index</p>
+              <p className="text-[9px] sm:text-[10px] text-white/60 uppercase tracking-widest mt-0.5">Unified Index</p>
             </div>
           </div>
 
           {/* 3 Pillars Breakdown */}
-          <div className="relative z-10 grid grid-cols-3 gap-3 my-6 pt-5 border-t border-white/10 text-center">
-            <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10">
-              <span className="text-[10px] uppercase tracking-wider text-white/60 font-semibold block">Tasks (35%)</span>
-              <p className="text-base font-semibold mt-1">{lifeScore.tasksScore}%</p>
+          <div className="relative z-10 grid grid-cols-3 gap-2 sm:gap-3 my-5 sm:my-6 pt-4 sm:pt-5 border-t border-white/10 text-center">
+            <div className="p-2 sm:p-2.5 rounded-2xl bg-white/5 border border-white/10">
+              <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-white/60 font-semibold block">Tasks (35%)</span>
+              <p className="text-sm sm:text-base font-semibold mt-1">{lifeScore.tasksScore}%</p>
             </div>
-            <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10">
-              <span className="text-[10px] uppercase tracking-wider text-white/60 font-semibold block">Habits (35%)</span>
-              <p className="text-base font-semibold mt-1">{lifeScore.habitsScore}%</p>
+            <div className="p-2 sm:p-2.5 rounded-2xl bg-white/5 border border-white/10">
+              <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-white/60 font-semibold block">Habits (35%)</span>
+              <p className="text-sm sm:text-base font-semibold mt-1">{lifeScore.habitsScore}%</p>
             </div>
-            <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10">
-              <span className="text-[10px] uppercase tracking-wider text-white/60 font-semibold block">Health (30%)</span>
-              <p className="text-base font-semibold mt-1">{lifeScore.healthScore}%</p>
+            <div className="p-2 sm:p-2.5 rounded-2xl bg-white/5 border border-white/10">
+              <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-white/60 font-semibold block">Health (30%)</span>
+              <p className="text-sm sm:text-base font-semibold mt-1">{lifeScore.healthScore}%</p>
             </div>
           </div>
 
-          <div className="relative z-10 mt-4 text-xs text-white/70">
+          <div className="relative z-10 mt-2 text-xs text-white/70">
             {lifeScore.summary}
           </div>
         </div>
 
         {/* Health & Strength Snapshot Card */}
-        <div className="bg-white rounded-3xl p-7 border border-[var(--line)] shadow-sm flex flex-col justify-between">
+        <div className="bg-white rounded-3xl p-5 sm:p-7 border border-[var(--line)] shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-start">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-600" />
-                  <p className="text-xs uppercase tracking-[0.25em] text-[var(--muted)] font-semibold">Physical Architecture</p>
+                  <p className="text-[10px] sm:text-xs uppercase tracking-[0.25em] text-[var(--muted)] font-semibold">Physical Architecture</p>
                 </div>
-                <div className="flex items-baseline gap-3 mt-3">
-                  <span className="text-3xl sm:text-4xl font-bold text-[var(--ink)]">
+                <div className="flex items-baseline gap-2 sm:gap-3 mt-2 sm:mt-3">
+                  <span className="text-2xl sm:text-4xl font-bold text-[var(--ink)]">
                     {todaysMealsEatenCount} / {todaysMealsTotalCount}
                   </span>
                   <span className="text-xs font-semibold text-[var(--muted)]">meals eaten today</span>
@@ -183,23 +183,23 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
             </div>
 
             {/* Quick Status Pill */}
-            <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="mt-4 sm:mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
               <div className="p-3 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
                 <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-[var(--muted)] font-medium">Training</span>
-                  <span className="font-bold text-[var(--ink)] flex items-center gap-1">
+                  <span className="text-[var(--muted)] font-medium text-[11px]">Training</span>
+                  <span className="font-bold text-[var(--ink)] flex items-center gap-1 text-[11px]">
                     <Flame size={12} className="text-[#e66b4b]" /> {workoutStreak}d streak
                   </span>
                 </div>
-                <p className="text-[11px] font-semibold text-[var(--ink)] truncate mt-1">
-                  {todaysWorkoutDay?.day_name}
+                <p className="text-xs font-semibold text-[var(--ink)] truncate mt-1">
+                  {todaysWorkoutDay?.day_name || 'Rest / Recovery'}
                 </p>
               </div>
 
               <div className="p-3 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
                 <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-[var(--muted)] font-medium">Workout Status</span>
-                  <span className={`font-bold text-xs ${isTodayWorkoutCompleted ? 'text-emerald-700' : 'text-[var(--muted)]'}`}>
+                  <span className="text-[var(--muted)] font-medium text-[11px]">Workout Status</span>
+                  <span className={`font-bold text-[11px] ${isTodayWorkoutCompleted ? 'text-emerald-700' : 'text-[var(--muted)]'}`}>
                     {isTodayWorkoutCompleted ? 'Completed ✓' : 'Pending'}
                   </span>
                 </div>
@@ -216,14 +216,14 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
             </div>
           </div>
 
-          <div className="mt-5 pt-4 border-t border-[var(--line)] flex items-center justify-between">
-            <div className="text-xs text-[var(--muted)]">
+          <div className="mt-4 pt-3.5 border-t border-[var(--line)] flex items-center justify-between">
+            <div className="text-xs text-[var(--muted)] truncate pr-2">
               <span className="font-semibold text-[var(--ink)]">{todaysWorkoutDay?.day_name.split(' ')[0] || 'Training'}:</span>{' '}
-              {todaysWorkoutDay?.is_rest_day ? 'Rest & Recovery Day' : `${todaysWorkoutDay?.exercises?.length || 0} planned exercises`}
+              {todaysWorkoutDay?.is_rest_day ? 'Rest & Recovery' : `${todaysWorkoutDay?.exercises?.length || 0} planned exercises`}
             </div>
             <button
               onClick={() => onNavigate('health')}
-              className="hover:text-[var(--accent)] text-xs font-bold text-[var(--ink)] flex items-center gap-1 cursor-pointer transition-colors"
+              className="hover:text-[var(--accent)] text-xs font-bold text-[var(--ink)] flex items-center gap-1 shrink-0 cursor-pointer transition-colors"
             >
               <span>Open Health</span>
               <ChevronRight size={13} />
