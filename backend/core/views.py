@@ -293,12 +293,25 @@ class HabitCompletionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return HabitCompletion.objects.filter(habit__user=self.request.user)
 
-    def perform_create(self, serializer):
-        habit = serializer.validated_data.get('habit')
-        if habit and habit.user == self.request.user:
-            serializer.save()
-        else:
-            raise permissions.PermissionDenied("Habit does not belong to you.")
+    def create(self, request, *args, **kwargs):
+        habit_id = request.data.get('habit')
+        date = request.data.get('date')
+        completed = request.data.get('completed', True)
+        if not habit_id or not date:
+            return Response({"error": "habit and date are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            habit = Habit.objects.get(id=habit_id, user=request.user)
+        except Habit.DoesNotExist:
+            return Response({"error": "Habit not found or does not belong to you."}, status=status.HTTP_404_NOT_FOUND)
+
+        instance, created = HabitCompletion.objects.update_or_create(
+            habit=habit,
+            date=date,
+            defaults={'completed': completed}
+        )
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
 class GoalViewSet(BaseUserOwnedViewSet):
