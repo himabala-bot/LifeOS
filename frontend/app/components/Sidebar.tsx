@@ -5,16 +5,14 @@ import {
   ListTodo,
   Flame,
   Target,
-  CircleDollarSign,
+  Activity,
   BarChart3,
-  BookOpen,
   Settings,
   Plus,
   LogOut,
   X,
   Compass,
-  ChevronRight,
-  Sparkles
+  Sparkles,
 } from 'lucide-react';
 import { ScreenType } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -36,31 +34,32 @@ export function Sidebar({
   onOpenQuickAdd,
 }: SidebarProps) {
   const { user, logout } = useAuth();
-  const { tasks, habits, goals, budgetRemaining, lifeScore } = useData();
+  const { tasks, habits, goals, healthProfile, lifeScore } = useData();
 
   const pendingTasksCount = tasks.filter(t => !t.completed).length;
   const activeHabitsCount = habits.length;
   const activeGoalsCount = goals.filter(g => g.status !== 'completed' && g.status !== 'paused').length;
 
-  const navItems: { id: ScreenType; label: string; icon: any; badge?: string | number; badgeColor?: string }[] = [
+  const primaryNavItems: { id: ScreenType; label: string; icon: any; badge?: string | number; badgeColor?: string }[] = [
     { id: 'today', label: 'Today', icon: Compass, badge: lifeScore.overall > 0 ? `${lifeScore.overall}%` : undefined, badgeColor: 'bg-[var(--accent-subtle)] text-[var(--accent)]' },
     { id: 'trajectory', label: 'Future Simulator', icon: Sparkles },
     { id: 'tasks', label: 'Tasks', icon: ListTodo, badge: pendingTasksCount > 0 ? pendingTasksCount : undefined },
     { id: 'habits', label: 'Habits', icon: Flame, badge: activeHabitsCount > 0 ? activeHabitsCount : undefined, badgeColor: 'bg-[var(--sage-light)] text-[var(--sage)]' },
     { id: 'goals', label: 'Goals', icon: Target, badge: activeGoalsCount > 0 ? activeGoalsCount : undefined },
-    { id: 'expenses', label: 'Expenses & Budget', icon: CircleDollarSign, badge: user?.currency ? `${user.currency}${Math.round(budgetRemaining).toLocaleString()}` : undefined },
+    { id: 'health', label: 'Health', icon: Activity, badge: `${healthProfile.current_weight}kg`, badgeColor: 'bg-emerald-50 text-emerald-800' },
+  ];
+
+  const secondaryNavItems: { id: ScreenType; label: string; icon: any }[] = [
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'journal', label: 'Daily Journal', icon: BookOpen },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   return (
     <>
-
       {isOpenMobile && (
         <div
           onClick={onCloseMobile}
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs md:hidden"
         />
       )}
 
@@ -70,7 +69,6 @@ export function Sidebar({
           ${isOpenMobile ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
-
         <div>
           <div className="flex items-center justify-between mb-8">
             <div
@@ -106,7 +104,7 @@ export function Sidebar({
               Workspace
             </p>
 
-            {navItems.slice(0, 6).map((item) => {
+            {primaryNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentScreen === item.id;
               return (
@@ -135,10 +133,10 @@ export function Sidebar({
             })}
 
             <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-[var(--muted)] px-3 mb-2 mt-6">
-              Insights & Reflect
+              Insights & System
             </p>
 
-            {navItems.slice(6).map((item) => {
+            {secondaryNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentScreen === item.id;
               return (

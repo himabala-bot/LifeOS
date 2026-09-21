@@ -1,5 +1,3 @@
-
-
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   (typeof window !== 'undefined' &&
@@ -100,7 +98,7 @@ export async function apiFetch<T = any>(
         errorMessage = errorData.error || errorData.detail || JSON.stringify(errorData);
       }
     } catch {
-
+      // Keep default error
     }
     throw new Error(errorMessage);
   }
@@ -113,13 +111,12 @@ export async function apiFetch<T = any>(
 }
 
 export const api = {
-
   warmup: () => {
     if (typeof window === 'undefined') return;
     try {
       fetch(`${API_BASE_URL}/health/`, { method: 'GET', keepalive: true }).catch(() => {});
     } catch {
-
+      // Silently catch
     }
   },
 
@@ -154,15 +151,17 @@ export const api = {
     tasks: any[];
     habits: any[];
     goals: any[];
-    expenses: any[];
-    budget: any;
-    analytics: {
-      tasks_completed: number;
-      tasks_total: number;
-      spent_month: number;
-      goal_progress: number;
-      habits_active: number;
-    };
+    health_profile: any;
+    foods: any[];
+    food_logs_today: any[];
+    weight_checkins: any[];
+    workout_plan: any;
+    today_workout_day: any;
+    today_workout_logs: any[];
+    daily_health_status: any;
+    today_macros: any;
+    lifescore: any;
+    analytics: any;
   }>('/api/bootstrap/'),
 
   tasks: {
@@ -250,46 +249,115 @@ export const api = {
     }),
   },
 
-  expenses: {
-    list: () => apiFetch<any[]>('/api/expenses/'),
-    create: (expense: {
-      title: string;
-      amount: number | string;
-      category: string;
-      date: string;
-    }) => apiFetch<any>('/api/expenses/', {
-      method: 'POST',
-      body: JSON.stringify(expense),
-    }),
-    update: (id: string, updates: Partial<{
-      title: string;
-      amount: number | string;
-      category: string;
-      date: string;
-    }>) => apiFetch<any>(`/api/expenses/${id}/`, {
+  // ==========================================
+  // HEALTH MODULE API
+  // ==========================================
+  health: {
+    getProfile: () => apiFetch<any>('/api/health/profile/'),
+    updateProfile: (id: string, data: any) => apiFetch<any>(`/api/health/profile/${id}/`, {
       method: 'PATCH',
-      body: JSON.stringify(updates),
+      body: JSON.stringify(data),
     }),
-    delete: (id: string) => apiFetch(`/api/expenses/${id}/`, {
-      method: 'DELETE',
-    }),
-  },
-
-  budget: {
-    get: () => apiFetch<any[]>('/api/budget/'),
-    update: (amount: number) => apiFetch<any>('/api/budget/', {
+    onboard: (data: {
+      current_weight: number;
+      goal_weight: number;
+      height_cm: number;
+      age: number;
+      biological_sex: string;
+      activity_level: string;
+      training_focus: string;
+      training_frequency: number;
+      target_calories?: number;
+      target_protein?: number;
+      target_carbs?: number;
+      target_fat?: number;
+      target_water_ml?: number;
+    }) => apiFetch<any>('/api/health/onboard/', {
       method: 'POST',
-      body: JSON.stringify({ amount }),
+      body: JSON.stringify(data),
     }),
+
+    foods: {
+      list: () => apiFetch<any[]>('/api/health/foods/'),
+      create: (food: {
+        name: string;
+        serving_description: string;
+        calories: number;
+        protein: number;
+        carbs: number;
+        fat: number;
+        is_staple?: boolean;
+      }) => apiFetch<any>('/api/health/foods/', {
+        method: 'POST',
+        body: JSON.stringify(food),
+      }),
+      update: (id: string, updates: any) => apiFetch<any>(`/api/health/foods/${id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      }),
+      delete: (id: string) => apiFetch(`/api/health/foods/${id}/`, {
+        method: 'DELETE',
+      }),
+    },
+
+    foodLogs: {
+      list: (date?: string) => apiFetch<any[]>(`/api/health/food-logs/${date ? `?date=${date}` : ''}`),
+      create: (log: { food: string; date: string; servings: number }) =>
+        apiFetch<any>('/api/health/food-logs/', {
+          method: 'POST',
+          body: JSON.stringify(log),
+        }),
+      delete: (id: string) => apiFetch(`/api/health/food-logs/${id}/`, {
+        method: 'DELETE',
+      }),
+    },
+
+    weight: {
+      list: () => apiFetch<any[]>('/api/health/weight/'),
+      create: (checkin: { date: string; weight: number; notes?: string }) =>
+        apiFetch<any>('/api/health/weight/', {
+          method: 'POST',
+          body: JSON.stringify(checkin),
+        }),
+      delete: (id: string) => apiFetch(`/api/health/weight/${id}/`, {
+        method: 'DELETE',
+      }),
+    },
+
+    workouts: {
+      getPlans: () => apiFetch<any[]>('/api/health/workout-plans/'),
+      createPlan: (plan: any) => apiFetch<any>('/api/health/workout-plans/', {
+        method: 'POST',
+        body: JSON.stringify(plan),
+      }),
+      updateExercise: (id: string, updates: any) => apiFetch<any>(`/api/health/workout-exercises/${id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      }),
+      logWorkout: (log: {
+        workout_exercise: string;
+        date: string;
+        completed: boolean;
+        actual_sets?: number;
+        actual_reps?: string;
+        actual_weight?: number;
+      }) => apiFetch<any>('/api/health/workout-logs/', {
+        method: 'POST',
+        body: JSON.stringify(log),
+      }),
+    },
+
+    dailyStatus: {
+      get: () => apiFetch<any[]>('/api/health/daily-status/'),
+      update: (id: string, updates: { water_ml?: number; creatine_completed?: boolean }) =>
+        apiFetch<any>(`/api/health/daily-status/${id}/`, {
+          method: 'PATCH',
+          body: JSON.stringify(updates),
+        }),
+    }
   },
 
   analytics: {
-    get: () => apiFetch<{
-      tasks_completed: number;
-      tasks_total: number;
-      spent_month: number;
-      goal_progress: number;
-      habits_active: number;
-    }>('/api/analytics/'),
+    get: () => apiFetch<any>('/api/analytics/'),
   },
 };

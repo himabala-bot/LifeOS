@@ -11,20 +11,19 @@ import { TrajectoryScreen } from './components/screens/TrajectoryScreen';
 import { TasksScreen } from './components/screens/TasksScreen';
 import { HabitsScreen } from './components/screens/HabitsScreen';
 import { GoalsScreen } from './components/screens/GoalsScreen';
-import { ExpensesScreen } from './components/screens/ExpensesScreen';
+import { HealthScreen } from './components/screens/HealthScreen';
 import { AnalyticsScreen } from './components/screens/AnalyticsScreen';
-import { JournalScreen } from './components/screens/JournalScreen';
 import { SettingsScreen } from './components/screens/SettingsScreen';
-import { Menu, Plus, Sparkles } from 'lucide-react';
+import { Menu, Plus } from 'lucide-react';
 
 export default function Home() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('today');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-  const [quickAddTab, setQuickAddTab] = useState<'task' | 'habit' | 'goal' | 'expense' | 'journal'>('task');
+  const [quickAddTab, setQuickAddTab] = useState<'task' | 'habit' | 'goal' | 'food' | 'weight' | 'water' | 'workout'>('task');
 
-  const openQuickAdd = (tab: 'task' | 'habit' | 'goal' | 'expense' | 'journal' = 'task') => {
+  const openQuickAdd = (tab: 'task' | 'habit' | 'goal' | 'food' | 'weight' | 'water' | 'workout' = 'task') => {
     setQuickAddTab(tab);
     setIsQuickAddOpen(true);
   };
@@ -48,7 +47,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex bg-[#f8f7f4] text-[#181a18]">
-
+      {/* Sidebar Navigation */}
       <Sidebar
         currentScreen={currentScreen}
         onSelectScreen={setCurrentScreen}
@@ -58,7 +57,7 @@ export default function Home() {
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
-
+        {/* Mobile Header */}
         <header className="md:hidden sticky top-0 z-30 bg-[#f8f7f4]/90 backdrop-blur-md border-b border-[var(--line)] px-5 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -78,6 +77,7 @@ export default function Home() {
           </button>
         </header>
 
+        {/* Main Content Viewport */}
         <main className="flex-1 px-5 sm:px-8 md:px-12 py-8 max-w-7xl w-full mx-auto">
           {currentScreen === 'today' && (
             <TodayScreen
@@ -94,11 +94,9 @@ export default function Home() {
 
           {currentScreen === 'goals' && <GoalsScreen />}
 
-          {currentScreen === 'expenses' && <ExpensesScreen />}
+          {currentScreen === 'health' && <HealthScreen />}
 
           {currentScreen === 'analytics' && <AnalyticsScreen />}
-
-          {currentScreen === 'journal' && <JournalScreen />}
 
           {currentScreen === 'settings' && <SettingsScreen />}
         </main>

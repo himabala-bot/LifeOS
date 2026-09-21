@@ -2,46 +2,75 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ListTodo, Flame, Target, CircleDollarSign, BookOpen, Plus, Calendar, Tag, AlertCircle } from 'lucide-react';
+import {
+  X,
+  ListTodo,
+  Flame,
+  Target,
+  Apple,
+  Scale,
+  Droplets,
+  Dumbbell,
+  Plus,
+} from 'lucide-react';
 import { useData, getTodayDateStr } from '../context/DataContext';
-import { useAuth } from '../context/AuthContext';
-import { TaskPriority, TaskTag, HabitCategory, HabitFrequency, ExpenseCategory, GoalCategory } from '../types';
+import { TaskPriority, TaskTag, HabitCategory, HabitFrequency, GoalCategory } from '../types';
 
 interface QuickAddModalProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultTab?: 'task' | 'habit' | 'goal' | 'expense' | 'journal';
+  defaultTab?: 'task' | 'habit' | 'goal' | 'food' | 'weight' | 'water' | 'workout';
 }
 
 export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAddModalProps) {
-  const { addTask, addHabit, addGoal, addExpense, addEnergyLog } = useData();
-  const { user } = useAuth();
-  const [tab, setTab] = useState<'task' | 'habit' | 'goal' | 'expense' | 'journal'>(defaultTab);
+  const {
+    addTask,
+    addHabit,
+    addGoal,
+    foods,
+    logFood,
+    logWeight,
+    logWater,
+    workoutPlan,
+    todayWorkoutDay,
+    toggleWorkoutExercise,
+  } = useData();
 
+  const [tab, setTab] = useState<'task' | 'habit' | 'goal' | 'food' | 'weight' | 'water' | 'workout'>(defaultTab);
+
+  // Task form
   const [taskTitle, setTaskTitle] = useState('');
   const [taskTag, setTaskTag] = useState<TaskTag>('Work');
   const [taskPriority, setTaskPriority] = useState<TaskPriority>('medium');
   const [taskDueDate, setTaskDueDate] = useState(getTodayDateStr());
 
+  // Habit form
   const [habitName, setHabitName] = useState('');
   const [habitCategory, setHabitCategory] = useState<HabitCategory>('Health');
   const [habitFreq, setHabitFreq] = useState<HabitFrequency>('daily');
 
+  // Goal form
   const [goalTitle, setGoalTitle] = useState('');
   const [goalCategory, setGoalCategory] = useState<GoalCategory>('Career');
   const [goalTargetDate, setGoalTargetDate] = useState('');
   const [goalMilestone1, setGoalMilestone1] = useState('');
 
-  const [expenseTitle, setExpenseTitle] = useState('');
-  const [expenseAmount, setExpenseAmount] = useState('');
-  const [expenseCategory, setExpenseCategory] = useState<ExpenseCategory>('Food & Dining');
-  const [expenseDate, setExpenseDate] = useState(getTodayDateStr());
+  // Food form
+  const [selectedFoodId, setSelectedFoodId] = useState<string>(foods[0]?.id || '');
+  const [servings, setServings] = useState('1');
 
-  const [journalEnergy, setJournalEnergy] = useState<number>(4);
-  const [journalFocus, setJournalFocus] = useState<number>(120);
-  const [journalMood, setJournalMood] = useState<'energized' | 'focused' | 'calm' | 'tired' | 'stressed' | 'inspired'>('focused');
-  const [journalHighlight, setJournalHighlight] = useState('');
-  const [journalGratitude, setJournalGratitude] = useState('');
+  // Weight form
+  const [weight, setWeight] = useState('');
+  const [weightDate, setWeightDate] = useState(getTodayDateStr());
+  const [weightNotes, setWeightNotes] = useState('');
+
+  // Water form
+  const [waterAmount, setWaterAmount] = useState('250');
+
+  // Workout form
+  const [selectedWorkoutExerciseId, setSelectedWorkoutExerciseId] = useState<string>(
+    todayWorkoutDay?.exercises?.[0]?.id || ''
+  );
 
   if (!isOpen) return null;
 
@@ -53,7 +82,6 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
       tag: taskTag,
       priority: taskPriority,
       dueDate: taskDueDate,
-      completed: false,
     });
     setTaskTitle('');
     onClose();
@@ -89,45 +117,48 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
     onClose();
   };
 
-  const handleCreateExpense = (e: React.FormEvent) => {
+  const handleLogFood = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!expenseTitle.trim() || !expenseAmount) return;
-    addExpense({
-      title: expenseTitle.trim(),
-      amount: parseFloat(expenseAmount),
-      category: expenseCategory,
-      date: expenseDate,
-    });
-    setExpenseTitle('');
-    setExpenseAmount('');
+    const foodId = selectedFoodId || foods[0]?.id;
+    if (!foodId) return;
+    const s = parseFloat(servings) || 1.0;
+    logFood(foodId, s, getTodayDateStr());
     onClose();
   };
 
-  const handleCreateJournal = (e: React.FormEvent) => {
+  const handleLogWeight = (e: React.FormEvent) => {
     e.preventDefault();
-    addEnergyLog({
-      date: getTodayDateStr(),
-      energyLevel: journalEnergy,
-      focusMinutes: journalFocus,
-      mood: journalMood,
-      highlight: journalHighlight.trim() || undefined,
-      gratitude: journalGratitude.trim() || undefined,
-    });
-    setJournalHighlight('');
-    setJournalGratitude('');
+    const w = parseFloat(weight);
+    if (isNaN(w) || w <= 0) return;
+    logWeight(w, weightDate, weightNotes);
+    setWeight('');
+    onClose();
+  };
+
+  const handleLogWater = (e: React.FormEvent) => {
+    e.preventDefault();
+    const ml = parseInt(waterAmount) || 250;
+    logWater(ml);
+    onClose();
+  };
+
+  const handleLogWorkout = (e: React.FormEvent) => {
+    e.preventDefault();
+    const weId = selectedWorkoutExerciseId || todayWorkoutDay?.exercises?.[0]?.id;
+    if (!weId) return;
+    toggleWorkoutExercise(weId, true);
     onClose();
   };
 
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/50 backdrop-blur-xs"
         />
 
         <motion.div
@@ -136,7 +167,6 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           className="relative w-full max-w-lg bg-[#f8f7f4] rounded-3xl border border-[var(--line)] shadow-2xl overflow-hidden z-10"
         >
-
           <div className="p-6 border-b border-[var(--line)] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />
@@ -144,19 +174,22 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-white transition-colors"
+              className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-white transition-colors cursor-pointer"
             >
               <X size={16} />
             </button>
           </div>
 
+          {/* Tab Selector */}
           <div className="px-6 pt-4 pb-2 flex gap-2 overflow-x-auto">
             {[
               { id: 'task', label: 'Task', icon: ListTodo },
               { id: 'habit', label: 'Habit', icon: Flame },
               { id: 'goal', label: 'Goal', icon: Target },
-              { id: 'expense', label: 'Expense', icon: CircleDollarSign },
-              { id: 'journal', label: 'Journal', icon: BookOpen },
+              { id: 'food', label: 'Food', icon: Apple },
+              { id: 'weight', label: 'Weight', icon: Scale },
+              { id: 'water', label: 'Water', icon: Droplets },
+              { id: 'workout', label: 'Workout', icon: Dumbbell },
             ].map(item => {
               const Icon = item.icon;
               const isActive = tab === item.id;
@@ -179,7 +212,7 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
           </div>
 
           <div className="p-6">
-
+            {/* TASK FORM */}
             {tab === 'task' && (
               <form onSubmit={handleCreateTask} className="space-y-4">
                 <div>
@@ -252,6 +285,7 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
               </form>
             )}
 
+            {/* HABIT FORM */}
             {tab === 'habit' && (
               <form onSubmit={handleCreateHabit} className="space-y-4">
                 <div>
@@ -312,6 +346,7 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
               </form>
             )}
 
+            {/* GOAL FORM */}
             {tab === 'goal' && (
               <form onSubmit={handleCreateGoal} className="space-y-4">
                 <div>
@@ -322,7 +357,7 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                     type="text"
                     value={goalTitle}
                     onChange={e => setGoalTitle(e.target.value)}
-                    placeholder="e.g., Publish Design Systems Book"
+                    placeholder="e.g., Reach 57kg lean bodyweight"
                     className="w-full px-4 py-2.5 bg-white rounded-xl border border-[var(--line)] text-sm focus:outline-none focus:border-[var(--accent)]"
                     autoFocus
                     required
@@ -366,7 +401,7 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                     type="text"
                     value={goalMilestone1}
                     onChange={e => setGoalMilestone1(e.target.value)}
-                    placeholder="e.g., Draft table of contents and chapter 1"
+                    placeholder="e.g., Hit 50kg solid baseline"
                     className="w-full px-4 py-2 bg-white rounded-xl border border-[var(--line)] text-xs focus:outline-none focus:border-[var(--accent)]"
                   />
                 </div>
@@ -381,150 +416,82 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
               </form>
             )}
 
-            {tab === 'expense' && (
-              <form onSubmit={handleCreateExpense} className="space-y-4">
+            {/* FOOD LOG FORM */}
+            {tab === 'food' && (
+              <form onSubmit={handleLogFood} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                    Expense Title
+                    Select Food
+                  </label>
+                  <select
+                    value={selectedFoodId}
+                    onChange={e => setSelectedFoodId(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white rounded-xl border border-[var(--line)] text-xs font-semibold"
+                  >
+                    {foods.map(f => (
+                      <option key={f.id} value={f.id}>
+                        {f.name} ({f.calories} kcal, {f.protein}g P)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
+                    Servings
                   </label>
                   <input
-                    type="text"
-                    value={expenseTitle}
-                    onChange={e => setExpenseTitle(e.target.value)}
-                    placeholder="e.g., Weekly groceries at Whole Foods"
-                    className="w-full px-4 py-2.5 bg-white rounded-xl border border-[var(--line)] text-sm focus:outline-none focus:border-[var(--accent)]"
+                    type="number"
+                    step="0.25"
+                    min="0.25"
+                    max="10"
+                    value={servings}
+                    onChange={e => setServings(e.target.value)}
+                    className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs font-semibold"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 rounded-xl bg-[#e66b4b] hover:bg-[#d05c3d] text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-md mt-2 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Plus size={16} />
+                  <span>Log Food</span>
+                </button>
+              </form>
+            )}
+
+            {/* WEIGHT FORM */}
+            {tab === 'weight' && (
+              <form onSubmit={handleLogWeight} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
+                    Weight (kg)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="30"
+                    max="200"
+                    placeholder="e.g., 49.5"
+                    value={weight}
+                    onChange={e => setWeight(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-white rounded-xl border border-[var(--line)] text-sm font-bold"
                     autoFocus
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                      Amount ({user?.currency || '₹'})
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={expenseAmount}
-                      onChange={e => setExpenseAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="w-full px-4 py-2 bg-white rounded-xl border border-[var(--line)] text-sm font-semibold focus:outline-none focus:border-[var(--accent)]"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                      Date
-                    </label>
-                    <input
-                      type="date"
-                      value={expenseDate}
-                      onChange={e => setExpenseDate(e.target.value)}
-                      className="w-full px-2 py-2 bg-white rounded-xl border border-[var(--line)] text-xs font-medium focus:outline-none"
-                    />
-                  </div>
-                </div>
-
                 <div>
                   <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                    Category
-                  </label>
-                  <select
-                    value={expenseCategory}
-                    onChange={e => setExpenseCategory(e.target.value as ExpenseCategory)}
-                    className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs font-medium focus:outline-none"
-                  >
-                    {[
-                      'Food & Dining',
-                      'Housing & Rent',
-                      'Transport',
-                      'Utilities & Bills',
-                      'Entertainment',
-                      'Health & Wellness',
-                      'Shopping',
-                      'Education',
-                      'Savings & Investment',
-                      'Other'
-                    ].map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-md mt-2 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Plus size={16} />
-                  <span>Log Expense</span>
-                </button>
-              </form>
-            )}
-
-            {tab === 'journal' && (
-              <form onSubmit={handleCreateJournal} className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                      Energy (1 - 5)
-                    </label>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map(lvl => (
-                        <button
-                          key={lvl}
-                          type="button"
-                          onClick={() => setJournalEnergy(lvl)}
-                          className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${journalEnergy === lvl ? 'bg-[var(--accent)] text-white' : 'bg-white border border-[var(--line)] text-[var(--muted)]'}`}
-                        >
-                          {lvl}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                      Focus Minutes
-                    </label>
-                    <input
-                      type="number"
-                      value={journalFocus}
-                      onChange={e => setJournalFocus(parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-1.5 bg-white rounded-xl border border-[var(--line)] text-xs font-semibold focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                    Mood
-                  </label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {(['energized', 'focused', 'calm', 'tired', 'stressed', 'inspired'] as const).map(m => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setJournalMood(m)}
-                        className={`py-1.5 rounded-lg text-[11px] font-medium capitalize transition-all ${journalMood === m ? 'bg-[var(--ink)] text-white' : 'bg-white border border-[var(--line)] text-[var(--muted)]'}`}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                    Today's Key Highlight
+                    Notes
                   </label>
                   <input
                     type="text"
-                    value={journalHighlight}
-                    onChange={e => setJournalHighlight(e.target.value)}
-                    placeholder="What made today meaningful?"
-                    className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs focus:outline-none"
+                    placeholder="e.g., Morning weigh-in"
+                    value={weightNotes}
+                    onChange={e => setWeightNotes(e.target.value)}
+                    className="w-full px-3 py-2 bg-white rounded-xl border border-[var(--line)] text-xs"
                   />
                 </div>
 
@@ -533,7 +500,70 @@ export function QuickAddModal({ isOpen, onClose, defaultTab = 'task' }: QuickAdd
                   className="w-full py-3 rounded-xl bg-[var(--ink)] hover:bg-black text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-md mt-2 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Plus size={16} />
-                  <span>Save Entry</span>
+                  <span>Save Check-in</span>
+                </button>
+              </form>
+            )}
+
+            {/* WATER FORM */}
+            {tab === 'water' && (
+              <form onSubmit={handleLogWater} className="space-y-4">
+                <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
+                  Quick Log Water
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['250', '500', '750'].map(ml => (
+                    <button
+                      key={ml}
+                      type="button"
+                      onClick={() => setWaterAmount(ml)}
+                      className={`py-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        waterAmount === ml
+                          ? 'bg-blue-500 text-white border-blue-500'
+                          : 'bg-white text-[var(--ink)] border-[var(--line)] hover:bg-blue-50'
+                      }`}
+                    >
+                      +{ml} ml
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-md mt-2 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Plus size={16} />
+                  <span>Log {waterAmount} ml Water</span>
+                </button>
+              </form>
+            )}
+
+            {/* WORKOUT FORM */}
+            {tab === 'workout' && (
+              <form onSubmit={handleLogWorkout} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
+                    Today's Exercise ({todayWorkoutDay?.day_name || 'Workout'})
+                  </label>
+                  <select
+                    value={selectedWorkoutExerciseId}
+                    onChange={e => setSelectedWorkoutExerciseId(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white rounded-xl border border-[var(--line)] text-xs font-semibold"
+                  >
+                    {todayWorkoutDay?.exercises?.map(we => (
+                      <option key={we.id} value={we.id}>
+                        {typeof we.exercise === 'string' ? we.exercise_details?.name : we.exercise.name} ({we.target_sets}x{we.target_reps} @ {we.target_weight}kg)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-md mt-2 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Plus size={16} />
+                  <span>Mark Exercise Completed</span>
                 </button>
               </form>
             )}

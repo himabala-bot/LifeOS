@@ -3,30 +3,25 @@
 import React, { useState } from 'react';
 import {
   User,
-  Wallet,
-  Trash2,
   LogOut,
-  ShieldCheck,
-  Sparkles,
   Check,
-  AlertTriangle
+  Activity,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 
 export function SettingsScreen() {
   const { user, updateProfile, logout } = useAuth();
-  const { resetAllData } = useData();
+  const { healthProfile } = useData();
 
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [currency, setCurrency] = useState(user?.currency || '₹');
-  const [monthlyBudget, setMonthlyBudget] = useState(String(user?.monthlyBudget || 25000));
   const [dailyFocusTarget, setDailyFocusTarget] = useState(String(user?.dailyFocusTargetMinutes || 180));
 
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +30,6 @@ export function SettingsScreen() {
       email: email.trim(),
       bio: bio.trim(),
       currency,
-      monthlyBudget: parseFloat(monthlyBudget) || 25000,
       dailyFocusTargetMinutes: parseInt(dailyFocusTarget) || 180,
     });
     setSaveSuccess(true);
@@ -43,8 +37,7 @@ export function SettingsScreen() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-16">
-
+    <div className="max-w-4xl mx-auto space-y-8 pb-16 animate-fadeIn">
       <div>
         <p className="text-xs uppercase tracking-[0.2em] font-semibold text-[var(--muted)] mb-1">Preferences</p>
         <h1 className="serif text-4xl sm:text-5xl font-normal">Settings & Workspace Control<span className="text-[var(--accent)]">.</span></h1>
@@ -92,12 +85,12 @@ export function SettingsScreen() {
               type="text"
               value={bio}
               onChange={e => setBio(e.target.value)}
-              placeholder="e.g., Designer, marathon runner, and lifelong learner"
+              placeholder="e.g., Designer, high-agency engineer, and lifelong learner"
               className="w-full px-4 py-2.5 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-sm focus:outline-none focus:border-[var(--accent)]"
             />
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-4 pt-2">
+          <div className="grid sm:grid-cols-2 gap-4 pt-2">
             <div>
               <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
                 Currency Symbol
@@ -113,18 +106,6 @@ export function SettingsScreen() {
                 <option value="£">£ (GBP - British Pound)</option>
                 <option value="¥">¥ (JPY / CNY)</option>
               </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1.5">
-                Monthly Target Budget ({currency})
-              </label>
-              <input
-                type="number"
-                value={monthlyBudget}
-                onChange={e => setMonthlyBudget(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#f8f7f4] rounded-xl border border-[var(--line)] text-sm font-semibold focus:outline-none focus:border-[var(--accent)]"
-              />
             </div>
 
             <div>
@@ -158,46 +139,47 @@ export function SettingsScreen() {
         </form>
       </div>
 
-      <div className="bg-red-50/50 rounded-3xl p-7 border border-red-200">
-        <h2 className="serif text-2xl font-normal text-red-900 pb-2">Danger Zone</h2>
-        <p className="text-xs text-red-700 mb-6">Irreversible actions regarding your local workspace.</p>
-
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-red-200">
-          <div>
-            <h4 className="font-semibold text-sm text-[var(--ink)]">Clear All Workspace Data</h4>
-            <p className="text-xs text-[var(--muted)]">Removes all tasks, habits, expenses, and goals from this account.</p>
-          </div>
-
-          {showResetConfirm ? (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowResetConfirm(false)}
-                className="px-3 py-1.5 rounded-xl border border-[var(--line)] text-xs font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => { resetAllData(); setShowResetConfirm(false); }}
-                className="px-4 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold"
-              >
-                Confirm Reset
-              </button>
+      {/* Health & Strength Profile Summary Card */}
+      <div className="bg-white rounded-3xl p-7 border border-[var(--line)] shadow-sm">
+        <div className="flex items-center justify-between pb-4 border-b border-[var(--line)] mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+              <Activity size={16} />
             </div>
-          ) : (
-            <button
-              onClick={() => setShowResetConfirm(true)}
-              className="px-4 py-2 rounded-xl border border-red-300 text-red-700 hover:bg-red-50 text-xs font-semibold transition-colors cursor-pointer"
-            >
-              Reset Workspace Data
-            </button>
-          )}
+            <div>
+              <h3 className="font-serif text-xl font-bold text-[var(--ink)]">Health & Physical Blueprint</h3>
+              <p className="text-xs text-[var(--muted)]">Active nutritional targets and physical profile</p>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-red-200/60 flex justify-between items-center">
-          <span className="text-xs text-red-700 font-medium">Session Status: Logged in as {user?.email}</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
+            <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Current Weight</span>
+            <span className="text-base font-bold text-[var(--ink)] mt-0.5 block">{healthProfile.current_weight} kg</span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
+            <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Goal Weight</span>
+            <span className="text-base font-bold text-[var(--ink)] mt-0.5 block">{healthProfile.goal_weight} kg</span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
+            <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Daily Calories</span>
+            <span className="text-base font-bold text-[var(--ink)] mt-0.5 block">{healthProfile.target_calories} kcal</span>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
+            <span className="text-[10px] font-bold text-[var(--muted)] uppercase block">Daily Protein</span>
+            <span className="text-base font-bold text-[var(--ink)] mt-0.5 block">{healthProfile.target_protein} g</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Account Control */}
+      <div className="bg-[#f8f7f4] rounded-3xl p-7 border border-[var(--line)]">
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-[var(--muted)] font-medium">Session Status: Logged in as <strong>{user?.email}</strong></span>
           <button
             onClick={logout}
-            className="px-4 py-2 rounded-xl bg-[var(--ink)] hover:bg-black text-white text-xs font-semibold flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-[var(--ink)] hover:bg-black text-white text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-sm"
           >
             <LogOut size={14} />
             <span>Sign Out</span>

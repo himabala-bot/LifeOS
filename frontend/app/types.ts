@@ -4,9 +4,8 @@ export type ScreenType =
   | 'tasks'
   | 'habits'
   | 'goals'
-  | 'expenses'
+  | 'health'
   | 'analytics'
-  | 'journal'
   | 'settings';
 
 export type TaskPriority = 'urgent' | 'high' | 'medium' | 'low';
@@ -60,39 +59,120 @@ export interface Goal {
   createdAt: string;
 }
 
-export type ExpenseCategory =
-  | 'Food & Dining'
-  | 'Housing & Rent'
-  | 'Transport'
-  | 'Utilities & Bills'
-  | 'Entertainment'
-  | 'Health & Wellness'
-  | 'Shopping'
-  | 'Education'
-  | 'Savings & Investment'
-  | 'Other';
+// ==========================================
+// HEALTH & STRENGTH MODULE TYPES
+// ==========================================
 
-export interface Expense {
-  id: string;
-  title: string;
-  amount: number;
-  category: ExpenseCategory;
-  date: string;
-  paymentMethod?: string;
-  notes?: string;
-  createdAt: string;
+export type BiologicalSex = 'male' | 'female';
+export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
+export type TrainingFocus = 'hypertrophy' | 'strength' | 'endurance' | 'general_fitness';
+
+export interface HealthProfile {
+  id?: string;
+  age: number;
+  biological_sex: BiologicalSex;
+  height_cm: number;
+  current_weight: number;
+  goal_weight: number;
+  activity_level: ActivityLevel;
+  training_focus: TrainingFocus;
+  training_frequency: number;
+  target_calories: number;
+  target_protein: number;
+  target_carbs: number;
+  target_fat: number;
+  target_water_ml: number;
+  creatine_target_g: number;
+  is_onboarded: boolean;
 }
 
-export interface EnergyLog {
+export interface Food {
+  id: string;
+  name: string;
+  serving_description: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  is_staple: boolean;
+}
+
+export interface FoodLog {
+  id: string;
+  food: string;
+  food_details?: Food;
+  date: string;
+  servings: number;
+  logged_at?: string;
+}
+
+export interface WeightCheckin {
   id: string;
   date: string;
-  energyLevel: number;
-  focusMinutes: number;
-  mood: 'energized' | 'focused' | 'calm' | 'tired' | 'stressed' | 'inspired';
-  highlight?: string;
-  gratitude?: string;
+  weight: number;
   notes?: string;
-  createdAt: string;
+}
+
+export interface Exercise {
+  id: string;
+  name: string;
+  muscle_group: string;
+}
+
+export interface WorkoutExercise {
+  id: string;
+  workout_day?: string;
+  exercise: string | Exercise;
+  exercise_details?: Exercise;
+  order: number;
+  target_sets: number;
+  target_reps: string;
+  target_weight: number;
+}
+
+export interface WorkoutDay {
+  id: string;
+  day_name: string;
+  day_of_week: number;
+  is_rest_day: boolean;
+  order: number;
+  exercises?: WorkoutExercise[];
+}
+
+export interface WorkoutPlan {
+  id: string;
+  name: string;
+  frequency: number;
+  is_active: boolean;
+  days?: WorkoutDay[];
+}
+
+export interface WorkoutLog {
+  id: string;
+  workout_exercise: string;
+  date: string;
+  completed: boolean;
+  actual_sets?: number;
+  actual_reps?: string;
+  actual_weight?: number;
+}
+
+export interface DailyHealthStatus {
+  id?: string;
+  date: string;
+  water_ml: number;
+  creatine_completed: boolean;
+}
+
+export interface TodayMacros {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  target_calories: number;
+  target_protein: number;
+  target_carbs: number;
+  target_fat: number;
 }
 
 export interface UserProfile {
@@ -102,17 +182,17 @@ export interface UserProfile {
   avatar: string;
   bio?: string;
   currency: string;
-  monthlyBudget: number;
   dailyFocusTargetMinutes: number;
   theme: 'warm-paper' | 'dark-slate' | 'minimal-light';
   createdAt: string;
+  health_profile?: HealthProfile;
 }
 
 export interface LifeScoreBreakdown {
   overall: number;
   tasksScore: number;
   habitsScore: number;
-  budgetScore: number;
+  healthScore: number;
   goalsScore: number;
   summary: string;
   changeVsLastWeek: number;

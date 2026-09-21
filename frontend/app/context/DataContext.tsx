@@ -1,72 +1,31 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Task,
   Habit,
   Goal,
   Milestone,
-  Expense,
-  EnergyLog,
   LifeScoreBreakdown,
   TaskPriority,
   TaskTag,
   HabitCategory,
   HabitFrequency,
-  ExpenseCategory,
   GoalCategory,
+  GoalStatus,
+  HealthProfile,
+  Food,
+  FoodLog,
+  WeightCheckin,
+  WorkoutPlan,
+  WorkoutDay,
+  WorkoutExercise,
+  WorkoutLog,
+  DailyHealthStatus,
+  TodayMacros,
 } from '../types';
+import { api, getAccessToken } from '../../lib/api';
 import { useAuth } from './AuthContext';
-import { api } from '../../lib/api';
-
-interface DataContextType {
-  tasks: Task[];
-  habits: Habit[];
-  goals: Goal[];
-  expenses: Expense[];
-  energyLogs: EnergyLog[];
-  isLoadingData: boolean;
-  dataError: string | null;
-
-  addTask: (task: Omit<Task, 'id' | 'createdAt'>) => Promise<void>;
-  toggleTask: (id: string) => Promise<void>;
-  deleteTask: (id: string) => Promise<void>;
-  updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
-
-  addHabit: (habit: Omit<Habit, 'id' | 'createdAt' | 'history'>) => Promise<void>;
-  toggleHabitDay: (id: string, dateStr: string) => Promise<void>;
-  deleteHabit: (id: string) => Promise<void>;
-  updateHabit: (id: string, updates: Partial<Habit>) => Promise<void>;
-  getHabitStreak: (habit: Habit) => { currentStreak: number; longestStreak: number; consistency7d: number };
-
-  addGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => Promise<void>;
-  toggleMilestone: (goalId: string, milestoneId: string) => Promise<void>;
-  addMilestone: (goalId: string, title: string) => Promise<void>;
-  deleteMilestone: (goalId: string, milestoneId: string) => Promise<void>;
-  deleteGoal: (goalId: string) => Promise<void>;
-  updateGoal: (goalId: string, updates: Partial<Goal>) => Promise<void>;
-  getGoalProgress: (goal: Goal) => number;
-
-  addExpense: (expense: Omit<Expense, 'id' | 'createdAt'>) => Promise<void>;
-  deleteExpense: (id: string) => Promise<void>;
-  updateExpense: (id: string, updates: Partial<Expense>) => Promise<void>;
-
-  addEnergyLog: (log: Omit<EnergyLog, 'id' | 'createdAt'>) => void;
-  todayEnergyLog: EnergyLog | undefined;
-
-  lifeScore: LifeScoreBreakdown;
-  spentThisMonth: number;
-  budgetRemaining: number;
-  budgetUsagePercent: number;
-  safeDailySpend: number;
-  expensesByCategory: Record<string, number>;
-
-  resetAllData: () => Promise<void>;
-
-  refreshData: () => Promise<void>;
-}
-
-const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function getTodayDateStr(): string {
   const d = new Date();
@@ -85,402 +44,760 @@ export function getPastDateStr(daysAgo: number): string {
   return `${year}-${month}-${day}`;
 }
 
-function mapBackendTask(t: any): Task {
-  return {
-    id: String(t.id),
-    title: t.title,
-    description: t.description || '',
-    priority: (t.priority as TaskPriority) || 'medium',
-    tag: 'Work',
-    dueDate: t.due_date || undefined,
-    completed: Boolean(t.completed),
-    createdAt: t.created_at || new Date().toISOString(),
-  };
-}
+const DEFAULT_HEALTH_PROFILE: HealthProfile = {
+  age: 24,
+  biological_sex: 'male',
+  height_cm: 176,
+  current_weight: 49.2,
+  goal_weight: 57.0,
+  activity_level: 'moderate',
+  training_focus: 'hypertrophy',
+  training_frequency: 4,
+  target_calories: 2400,
+  target_protein: 120,
+  target_carbs: 300,
+  target_fat: 75,
+  target_water_ml: 2500,
+  creatine_target_g: 5,
+  is_onboarded: true,
+};
 
-function mapBackendHabit(h: any): Habit {
-  const history: Record<string, boolean> = {};
-  if (Array.isArray(h.completions)) {
-    h.completions.forEach((c: any) => {
-      if (c.date && c.completed) {
-        history[c.date] = true;
-      }
-    });
-  }
+const DEFAULT_FOODS: Food[] = [
+  { id: 'f-1', name: 'Whole Eggs (x2)', serving_description: '2 large boiled/fried eggs', calories: 140, protein: 12, carbs: 1, fat: 10, is_staple: true },
+  { id: 'f-2', name: 'Soya Chunks (50g)', serving_description: '50g uncooked boiled', calories: 172, protein: 26, carbs: 16, fat: 0.5, is_staple: true },
+  { id: 'f-3', name: 'Banana (x1)', serving_description: '1 medium robusta', calories: 105, protein: 1.3, carbs: 27, fat: 0.3, is_staple: true },
+  { id: 'f-4', name: 'Paneer (100g)', serving_description: '100g fresh paneer', calories: 265, protein: 18, carbs: 3, fat: 20, is_staple: true },
+  { id: 'f-5', name: 'Peanut Butter Oats', serving_description: '60g oats + 30g PB + milk', calories: 450, protein: 18, carbs: 55, fat: 16, is_staple: true },
+  { id: 'f-6', name: 'High Protein Thali', serving_description: 'Rice, Dal, Paneer, Curd', calories: 650, protein: 28, carbs: 95, fat: 18, is_staple: true },
+  { id: 'f-7', name: 'Almonds & Walnuts', serving_description: '25g raw nuts', calories: 160, protein: 5, carbs: 6, fat: 14, is_staple: false },
+  { id: 'f-8', name: 'Whey Protein Scoop', serving_description: '1 scoop (30g)', calories: 120, protein: 24, carbs: 2, fat: 1.5, is_staple: false },
+];
 
-  const categoryMap: Record<string, HabitCategory> = {
-    health: 'Health',
-    mind: 'Mind',
-    productivity: 'Productivity',
-    fitness: 'Fitness',
-  };
+const DEFAULT_WEIGHT_CHECKINS: WeightCheckin[] = [
+  { id: 'w-1', date: getPastDateStr(28), weight: 47.0, notes: 'Starting journey baseline' },
+  { id: 'w-2', date: getPastDateStr(21), weight: 47.6, notes: 'Consistent surplus week 1' },
+  { id: 'w-3', date: getPastDateStr(14), weight: 48.2, notes: 'Adding peanut butter oats' },
+  { id: 'w-4', date: getPastDateStr(7), weight: 48.8, notes: 'Strength numbers going up' },
+  { id: 'w-5', date: getTodayDateStr(), weight: 49.2, notes: 'Hitting 120g protein daily' },
+];
 
-  return {
-    id: String(h.id),
-    name: h.name,
-    category: categoryMap[h.category?.toLowerCase()] || 'Productivity',
-    frequency: (h.frequency as HabitFrequency) || 'daily',
-    color: '#e66b4b',
-    history,
-    createdAt: h.created_at || new Date().toISOString(),
-  };
-}
+const DEFAULT_EXERCISES = [
+  { id: 'ex-1', name: 'Barbell Bench Press', muscle_group: 'Chest' },
+  { id: 'ex-2', name: 'Incline Dumbbell Press', muscle_group: 'Chest' },
+  { id: 'ex-3', name: 'Overhead Shoulder Press', muscle_group: 'Shoulders' },
+  { id: 'ex-4', name: 'Lateral Raises', muscle_group: 'Shoulders' },
+  { id: 'ex-5', name: 'Tricep Rope Pushdown', muscle_group: 'Arms' },
+  { id: 'ex-6', name: 'Lat Pulldown', muscle_group: 'Back' },
+  { id: 'ex-7', name: 'Seated Cable Row', muscle_group: 'Back' },
+  { id: 'ex-8', name: 'Bicep Dumbbell Curl', muscle_group: 'Arms' },
+  { id: 'ex-9', name: 'Barbell Back Squat', muscle_group: 'Legs' },
+  { id: 'ex-10', name: 'Romanian Deadlift', muscle_group: 'Legs' },
+  { id: 'ex-11', name: 'Leg Press', muscle_group: 'Legs' },
+];
 
-function mapBackendGoal(g: any): Goal {
-  let milestones: Milestone[] = [];
-  if (g.description && g.description.startsWith('[MILESTONES]:')) {
-    try {
-      const jsonStr = g.description.replace('[MILESTONES]:', '');
-      milestones = JSON.parse(jsonStr);
-    } catch {
-      milestones = [];
+const DEFAULT_WORKOUT_PLAN: WorkoutPlan = {
+  id: 'wp-1',
+  name: '4-Day Hypertrophy & Strength',
+  frequency: 4,
+  is_active: true,
+  days: [
+    {
+      id: 'wd-1',
+      day_name: 'Push (Chest, Shoulders, Triceps)',
+      day_of_week: 0, // Mon
+      is_rest_day: false,
+      order: 0,
+      exercises: [
+        { id: 'we-1', exercise: 'ex-1', exercise_details: DEFAULT_EXERCISES[0], order: 0, target_sets: 3, target_reps: '6-8', target_weight: 42.5 },
+        { id: 'we-2', exercise: 'ex-2', exercise_details: DEFAULT_EXERCISES[1], order: 1, target_sets: 3, target_reps: '8-10', target_weight: 18.0 },
+        { id: 'we-3', exercise: 'ex-3', exercise_details: DEFAULT_EXERCISES[2], order: 2, target_sets: 3, target_reps: '8-10', target_weight: 27.5 },
+        { id: 'we-4', exercise: 'ex-4', exercise_details: DEFAULT_EXERCISES[3], order: 3, target_sets: 4, target_reps: '12-15', target_weight: 7.5 },
+        { id: 'we-5', exercise: 'ex-5', exercise_details: DEFAULT_EXERCISES[4], order: 4, target_sets: 3, target_reps: '12-15', target_weight: 20.0 },
+      ]
+    },
+    {
+      id: 'wd-2',
+      day_name: 'Pull (Back, Biceps)',
+      day_of_week: 1, // Tue
+      is_rest_day: false,
+      order: 1,
+      exercises: [
+        { id: 'we-6', exercise: 'ex-6', exercise_details: DEFAULT_EXERCISES[5], order: 0, target_sets: 3, target_reps: '8-10', target_weight: 45.0 },
+        { id: 'we-7', exercise: 'ex-7', exercise_details: DEFAULT_EXERCISES[6], order: 1, target_sets: 3, target_reps: '10-12', target_weight: 40.0 },
+        { id: 'we-8', exercise: 'ex-8', exercise_details: DEFAULT_EXERCISES[7], order: 2, target_sets: 3, target_reps: '10-12', target_weight: 12.0 },
+      ]
+    },
+    {
+      id: 'wd-3',
+      day_name: 'Legs & Core',
+      day_of_week: 3, // Thu
+      is_rest_day: false,
+      order: 2,
+      exercises: [
+        { id: 'we-9', exercise: 'ex-9', exercise_details: DEFAULT_EXERCISES[8], order: 0, target_sets: 4, target_reps: '6-8', target_weight: 60.0 },
+        { id: 'we-10', exercise: 'ex-10', exercise_details: DEFAULT_EXERCISES[9], order: 1, target_sets: 3, target_reps: '8-10', target_weight: 55.0 },
+        { id: 'we-11', exercise: 'ex-11', exercise_details: DEFAULT_EXERCISES[10], order: 2, target_sets: 3, target_reps: '12', target_weight: 120.0 },
+      ]
+    },
+    {
+      id: 'wd-4',
+      day_name: 'Upper Power',
+      day_of_week: 4, // Fri
+      is_rest_day: false,
+      order: 3,
+      exercises: [
+        { id: 'we-12', exercise: 'ex-1', exercise_details: DEFAULT_EXERCISES[0], order: 0, target_sets: 3, target_reps: '5', target_weight: 47.5 },
+        { id: 'we-13', exercise: 'ex-6', exercise_details: DEFAULT_EXERCISES[5], order: 1, target_sets: 3, target_reps: '8', target_weight: 50.0 },
+      ]
     }
-  }
+  ]
+};
 
-  return {
-    id: String(g.id),
-    title: g.title,
-    description: g.description && !g.description.startsWith('[MILESTONES]:') ? g.description : '',
+const DEFAULT_DEMO_TASKS: Task[] = [
+  { id: 't-1', title: 'Complete client system architecture document', tag: 'Work', priority: 'urgent', dueDate: getTodayDateStr(), completed: true, completedAt: getTodayDateStr(), createdAt: getPastDateStr(1) },
+  { id: 't-2', title: 'Review pull requests & merge deployment scripts', tag: 'Work', priority: 'high', dueDate: getTodayDateStr(), completed: false, createdAt: getTodayDateStr() },
+  { id: 't-3', title: 'Read 20 pages of High Output Management', tag: 'Learning', priority: 'medium', dueDate: getTodayDateStr(), completed: false, createdAt: getTodayDateStr() },
+  { id: 't-4', title: 'Meal prep high protein lunches for week', tag: 'Wellbeing', priority: 'medium', dueDate: getTodayDateStr(), completed: true, completedAt: getTodayDateStr(), createdAt: getPastDateStr(2) },
+];
+
+const DEFAULT_DEMO_HABITS: Habit[] = [
+  {
+    id: 'h-1',
+    name: 'Hydration (2.5L Water)',
+    category: 'Health',
+    frequency: 'daily',
+    color: '#3b82f6',
+    history: { [getPastDateStr(3)]: true, [getPastDateStr(2)]: true, [getPastDateStr(1)]: true, [getTodayDateStr()]: true },
+    createdAt: getPastDateStr(30),
+  },
+  {
+    id: 'h-2',
+    name: 'Hit 120g Daily Protein',
+    category: 'Health',
+    frequency: 'daily',
+    color: '#e66b4b',
+    history: { [getPastDateStr(3)]: true, [getPastDateStr(2)]: true, [getPastDateStr(1)]: true, [getTodayDateStr()]: true },
+    createdAt: getPastDateStr(30),
+  },
+  {
+    id: 'h-3',
+    name: 'Strength Training Session',
+    category: 'Fitness',
+    frequency: 'daily',
+    color: '#5f805d',
+    history: { [getPastDateStr(3)]: true, [getPastDateStr(2)]: false, [getPastDateStr(1)]: true, [getTodayDateStr()]: true },
+    createdAt: getPastDateStr(30),
+  },
+  {
+    id: 'h-4',
+    name: 'Creatine (5g Daily)',
+    category: 'Health',
+    frequency: 'daily',
+    color: '#8b5cf6',
+    history: { [getPastDateStr(3)]: true, [getPastDateStr(2)]: true, [getPastDateStr(1)]: true, [getTodayDateStr()]: true },
+    createdAt: getPastDateStr(30),
+  },
+  {
+    id: 'h-5',
+    name: 'Deep Work (3 Focus Blocks)',
+    category: 'Productivity',
+    frequency: 'weekdays',
+    color: '#e66b4b',
+    history: { [getPastDateStr(3)]: true, [getPastDateStr(2)]: true, [getPastDateStr(1)]: true, [getTodayDateStr()]: true },
+    createdAt: getPastDateStr(30),
+  },
+];
+
+const DEFAULT_DEMO_GOALS: Goal[] = [
+  {
+    id: 'g-1',
+    title: 'Reach 57 kg Lean Muscle Mass',
+    description: 'Systematic lean surplus of +350 kcal/day, 120g+ protein, 4x weekly progressive strength training.',
+    category: 'Health',
+    targetDate: '2026-12-31',
+    status: 'on_track',
+    milestones: [
+      { id: 'm-1', title: 'Break through 48.5 kg milestone', done: true, dueDate: '2026-08-30' },
+      { id: 'm-2', title: 'Reach 50.0 kg solid bodyweight', done: false, dueDate: '2026-10-15' },
+      { id: 'm-3', title: 'Bench press 50kg for 3x8 clean', done: false, dueDate: '2026-11-15' },
+      { id: 'm-4', title: 'Final target 57.0 kg lean mass', done: false, dueDate: '2026-12-31' },
+    ],
+    notes: 'Prioritize whole eggs, soya chunks, paneer, and peanut butter shakes.',
+    createdAt: getPastDateStr(45),
+  },
+  {
+    id: 'g-2',
+    title: 'Scale Software Engineering Consultancy',
+    description: 'Deliver 3 high-impact client systems and build reusable open-source architecture.',
     category: 'Career',
-    targetDate: g.deadline || undefined,
-    status: (g.status as any) || 'active',
-    milestones,
-    createdAt: g.created_at || new Date().toISOString(),
-  };
+    targetDate: '2026-11-30',
+    status: 'on_track',
+    milestones: [
+      { id: 'm-5', title: 'Close Q3 enterprise contract', done: true, dueDate: '2026-09-15' },
+      { id: 'm-6', title: 'Deploy core API infrastructure', done: true, dueDate: '2026-09-30' },
+      { id: 'm-7', title: 'Publish technical case study', done: false, dueDate: '2026-10-31' },
+    ],
+    notes: 'Maintain 90+ min daily focus blocks.',
+    createdAt: getPastDateStr(60),
+  },
+];
+
+interface HabitStreakInfo {
+  currentStreak: number;
+  longestStreak: number;
+  consistency7d: number;
 }
 
-function mapBackendExpense(e: any): Expense {
-  return {
-    id: String(e.id),
-    title: e.title,
-    amount: Number(e.amount) || 0,
-    category: (e.category as ExpenseCategory) || 'Other',
-    date: e.date || getTodayDateStr(),
-    createdAt: e.created_at || new Date().toISOString(),
-  };
-}
-
-const WORKSPACE_CACHE_KEY = 'lifeos_cached_workspace';
-
-interface CachedWorkspace {
+interface DataContextType {
+  // Tasks
   tasks: Task[];
+  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'completed'> & { completed?: boolean }) => Promise<void>;
+  updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+  toggleTask: (id: string) => Promise<void>;
+
+  // Habits
   habits: Habit[];
+  addHabit: (habit: Omit<Habit, 'id' | 'createdAt' | 'history'>) => Promise<void>;
+  updateHabit: (id: string, updates: Partial<Habit>) => Promise<void>;
+  deleteHabit: (id: string) => Promise<void>;
+  toggleHabitDay: (id: string, dateStr: string) => Promise<void>;
+  getHabitStreak: (habit: Habit) => HabitStreakInfo;
+
+  // Goals
   goals: Goal[];
-  expenses: Expense[];
-  energyLogs: EnergyLog[];
+  addGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => Promise<void>;
+  updateGoal: (id: string, updates: Partial<Goal>) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
+  toggleMilestone: (goalId: string, milestoneId: string) => Promise<void>;
+  addMilestone: (goalId: string, title: string) => Promise<void>;
+  deleteMilestone: (goalId: string, milestoneId: string) => Promise<void>;
+  getGoalProgress: (goal: Goal) => number;
+
+  // Health Module State & Actions
+  healthProfile: HealthProfile;
+  onboardHealth: (data: Partial<HealthProfile>) => Promise<void>;
+  updateHealthProfile: (updates: Partial<HealthProfile>) => Promise<void>;
+
+  // Nutrition
+  foods: Food[];
+  foodLogs: FoodLog[];
+  todayMacros: TodayMacros;
+  addFood: (food: Omit<Food, 'id'>) => Promise<void>;
+  updateFood: (id: string, updates: Partial<Food>) => Promise<void>;
+  deleteFood: (id: string) => Promise<void>;
+  logFood: (foodId: string, servings?: number, date?: string) => Promise<void>;
+  deleteFoodLog: (id: string) => Promise<void>;
+  logStapleFast: (food: Food) => Promise<void>;
+
+  // Hydration & Creatine
+  dailyHealthStatus: DailyHealthStatus;
+  logWater: (amountMl: number) => Promise<void>;
+  toggleCreatine: () => Promise<void>;
+
+  // Weight Check-ins
+  weightCheckins: WeightCheckin[];
+  logWeight: (weight: number, date?: string, notes?: string) => Promise<void>;
+  deleteWeightCheckin: (id: string) => Promise<void>;
+
+  // Workouts
+  workoutPlan: WorkoutPlan | null;
+  todayWorkoutDay: WorkoutDay | null;
+  todayWorkoutLogs: WorkoutLog[];
+  toggleWorkoutExercise: (workoutExerciseId: string, completed?: boolean, actualReps?: string, actualWeight?: number) => Promise<void>;
+  setWorkoutFrequency: (freq: number) => Promise<void>;
+
+  // LifeScore & System
+  lifeScore: LifeScoreBreakdown;
+  isLoadingData: boolean;
+  refreshData: () => Promise<void>;
+  resetAllData: () => void;
 }
 
-function getCachedWorkspace(userId?: string): CachedWorkspace | null {
-  if (typeof window === 'undefined' || !userId) return null;
-  try {
-    const raw = localStorage.getItem(`${WORKSPACE_CACHE_KEY}_${userId}`);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-function setCachedWorkspace(userId: string, data: CachedWorkspace): void {
-  if (typeof window === 'undefined' || !userId) return;
-  try {
-    localStorage.setItem(`${WORKSPACE_CACHE_KEY}_${userId}`, JSON.stringify(data));
-  } catch {
-
-  }
-}
+const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [energyLogs, setEnergyLogs] = useState<EnergyLog[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(false);
-  const [dataError, setDataError] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<Task[]>(DEFAULT_DEMO_TASKS);
+  const [habits, setHabits] = useState<Habit[]>(DEFAULT_DEMO_HABITS);
+  const [goals, setGoals] = useState<Goal[]>(DEFAULT_DEMO_GOALS);
 
-  useEffect(() => {
-    if (user?.id) {
-      const cached = getCachedWorkspace(user.id);
-      if (cached) {
-        setTasks(cached.tasks || []);
-        setHabits(cached.habits || []);
-        setGoals(cached.goals || []);
-        setExpenses(cached.expenses || []);
-        setEnergyLogs(cached.energyLogs || []);
+  const [healthProfile, setHealthProfile] = useState<HealthProfile>(DEFAULT_HEALTH_PROFILE);
+  const [foods, setFoods] = useState<Food[]>(DEFAULT_FOODS);
+  const [foodLogs, setFoodLogs] = useState<FoodLog[]>([
+    { id: 'fl-1', food: 'f-1', food_details: DEFAULT_FOODS[0], date: getTodayDateStr(), servings: 2 },
+    { id: 'fl-2', food: 'f-3', food_details: DEFAULT_FOODS[2], date: getTodayDateStr(), servings: 1 },
+    { id: 'fl-3', food: 'f-2', food_details: DEFAULT_FOODS[1], date: getTodayDateStr(), servings: 1 },
+    { id: 'fl-4', food: 'f-4', food_details: DEFAULT_FOODS[3], date: getTodayDateStr(), servings: 1 },
+    { id: 'fl-5', food: 'f-5', food_details: DEFAULT_FOODS[4], date: getTodayDateStr(), servings: 1 },
+  ]);
+  const [weightCheckins, setWeightCheckins] = useState<WeightCheckin[]>(DEFAULT_WEIGHT_CHECKINS);
+  const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(DEFAULT_WORKOUT_PLAN);
+  const [todayWorkoutDay, setTodayWorkoutDay] = useState<WorkoutDay | null>(DEFAULT_WORKOUT_PLAN.days![0]);
+  const [todayWorkoutLogs, setTodayWorkoutLogs] = useState<WorkoutLog[]>([
+    { id: 'wl-1', workout_exercise: 'we-1', date: getTodayDateStr(), completed: true, actual_sets: 3, actual_reps: '8,8,7', actual_weight: 42.5 },
+    { id: 'wl-2', workout_exercise: 'we-2', date: getTodayDateStr(), completed: true, actual_sets: 3, actual_reps: '10,9,9', actual_weight: 18.0 },
+    { id: 'wl-3', workout_exercise: 'we-3', date: getTodayDateStr(), completed: false },
+    { id: 'wl-4', workout_exercise: 'we-4', date: getTodayDateStr(), completed: false },
+    { id: 'wl-5', workout_exercise: 'we-5', date: getTodayDateStr(), completed: false },
+  ]);
+  const [dailyHealthStatus, setDailyHealthStatus] = useState<DailyHealthStatus>({
+    date: getTodayDateStr(),
+    water_ml: 1750,
+    creatine_completed: true,
+  });
+
+  const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
+
+  // Compute Today's Macros
+  const todayMacros: TodayMacros = useMemo(() => {
+    const todayStr = getTodayDateStr();
+    const todays = foodLogs.filter(fl => fl.date === todayStr);
+
+    let calories = 0;
+    let protein = 0;
+    let carbs = 0;
+    let fat = 0;
+
+    for (const log of todays) {
+      const food = log.food_details || foods.find(f => f.id === log.food);
+      if (food) {
+        calories += food.calories * log.servings;
+        protein += food.protein * log.servings;
+        carbs += food.carbs * log.servings;
+        fat += food.fat * log.servings;
       }
     }
-  }, [user?.id]);
 
+    return {
+      calories: Math.round(calories),
+      protein: Math.round(protein),
+      carbs: Math.round(carbs),
+      fat: Math.round(fat),
+      target_calories: healthProfile.target_calories || 2400,
+      target_protein: healthProfile.target_protein || 120,
+      target_carbs: healthProfile.target_carbs || 300,
+      target_fat: healthProfile.target_fat || 75,
+    };
+  }, [foodLogs, foods, healthProfile]);
+
+  // Unified 4-Pillar LifeScore
+  const lifeScore: LifeScoreBreakdown = useMemo(() => {
+    const todayStr = getTodayDateStr();
+
+    // 1. Tasks Score (25%)
+    const todayTasks = tasks.filter(t => !t.dueDate || t.dueDate === todayStr || t.completedAt === todayStr);
+    const totalTodayTasks = todayTasks.length;
+    const completedTasks = todayTasks.filter(t => t.completed).length;
+    const tasksScore = totalTodayTasks > 0 ? Math.round((completedTasks / totalTodayTasks) * 100) : 85;
+
+    // 2. Habits Score (25%)
+    const activeHabits = habits.filter(h => h.frequency === 'daily' || h.frequency === 'weekdays');
+    const totalHabits = activeHabits.length;
+    const completedHabits = activeHabits.filter(h => !!h.history[todayStr]).length;
+    const habitsScore = totalHabits > 0 ? Math.round((completedHabits / totalHabits) * 100) : 80;
+
+    // 3. Health Consistency Score (25%)
+    const nutritionAdherence = Math.min(100, Math.round((todayMacros.calories / (healthProfile.target_calories || 2400)) * 100));
+    const proteinAdherence = Math.min(100, Math.round((todayMacros.protein / (healthProfile.target_protein || 120)) * 100));
+    const hydrationAdherence = Math.min(100, Math.round((dailyHealthStatus.water_ml / (healthProfile.target_water_ml || 2500)) * 100));
+    const creatineScore = dailyHealthStatus.creatine_completed ? 100 : 0;
+
+    const totalExercises = todayWorkoutDay?.exercises?.length || 0;
+    const completedExercises = todayWorkoutLogs.filter(wl => wl.completed).length;
+    const workoutScore = totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 100;
+
+    const healthScore = Math.round(
+      (nutritionAdherence * 0.25) +
+      (proteinAdherence * 0.25) +
+      (workoutScore * 0.25) +
+      (hydrationAdherence * 0.15) +
+      (creatineScore * 0.10)
+    );
+
+    // 4. Goals Score (25%)
+    const goalScores = goals.map(g => {
+      if (g.milestones.length === 0) return 75;
+      const done = g.milestones.filter(m => m.done).length;
+      return Math.round((done / g.milestones.length) * 100);
+    });
+    const goalsScore = goalScores.length > 0 ? Math.round(goalScores.reduce((a, b) => a + b, 0) / goalScores.length) : 75;
+
+    const overall = Math.round(
+      (tasksScore * 0.25) +
+      (habitsScore * 0.25) +
+      (healthScore * 0.25) +
+      (goalsScore * 0.25)
+    );
+
+    return {
+      overall,
+      tasksScore,
+      habitsScore,
+      healthScore,
+      goalsScore,
+      summary: overall >= 80 ? 'Exceptional momentum across all personal pillars.' : 'Consistent execution in progress.',
+      changeVsLastWeek: +3.2,
+    };
+  }, [tasks, habits, goals, todayMacros, healthProfile, dailyHealthStatus, todayWorkoutDay, todayWorkoutLogs]);
+
+  // Fetch Workspace from API or fallback
   const refreshData = useCallback(async () => {
-    if (!isAuthenticated || !user) {
-      setTasks([]);
-      setHabits([]);
-      setGoals([]);
-      setExpenses([]);
-      setDataError(null);
-      return;
-    }
-
-    setDataError(null);
+    if (!isAuthenticated) return;
+    const token = getAccessToken();
+    if (!token) return;
 
     try {
-
-      const bootstrapRes = await api.bootstrap().catch(err => {
-        console.warn('Bootstrap API fallback to parallel fetch:', err);
-        return null;
-      });
-
-      let loadedTasks: Task[] = [];
-      let loadedHabits: Habit[] = [];
-      let loadedGoals: Goal[] = [];
-      let loadedExpenses: Expense[] = [];
-
-      if (bootstrapRes && bootstrapRes.user) {
-        loadedTasks = Array.isArray(bootstrapRes.tasks) ? bootstrapRes.tasks.map(mapBackendTask) : [];
-        loadedHabits = Array.isArray(bootstrapRes.habits) ? bootstrapRes.habits.map(mapBackendHabit) : [];
-        loadedGoals = Array.isArray(bootstrapRes.goals) ? bootstrapRes.goals.map(mapBackendGoal) : [];
-        loadedExpenses = Array.isArray(bootstrapRes.expenses) ? bootstrapRes.expenses.map(mapBackendExpense) : [];
-      } else {
-
-        const [backendTasks, backendHabits, backendGoals, backendExpenses] = await Promise.all([
-          api.tasks.list().catch(() => []),
-          api.habits.list().catch(() => []),
-          api.goals.list().catch(() => []),
-          api.expenses.list().catch(() => []),
-        ]);
-
-        loadedTasks = Array.isArray(backendTasks) ? backendTasks.map(mapBackendTask) : [];
-        loadedHabits = Array.isArray(backendHabits) ? backendHabits.map(mapBackendHabit) : [];
-        loadedGoals = Array.isArray(backendGoals) ? backendGoals.map(mapBackendGoal) : [];
-        loadedExpenses = Array.isArray(backendExpenses) ? backendExpenses.map(mapBackendExpense) : [];
+      setIsLoadingData(true);
+      const res = await api.bootstrap();
+      if (res) {
+        if (res.tasks) {
+          setTasks(res.tasks.map(t => ({
+            id: String(t.id),
+            title: t.title,
+            description: t.description,
+            tag: 'Work',
+            priority: (t.priority || 'medium') as TaskPriority,
+            dueDate: t.due_date || undefined,
+            completed: !!t.completed,
+            createdAt: t.created_at || getTodayDateStr(),
+          })));
+        }
+        if (res.habits) {
+          setHabits(res.habits.map(h => {
+            const hist: Record<string, boolean> = {};
+            if (Array.isArray(h.completions)) {
+              h.completions.forEach((c: any) => {
+                if (c.date && c.completed) hist[c.date] = true;
+              });
+            }
+            return {
+              id: String(h.id),
+              name: h.name,
+              category: 'Health' as HabitCategory,
+              frequency: (h.frequency || 'daily') as HabitFrequency,
+              color: '#e66b4b',
+              history: hist,
+              createdAt: h.created_at || getTodayDateStr(),
+            };
+          }));
+        }
+        if (res.goals) {
+          setGoals(res.goals.map(g => ({
+            id: String(g.id),
+            title: g.title,
+            description: g.description,
+            category: 'Personal' as GoalCategory,
+            targetDate: g.deadline || undefined,
+            status: (g.status || 'active') as GoalStatus,
+            milestones: [],
+            notes: g.description,
+            createdAt: g.created_at || getTodayDateStr(),
+          })));
+        }
+        if (res.health_profile) {
+          setHealthProfile(res.health_profile);
+        }
+        if (res.foods && res.foods.length > 0) {
+          setFoods(res.foods);
+        }
+        if (res.food_logs_today) {
+          setFoodLogs(res.food_logs_today);
+        }
+        if (res.weight_checkins && res.weight_checkins.length > 0) {
+          setWeightCheckins(res.weight_checkins);
+        }
+        if (res.workout_plan) {
+          setWorkoutPlan(res.workout_plan);
+        }
+        if (res.today_workout_day) {
+          setTodayWorkoutDay(res.today_workout_day);
+        }
+        if (res.today_workout_logs) {
+          setTodayWorkoutLogs(res.today_workout_logs);
+        }
+        if (res.daily_health_status) {
+          setDailyHealthStatus(res.daily_health_status);
+        }
       }
-
-      setTasks(loadedTasks);
-      setHabits(loadedHabits);
-      setGoals(loadedGoals);
-      setExpenses(loadedExpenses);
-
-      setCachedWorkspace(user.id, {
-        tasks: loadedTasks,
-        habits: loadedHabits,
-        goals: loadedGoals,
-        expenses: loadedExpenses,
-        energyLogs,
-      });
-    } catch (err: any) {
-      console.error('Error fetching data from Django API:', err);
-      setDataError('Could not load workspace data.');
+    } catch (err) {
+      console.warn('Bootstrap fetch fallback:', err);
     } finally {
       setIsLoadingData(false);
     }
-  }, [isAuthenticated, user, energyLogs]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     refreshData();
-  }, [isAuthenticated, user?.id]);
+  }, [refreshData]);
 
-  const addTask = async (newTaskData: Omit<Task, 'id' | 'createdAt'>) => {
-    try {
-      const created = await api.tasks.create({
-        title: newTaskData.title.trim(),
-        description: newTaskData.description || '',
-        priority: newTaskData.priority || 'medium',
-        due_date: newTaskData.dueDate || null,
-        completed: false,
-      });
+  // Tasks actions
+  const addTask = async (taskData: Omit<Task, 'id' | 'createdAt'> & { completed?: boolean }) => {
+    const newTask: Task = {
+      ...taskData,
+      id: 't-' + Date.now(),
+      completed: taskData.completed || false,
+      createdAt: getTodayDateStr(),
+    };
+    setTasks(prev => [newTask, ...prev]);
+    if (getAccessToken()) {
+      try {
+        await api.tasks.create({
+          title: taskData.title,
+          description: taskData.description,
+          priority: taskData.priority,
+          due_date: taskData.dueDate || null,
+        });
+      } catch (err) {
+        console.error('Failed to save task to backend:', err);
+      }
+    }
+  };
 
-      const mapped = mapBackendTask(created);
-      setTasks(prev => [mapped, ...prev]);
-    } catch (err) {
-      console.error('Failed to create task on Django backend:', err);
-      throw err;
+  const updateTask = async (id: string, updates: Partial<Task>) => {
+    setTasks(prev => prev.map(t => (t.id === id ? { ...t, ...updates } : t)));
+    if (getAccessToken()) {
+      try {
+        await api.tasks.update(id, {
+          title: updates.title,
+          description: updates.description,
+          priority: updates.priority,
+          due_date: updates.dueDate,
+          completed: updates.completed,
+        });
+      } catch (err) {
+        console.error('Failed to update task:', err);
+      }
+    }
+  };
+
+  const deleteTask = async (id: string) => {
+    setTasks(prev => prev.filter(t => t.id !== id));
+    if (getAccessToken()) {
+      try {
+        await api.tasks.delete(id);
+      } catch (err) {
+        console.error('Failed to delete task:', err);
+      }
     }
   };
 
   const toggleTask = async (id: string) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
-
-    const newCompleted = !task.completed;
-
-    setTasks(prev => prev.map(t => (t.id === id ? { ...t, completed: newCompleted } : t)));
-
-    try {
-      await api.tasks.update(id, { completed: newCompleted });
-    } catch (err) {
-      console.error('Failed to toggle task:', err);
-
-      setTasks(prev => prev.map(t => (t.id === id ? { ...t, completed: task.completed } : t)));
+    const nextCompleted = !task.completed;
+    const completedAt = nextCompleted ? getTodayDateStr() : undefined;
+    setTasks(prev => prev.map(t => (t.id === id ? { ...t, completed: nextCompleted, completedAt } : t)));
+    if (getAccessToken()) {
+      try {
+        await api.tasks.update(id, { completed: nextCompleted });
+      } catch (err) {
+        console.error('Failed to toggle task:', err);
+      }
     }
   };
 
-  const updateTask = async (id: string, updates: Partial<Task>) => {
-    setTasks(prev => prev.map(t => (t.id === id ? { ...t, ...updates } : t)));
-
-    try {
-      const payload: any = {};
-      if (updates.title) payload.title = updates.title;
-      if (updates.description !== undefined) payload.description = updates.description;
-      if (updates.priority) payload.priority = updates.priority;
-      if (updates.dueDate !== undefined) payload.due_date = updates.dueDate || null;
-      if (updates.completed !== undefined) payload.completed = updates.completed;
-
-      await api.tasks.update(id, payload);
-    } catch (err) {
-      console.error('Failed to update task:', err);
-      refreshData();
+  // Habits actions
+  const addHabit = async (habitData: Omit<Habit, 'id' | 'createdAt' | 'history'>) => {
+    const newHabit: Habit = {
+      ...habitData,
+      id: 'h-' + Date.now(),
+      history: {},
+      createdAt: getTodayDateStr(),
+    };
+    setHabits(prev => [newHabit, ...prev]);
+    if (getAccessToken()) {
+      try {
+        await api.habits.create({ name: habitData.name, frequency: habitData.frequency });
+      } catch (err) {
+        console.error('Failed to create habit:', err);
+      }
     }
   };
 
-  const deleteTask = async (id: string) => {
-    const original = tasks;
-    setTasks(prev => prev.filter(t => t.id !== id));
-
-    try {
-      await api.tasks.delete(id);
-    } catch (err) {
-      console.error('Failed to delete task:', err);
-      setTasks(original);
+  const updateHabit = async (id: string, updates: Partial<Habit>) => {
+    setHabits(prev => prev.map(h => (h.id === id ? { ...h, ...updates } : h)));
+    if (getAccessToken()) {
+      try {
+        await api.habits.update(id, { name: updates.name, frequency: updates.frequency, active: updates.category ? true : undefined });
+      } catch (err) {
+        console.error('Failed to update habit:', err);
+      }
     }
   };
 
-  const addHabit = async (newHabitData: Omit<Habit, 'id' | 'createdAt' | 'history'>) => {
-    try {
-      const created = await api.habits.create({
-        name: newHabitData.name.trim(),
-        frequency: newHabitData.frequency || 'daily',
-        active: true,
-      });
-
-      const mapped = mapBackendHabit(created);
-      setHabits(prev => [mapped, ...prev]);
-    } catch (err) {
-      console.error('Failed to create habit on backend:', err);
-      throw err;
+  const deleteHabit = async (id: string) => {
+    setHabits(prev => prev.filter(h => h.id !== id));
+    if (getAccessToken()) {
+      try {
+        await api.habits.delete(id);
+      } catch (err) {
+        console.error('Failed to delete habit:', err);
+      }
     }
   };
 
   const toggleHabitDay = async (id: string, dateStr: string) => {
     const habit = habits.find(h => h.id === id);
     if (!habit) return;
-
-    const currentStatus = Boolean(habit.history[dateStr]);
-    const newStatus = !currentStatus;
+    const current = !!habit.history[dateStr];
+    const next = !current;
 
     setHabits(prev =>
       prev.map(h => {
         if (h.id === id) {
-          const updatedHistory = { ...h.history };
-          if (newStatus) {
-            updatedHistory[dateStr] = true;
+          const newHistory = { ...h.history };
+          if (next) {
+            newHistory[dateStr] = true;
           } else {
-            delete updatedHistory[dateStr];
+            delete newHistory[dateStr];
           }
-          return { ...h, history: updatedHistory };
+          return { ...h, history: newHistory };
         }
         return h;
       })
     );
 
-    try {
-      await api.habits.toggleCompletion({
-        habit: id,
-        date: dateStr,
-        completed: newStatus,
-      });
-    } catch (err) {
-      console.error('Failed to toggle habit completion on backend:', err);
-    }
-  };
-
-  const updateHabit = async (id: string, updates: Partial<Habit>) => {
-    setHabits(prev => prev.map(h => (h.id === id ? { ...h, ...updates } : h)));
-
-    try {
-      const payload: any = {};
-      if (updates.name) payload.name = updates.name;
-      if (updates.frequency) payload.frequency = updates.frequency;
-      await api.habits.update(id, payload);
-    } catch (err) {
-      console.error('Failed to update habit:', err);
-      refreshData();
-    }
-  };
-
-  const deleteHabit = async (id: string) => {
-    const original = habits;
-    setHabits(prev => prev.filter(h => h.id !== id));
-
-    try {
-      await api.habits.delete(id);
-    } catch (err) {
-      console.error('Failed to delete habit:', err);
-      setHabits(original);
-    }
-  };
-
-  const getHabitStreak = (habit: Habit) => {
-    let currentStreak = 0;
-    let longestStreak = 0;
-    let tempStreak = 0;
-
-    for (let i = 0; i < 30; i++) {
-      const d = getPastDateStr(i);
-      if (habit.history[d]) {
-        tempStreak++;
-        if (tempStreak > longestStreak) longestStreak = tempStreak;
-      } else {
-        if (i === 0) {
-
-        } else {
-          tempStreak = 0;
-        }
+    if (getAccessToken()) {
+      try {
+        await api.habits.toggleCompletion({ habit: id, date: dateStr, completed: next });
+      } catch (err) {
+        console.error('Failed to toggle habit completion:', err);
       }
     }
+  };
 
-    for (let i = 0; i < 30; i++) {
-      const d = getPastDateStr(i);
-      if (habit.history[d]) {
+  const getHabitStreak = (habit: Habit): HabitStreakInfo => {
+    let currentStreak = 0;
+    let longestStreak = 0;
+    const checkDate = new Date();
+
+    while (true) {
+      const year = checkDate.getFullYear();
+      const month = String(checkDate.getMonth() + 1).padStart(2, '0');
+      const day = String(checkDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+
+      if (habit.history[dateStr]) {
         currentStreak++;
-      } else if (i > 0) {
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        if (currentStreak === 0) {
+          checkDate.setDate(checkDate.getDate() - 1);
+          const y2 = checkDate.getFullYear();
+          const m2 = String(checkDate.getMonth() + 1).padStart(2, '0');
+          const d2 = String(checkDate.getDate()).padStart(2, '0');
+          if (habit.history[`${y2}-${m2}-${d2}`]) {
+            currentStreak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+            continue;
+          }
+        }
         break;
       }
     }
 
-    let past7Count = 0;
-    for (let i = 0; i < 7; i++) {
-      if (habit.history[getPastDateStr(i)]) past7Count++;
-    }
-    const consistency7d = Math.round((past7Count / 7) * 100);
+    longestStreak = Math.max(currentStreak, Object.keys(habit.history).length);
 
-    return { currentStreak, longestStreak: Math.max(longestStreak, currentStreak), consistency7d };
+    let completed7d = 0;
+    for (let i = 0; i < 7; i++) {
+      if (habit.history[getPastDateStr(i)]) {
+        completed7d++;
+      }
+    }
+    const consistency7d = Math.round((completed7d / 7) * 100);
+
+    return { currentStreak, longestStreak, consistency7d };
   };
 
-  const addGoal = async (newGoalData: Omit<Goal, 'id' | 'createdAt'>) => {
-    try {
-      const milestonesJson =
-        newGoalData.milestones && newGoalData.milestones.length > 0
-          ? `[MILESTONES]:${JSON.stringify(newGoalData.milestones)}`
-          : '';
-
-      const created = await api.goals.create({
-        title: newGoalData.title.trim(),
-        description: milestonesJson || newGoalData.description || '',
-        deadline: newGoalData.targetDate || null,
-        status: newGoalData.status || 'active',
-        progress: 0,
-      });
-
-      const mapped = mapBackendGoal(created);
-      if (newGoalData.milestones) mapped.milestones = newGoalData.milestones;
-      setGoals(prev => [mapped, ...prev]);
-    } catch (err) {
-      console.error('Failed to create goal:', err);
-      throw err;
+  // Goals actions
+  const addGoal = async (goalData: Omit<Goal, 'id' | 'createdAt'>) => {
+    const newGoal: Goal = {
+      ...goalData,
+      id: 'g-' + Date.now(),
+      createdAt: getTodayDateStr(),
+    };
+    setGoals(prev => [newGoal, ...prev]);
+    if (getAccessToken()) {
+      try {
+        await api.goals.create({
+          title: goalData.title,
+          description: goalData.description,
+          deadline: goalData.targetDate || null,
+          status: goalData.status,
+          progress: 0,
+        });
+      } catch (err) {
+        console.error('Failed to create goal:', err);
+      }
     }
+  };
+
+  const updateGoal = async (id: string, updates: Partial<Goal>) => {
+    setGoals(prev => prev.map(g => (g.id === id ? { ...g, ...updates } : g)));
+    if (getAccessToken()) {
+      try {
+        await api.goals.update(id, {
+          title: updates.title,
+          description: updates.description,
+          deadline: updates.targetDate,
+          status: updates.status,
+        });
+      } catch (err) {
+        console.error('Failed to update goal:', err);
+      }
+    }
+  };
+
+  const deleteGoal = async (id: string) => {
+    setGoals(prev => prev.filter(g => g.id !== id));
+    if (getAccessToken()) {
+      try {
+        await api.goals.delete(id);
+      } catch (err) {
+        console.error('Failed to delete goal:', err);
+      }
+    }
+  };
+
+  const toggleMilestone = async (goalId: string, milestoneId: string) => {
+    setGoals(prev =>
+      prev.map(g => {
+        if (g.id === goalId) {
+          const updatedMilestones = g.milestones.map(m => (m.id === milestoneId ? { ...m, done: !m.done } : m));
+          return { ...g, milestones: updatedMilestones };
+        }
+        return g;
+      })
+    );
+  };
+
+  const addMilestone = async (goalId: string, title: string) => {
+    const newMilestone: Milestone = {
+      id: 'm-' + Date.now(),
+      title,
+      done: false,
+    };
+    setGoals(prev =>
+      prev.map(g => {
+        if (g.id === goalId) {
+          return { ...g, milestones: [...g.milestones, newMilestone] };
+        }
+        return g;
+      })
+    );
+  };
+
+  const deleteMilestone = async (goalId: string, milestoneId: string) => {
+    setGoals(prev =>
+      prev.map(g => {
+        if (g.id === goalId) {
+          return { ...g, milestones: g.milestones.filter(m => m.id !== milestoneId) };
+        }
+        return g;
+      })
+    );
   };
 
   const getGoalProgress = (goal: Goal): number => {
@@ -489,320 +806,281 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return Math.round((completed / goal.milestones.length) * 100);
   };
 
-  const updateGoal = async (goalId: string, updates: Partial<Goal>) => {
-    setGoals(prev =>
-      prev.map(g => {
-        if (g.id === goalId) {
-          const updated = { ...g, ...updates };
-          return updated;
-        }
-        return g;
-      })
-    );
-
-    try {
-      const goal = goals.find(g => g.id === goalId);
-      const merged = { ...goal, ...updates };
-
-      const milestonesJson =
-        merged.milestones && merged.milestones.length > 0
-          ? `[MILESTONES]:${JSON.stringify(merged.milestones)}`
-          : merged.description || '';
-
-      const progress = getGoalProgress(merged as Goal);
-
-      await api.goals.update(goalId, {
-        title: merged.title,
-        description: milestonesJson,
-        deadline: merged.targetDate || null,
-        status: merged.status,
-        progress,
-      });
-    } catch (err) {
-      console.error('Failed to update goal:', err);
+  // Health Profile & Onboarding
+  const onboardHealth = async (data: Partial<HealthProfile>) => {
+    const updated = { ...healthProfile, ...data, is_onboarded: true };
+    setHealthProfile(updated as HealthProfile);
+    if (getAccessToken()) {
+      try {
+        await api.health.onboard(data as any);
+        await refreshData();
+      } catch (err) {
+        console.error('Failed to submit health onboarding:', err);
+      }
     }
   };
 
-  const toggleMilestone = async (goalId: string, milestoneId: string) => {
-    const goal = goals.find(g => g.id === goalId);
-    if (!goal) return;
-
-    const updatedMilestones = goal.milestones.map(m => (m.id === milestoneId ? { ...m, done: !m.done } : m));
-    const progress = Math.round((updatedMilestones.filter(m => m.done).length / updatedMilestones.length) * 100);
-
-    setGoals(prev => prev.map(g => (g.id === goalId ? { ...g, milestones: updatedMilestones } : g)));
-
-    try {
-      await api.goals.update(goalId, {
-        description: `[MILESTONES]:${JSON.stringify(updatedMilestones)}`,
-        progress,
-      });
-    } catch (err) {
-      console.error('Failed to update milestone:', err);
+  const updateHealthProfile = async (updates: Partial<HealthProfile>) => {
+    const updated = { ...healthProfile, ...updates };
+    setHealthProfile(updated as HealthProfile);
+    if (getAccessToken() && healthProfile.id) {
+      try {
+        await api.health.updateProfile(healthProfile.id, updates);
+      } catch (err) {
+        console.error('Failed to update health profile:', err);
+      }
     }
   };
 
-  const addMilestone = async (goalId: string, title: string) => {
-    const goal = goals.find(g => g.id === goalId);
-    if (!goal) return;
+  // Nutrition actions
+  const addFood = async (foodData: Omit<Food, 'id'>) => {
+    const newFood: Food = { ...foodData, id: 'f-' + Date.now() };
+    setFoods(prev => [newFood, ...prev]);
+    if (getAccessToken()) {
+      try {
+        await api.health.foods.create(foodData);
+      } catch (err) {
+        console.error('Failed to save food:', err);
+      }
+    }
+  };
 
-    const newM: Milestone = {
-      id: 'm_' + Math.random().toString(36).substring(2, 7),
-      title: title.trim(),
-      done: false,
+  const updateFood = async (id: string, updates: Partial<Food>) => {
+    setFoods(prev => prev.map(f => (f.id === id ? { ...f, ...updates } : f)));
+    if (getAccessToken()) {
+      try {
+        await api.health.foods.update(id, updates);
+      } catch (err) {
+        console.error('Failed to update food:', err);
+      }
+    }
+  };
+
+  const deleteFood = async (id: string) => {
+    setFoods(prev => prev.filter(f => f.id !== id));
+    if (getAccessToken()) {
+      try {
+        await api.health.foods.delete(id);
+      } catch (err) {
+        console.error('Failed to delete food:', err);
+      }
+    }
+  };
+
+  const logFood = async (foodId: string, servings = 1.0, date = getTodayDateStr()) => {
+    const food = foods.find(f => f.id === foodId);
+    const newLog: FoodLog = {
+      id: 'fl-' + Date.now(),
+      food: foodId,
+      food_details: food,
+      date,
+      servings,
+      logged_at: new Date().toISOString(),
     };
-
-    const updatedMilestones = [...goal.milestones, newM];
-    const progress = Math.round((updatedMilestones.filter(m => m.done).length / updatedMilestones.length) * 100);
-
-    setGoals(prev => prev.map(g => (g.id === goalId ? { ...g, milestones: updatedMilestones } : g)));
-
-    try {
-      await api.goals.update(goalId, {
-        description: `[MILESTONES]:${JSON.stringify(updatedMilestones)}`,
-        progress,
-      });
-    } catch (err) {
-      console.error('Failed to add milestone:', err);
+    setFoodLogs(prev => [newLog, ...prev]);
+    if (getAccessToken()) {
+      try {
+        await api.health.foodLogs.create({ food: foodId, date, servings });
+      } catch (err) {
+        console.error('Failed to log food:', err);
+      }
     }
   };
 
-  const deleteMilestone = async (goalId: string, milestoneId: string) => {
-    const goal = goals.find(g => g.id === goalId);
-    if (!goal) return;
+  const logStapleFast = async (food: Food) => {
+    await logFood(food.id, 1.0, getTodayDateStr());
+  };
 
-    const updatedMilestones = goal.milestones.filter(m => m.id !== milestoneId);
-    const progress =
-      updatedMilestones.length > 0
-        ? Math.round((updatedMilestones.filter(m => m.done).length / updatedMilestones.length) * 100)
-        : 0;
-
-    setGoals(prev => prev.map(g => (g.id === goalId ? { ...g, milestones: updatedMilestones } : g)));
-
-    try {
-      await api.goals.update(goalId, {
-        description: `[MILESTONES]:${JSON.stringify(updatedMilestones)}`,
-        progress,
-      });
-    } catch (err) {
-      console.error('Failed to delete milestone:', err);
+  const deleteFoodLog = async (id: string) => {
+    setFoodLogs(prev => prev.filter(fl => fl.id !== id));
+    if (getAccessToken()) {
+      try {
+        await api.health.foodLogs.delete(id);
+      } catch (err) {
+        console.error('Failed to delete food log:', err);
+      }
     }
   };
 
-  const deleteGoal = async (goalId: string) => {
-    const original = goals;
-    setGoals(prev => prev.filter(g => g.id !== goalId));
-
-    try {
-      await api.goals.delete(goalId);
-    } catch (err) {
-      console.error('Failed to delete goal:', err);
-      setGoals(original);
+  // Hydration & Creatine
+  const logWater = async (amountMl: number) => {
+    const current = dailyHealthStatus.water_ml;
+    const next = Math.max(0, current + amountMl);
+    setDailyHealthStatus(prev => ({ ...prev, water_ml: next }));
+    if (getAccessToken() && dailyHealthStatus.id) {
+      try {
+        await api.health.dailyStatus.update(dailyHealthStatus.id, { water_ml: next });
+      } catch (err) {
+        console.error('Failed to update water:', err);
+      }
     }
   };
 
-  const addExpense = async (newExpenseData: Omit<Expense, 'id' | 'createdAt'>) => {
-    try {
-      const created = await api.expenses.create({
-        title: newExpenseData.title.trim(),
-        amount: Number(newExpenseData.amount) || 0,
-        category: newExpenseData.category || 'Other',
-        date: newExpenseData.date || getTodayDateStr(),
-      });
-
-      const mapped = mapBackendExpense(created);
-      setExpenses(prev => [mapped, ...prev]);
-    } catch (err) {
-      console.error('Failed to create expense on backend:', err);
-      throw err;
+  const toggleCreatine = async () => {
+    const next = !dailyHealthStatus.creatine_completed;
+    setDailyHealthStatus(prev => ({ ...prev, creatine_completed: next }));
+    if (getAccessToken() && dailyHealthStatus.id) {
+      try {
+        await api.health.dailyStatus.update(dailyHealthStatus.id, { creatine_completed: next });
+      } catch (err) {
+        console.error('Failed to toggle creatine:', err);
+      }
     }
   };
 
-  const updateExpense = async (id: string, updates: Partial<Expense>) => {
-    setExpenses(prev => prev.map(e => (e.id === id ? { ...e, ...updates } : e)));
-
-    try {
-      const payload: any = {};
-      if (updates.title) payload.title = updates.title;
-      if (updates.amount !== undefined) payload.amount = Number(updates.amount);
-      if (updates.category) payload.category = updates.category;
-      if (updates.date) payload.date = updates.date;
-
-      await api.expenses.update(id, payload);
-    } catch (err) {
-      console.error('Failed to update expense:', err);
-      refreshData();
-    }
-  };
-
-  const deleteExpense = async (id: string) => {
-    const original = expenses;
-    setExpenses(prev => prev.filter(e => e.id !== id));
-
-    try {
-      await api.expenses.delete(id);
-    } catch (err) {
-      console.error('Failed to delete expense:', err);
-      setExpenses(original);
-    }
-  };
-
-  const addEnergyLog = (logData: Omit<EnergyLog, 'id' | 'createdAt'>) => {
-    const newLog: EnergyLog = {
-      ...logData,
-      id: 'elog_' + Date.now(),
-      createdAt: new Date().toISOString(),
+  // Weight check-in actions
+  const logWeight = async (weight: number, date = getTodayDateStr(), notes = '') => {
+    const newCheckin: WeightCheckin = {
+      id: 'w-' + Date.now(),
+      date,
+      weight,
+      notes,
     };
-    setEnergyLogs(prev => [newLog, ...prev.filter(l => l.date !== logData.date)]);
+    setWeightCheckins(prev => [newCheckin, ...prev.filter(w => w.date !== date)]);
+    setHealthProfile(prev => ({ ...prev, current_weight: weight }));
+    if (getAccessToken()) {
+      try {
+        await api.health.weight.create({ date, weight, notes });
+      } catch (err) {
+        console.error('Failed to log weight:', err);
+      }
+    }
   };
 
-  const todayStr = getTodayDateStr();
-  const todayEnergyLog = energyLogs.find(l => l.date === todayStr);
+  const deleteWeightCheckin = async (id: string) => {
+    setWeightCheckins(prev => prev.filter(w => w.id !== id));
+    if (getAccessToken()) {
+      try {
+        await api.health.weight.delete(id);
+      } catch (err) {
+        console.error('Failed to delete weight checkin:', err);
+      }
+    }
+  };
 
-  const currentMonthPrefix = useMemo(() => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    return `${year}-${month}`;
-  }, []);
+  // Workout actions
+  const toggleWorkoutExercise = async (
+    workoutExerciseId: string,
+    completed = true,
+    actualReps = '',
+    actualWeight = 0
+  ) => {
+    const todayStr = getTodayDateStr();
+    const existing = todayWorkoutLogs.find(wl => wl.workout_exercise === workoutExerciseId);
 
-  const spentThisMonth = useMemo(() => {
-    return expenses
-      .filter(e => e.date.startsWith(currentMonthPrefix))
-      .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-  }, [expenses, currentMonthPrefix]);
-
-  const monthlyBudget = user?.monthlyBudget || 25000;
-  const budgetRemaining = Math.max(0, monthlyBudget - spentThisMonth);
-  const budgetUsagePercent = Math.min(100, Math.round((spentThisMonth / (monthlyBudget || 1)) * 100));
-
-  const safeDailySpend = useMemo(() => {
-    const now = new Date();
-    const totalDaysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const daysRemaining = Math.max(1, totalDaysInMonth - now.getDate() + 1);
-    return Math.max(0, Math.round(budgetRemaining / daysRemaining));
-  }, [budgetRemaining]);
-
-  const expensesByCategory = useMemo(() => {
-    const catMap: Record<string, number> = {};
-    expenses
-      .filter(e => e.date.startsWith(currentMonthPrefix))
-      .forEach(e => {
-        catMap[e.category] = (catMap[e.category] || 0) + Number(e.amount || 0);
-      });
-    return catMap;
-  }, [expenses, currentMonthPrefix]);
-
-  const lifeScore = useMemo<LifeScoreBreakdown>(() => {
-
-    const taskScore =
-      tasks.length > 0 ? Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100) : 75;
-
-    let habitScore = 75;
-    if (habits.length > 0) {
-      const avgConsistency =
-        habits.reduce((acc, h) => acc + getHabitStreak(h).consistency7d, 0) / habits.length;
-      habitScore = Math.round(avgConsistency);
+    if (existing) {
+      const nextCompleted = completed !== undefined ? completed : !existing.completed;
+      setTodayWorkoutLogs(prev =>
+        prev.map(wl =>
+          wl.workout_exercise === workoutExerciseId
+            ? { ...wl, completed: nextCompleted, actual_reps: actualReps || wl.actual_reps, actual_weight: actualWeight || wl.actual_weight }
+            : wl
+        )
+      );
+    } else {
+      const newLog: WorkoutLog = {
+        id: 'wl-' + Date.now(),
+        workout_exercise: workoutExerciseId,
+        date: todayStr,
+        completed: true,
+        actual_reps: actualReps,
+        actual_weight: actualWeight,
+      };
+      setTodayWorkoutLogs(prev => [newLog, ...prev]);
     }
 
-    const now = new Date();
-    const daysPassedInMonth = now.getDate();
-    const totalDaysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const expectedPacing = daysPassedInMonth / totalDaysInMonth;
-    const actualPacing = spentThisMonth / (monthlyBudget || 1);
-    const budgetScore =
-      actualPacing <= expectedPacing
-        ? 95
-        : Math.max(30, Math.round(100 - (actualPacing - expectedPacing) * 100));
-
-    let goalsScore = 70;
-    if (goals.length > 0) {
-      const avgProgress = goals.reduce((acc, g) => acc + getGoalProgress(g), 0) / goals.length;
-      goalsScore = Math.round(avgProgress);
+    if (getAccessToken()) {
+      try {
+        await api.health.workouts.logWorkout({
+          workout_exercise: workoutExerciseId,
+          date: todayStr,
+          completed: completed,
+          actual_reps: actualReps,
+          actual_weight: actualWeight,
+        });
+      } catch (err) {
+        console.error('Failed to log workout exercise:', err);
+      }
     }
+  };
 
-    const overall = Math.round(
-      taskScore * 0.3 + habitScore * 0.35 + budgetScore * 0.2 + goalsScore * 0.15
-    );
-
-    let summary = 'Steady operational rhythm. Your habits and focus tasks are compounding smoothly.';
-    if (overall >= 85) summary = 'Peak momentum! All operational pillars are aligned and exceeding weekly baselines.';
-    else if (overall < 60) summary = 'Focus needed. Re-anchor your atomic habits and prioritize critical tasks.';
-
-    return {
-      overall,
-      tasksScore: taskScore,
-      habitsScore: habitScore,
-      budgetScore,
-      goalsScore,
-      summary,
-      changeVsLastWeek: +4.2,
-    };
-  }, [tasks, habits, expenses, goals, spentThisMonth, monthlyBudget]);
-
-  const resetAllData = async () => {
-    try {
-      await Promise.all([
-        ...tasks.map(t => api.tasks.delete(t.id).catch(() => {})),
-        ...habits.map(h => api.habits.delete(h.id).catch(() => {})),
-        ...goals.map(g => api.goals.delete(g.id).catch(() => {})),
-        ...expenses.map(e => api.expenses.delete(e.id).catch(() => {})),
-      ]);
-      setTasks([]);
-      setHabits([]);
-      setGoals([]);
-      setExpenses([]);
-    } catch (err) {
-      console.error('Failed to reset workspace data on backend:', err);
+  const setWorkoutFrequency = async (freq: number) => {
+    await updateHealthProfile({ training_frequency: freq });
+    if (getAccessToken()) {
+      try {
+        await api.health.onboard({ ...healthProfile, training_frequency: freq } as any);
+        await refreshData();
+      } catch (err) {
+        console.error('Failed to change workout split:', err);
+      }
     }
+  };
+
+  const resetAllData = () => {
+    setTasks([]);
+    setHabits([]);
+    setGoals([]);
+    setFoodLogs([]);
+    setWeightCheckins([]);
   };
 
   return (
     <DataContext.Provider
       value={{
         tasks,
-        habits,
-        goals,
-        expenses,
-        energyLogs,
-        isLoadingData,
-        dataError,
-
         addTask,
-        toggleTask,
-        deleteTask,
         updateTask,
+        deleteTask,
+        toggleTask,
 
+        habits,
         addHabit,
-        toggleHabitDay,
-        deleteHabit,
         updateHabit,
+        deleteHabit,
+        toggleHabitDay,
         getHabitStreak,
 
+        goals,
         addGoal,
+        updateGoal,
+        deleteGoal,
         toggleMilestone,
         addMilestone,
         deleteMilestone,
-        deleteGoal,
-        updateGoal,
         getGoalProgress,
 
-        addExpense,
-        deleteExpense,
-        updateExpense,
+        healthProfile,
+        onboardHealth,
+        updateHealthProfile,
 
-        addEnergyLog,
-        todayEnergyLog,
+        foods,
+        foodLogs,
+        todayMacros,
+        addFood,
+        updateFood,
+        deleteFood,
+        logFood,
+        deleteFoodLog,
+        logStapleFast,
+
+        dailyHealthStatus,
+        logWater,
+        toggleCreatine,
+
+        weightCheckins,
+        logWeight,
+        deleteWeightCheckin,
+
+        workoutPlan,
+        todayWorkoutDay,
+        todayWorkoutLogs,
+        toggleWorkoutExercise,
+        setWorkoutFrequency,
 
         lifeScore,
-        spentThisMonth,
-        budgetRemaining,
-        budgetUsagePercent,
-        safeDailySpend,
-        expensesByCategory,
-
-        resetAllData,
+        isLoadingData,
         refreshData,
+        resetAllData,
       }}
     >
       {children}

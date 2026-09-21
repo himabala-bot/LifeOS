@@ -1,27 +1,18 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
   TrendingUp,
   TrendingDown,
-  Compass,
   Clock,
-  Zap,
   Flame,
   Target,
   CircleDollarSign,
-  ShieldCheck,
-  Layers,
   Sliders,
   Brain,
-  Heart,
-  ArrowRight,
-  HelpCircle,
-  Award,
   AlertTriangle,
-  RotateCcw
+  RotateCcw,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -30,7 +21,6 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine
 } from 'recharts';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
@@ -38,15 +28,9 @@ import { useData } from '../../context/DataContext';
 export function TrajectoryScreen() {
   const { user } = useAuth();
   const {
-    tasks,
     habits,
     goals,
-    expenses,
-    energyLogs,
     lifeScore,
-    spentThisMonth,
-    budgetRemaining,
-    getGoalProgress
   } = useData();
 
   const currency = user?.currency || '₹';
@@ -58,17 +42,8 @@ export function TrajectoryScreen() {
   const [habitDisciplineRate, setHabitDisciplineRate] = useState<number>(85);
   const [readingPagesDaily, setReadingPagesDaily] = useState<number>(15);
 
-  const baseAvgFocusMinutes = useMemo(() => {
-    if (energyLogs.length === 0) return 90;
-    const sum = energyLogs.reduce((acc, log) => acc + log.focusMinutes, 0);
-    return Math.round(sum / energyLogs.length) || 90;
-  }, [energyLogs]);
-
-  const baseMonthlySavings = useMemo(() => {
-    const budget = user?.monthlyBudget || 25000;
-    const remaining = Math.max(0, budget - spentThisMonth);
-    return remaining > 0 ? remaining : (user?.currency === '₹' ? 4000 : 100);
-  }, [user?.monthlyBudget, spentThisMonth]);
+  const baseAvgFocusMinutes = 90;
+  const baseMonthlySavings = user?.currency === '₹' ? 8000 : 200;
 
   const activeHabitsCount = Math.max(1, habits.length);
   const activeGoalsCount = Math.max(1, goals.length);
@@ -154,8 +129,7 @@ export function TrajectoryScreen() {
   const userFirstName = user?.name ? user.name.split(' ')[0] : 'Explorer';
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 pb-20 text-[#181a18]">
-
+    <div className="max-w-6xl mx-auto space-y-10 pb-20 text-[#181a18] animate-fadeIn">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-subtle)] border border-[var(--accent)]/20 text-[var(--accent)] text-xs font-semibold uppercase tracking-wider mb-2">
@@ -164,7 +138,7 @@ export function TrajectoryScreen() {
           </div>
           <h1 className="serif text-4xl sm:text-5xl font-normal">The "Future You" Simulator<span className="text-[var(--accent)]">.</span></h1>
           <p className="text-sm text-[var(--muted)] mt-1.5 max-w-2xl">
-            Simulate where your current habits, focus hours, and financial discipline will take you. See the staggering mathematical divergence between intentional compounding vs status-quo drift.
+            Simulate where your current habits, focus hours, and physical discipline will take you. See the staggering mathematical divergence between intentional compounding vs status-quo drift.
           </p>
         </div>
 
@@ -192,7 +166,6 @@ export function TrajectoryScreen() {
       </div>
 
       <div className="bg-[var(--ink)] text-white rounded-3xl p-7 sm:p-9 shadow-2xl relative overflow-hidden">
-
         <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--accent)]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#8aa682]/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -282,7 +255,6 @@ export function TrajectoryScreen() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
-
         <div className="p-7 sm:p-8 rounded-3xl bg-white border-2 border-[var(--accent)]/30 shadow-lg relative flex flex-col justify-between">
           <div className="absolute top-4 right-4">
             <span className="px-3 py-1 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-bold text-xs uppercase tracking-wider">
@@ -302,7 +274,6 @@ export function TrajectoryScreen() {
             </div>
 
             <div className="space-y-4 mt-6">
-
               <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Brain size={20} className="text-[var(--accent)]" />
@@ -329,11 +300,11 @@ export function TrajectoryScreen() {
                 <div className="flex items-center gap-3">
                   <Flame size={20} className="text-[var(--sage)]" />
                   <div>
-                    <p className="text-xs text-[var(--muted)] font-semibold uppercase tracking-wider">Cardiovascular & Body</p>
+                    <p className="text-xs text-[var(--muted)] font-semibold uppercase tracking-wider">Physical Strength & Body</p>
                     <p className="text-sm font-bold text-[var(--ink)] mt-0.5">{simulation.workoutsAlpha} Workouts Logged</p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-[var(--sage)]">Top 5% Stamina</span>
+                <span className="text-xs font-bold text-[var(--sage)]">Peak Physical Form</span>
               </div>
 
               <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex items-center justify-between">
@@ -373,7 +344,6 @@ export function TrajectoryScreen() {
             </div>
 
             <div className="space-y-4 mt-6">
-
               <div className="p-4 rounded-2xl bg-white border border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Clock size={20} className="text-red-500" />
@@ -453,7 +423,6 @@ export function TrajectoryScreen() {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
           <div className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)] flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-center mb-1">

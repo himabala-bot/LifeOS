@@ -29,10 +29,10 @@ function mapBackendUserToProfile(backendUser: any, currency = '₹'): UserProfil
     avatar: avatar,
     bio: 'Focused builder & high-agency individual',
     currency: currency,
-    monthlyBudget: backendUser.monthly_budget ? Number(backendUser.monthly_budget) : 25000,
     dailyFocusTargetMinutes: 180,
     theme: 'warm-paper',
     createdAt: backendUser.date_joined || new Date().toISOString(),
+    health_profile: backendUser.health_profile || undefined,
   };
 }
 
@@ -57,7 +57,7 @@ function setCachedUser(profile: UserProfile | null): void {
       localStorage.removeItem(CACHED_USER_KEY);
     }
   } catch {
-
+    // Ignore
   }
 }
 
@@ -87,7 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (err) {
       console.warn('Session verification check:', err);
-
       if (err instanceof Error && err.message.includes('401')) {
         clearTokens();
         setCachedUser(null);
@@ -99,7 +98,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-
     const token = getAccessToken();
     const cached = getCachedUser();
     if (token && cached) {
@@ -110,7 +108,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     api.warmup();
-
     fetchCurrentUser();
 
     const handleUnauthorized = () => {
@@ -197,7 +194,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const loginRes = await login(demoEmail, demoPassword);
       if (!loginRes.success) {
-
         const signupRes = await signup('Aisha Sharma', demoEmail, demoPassword, '₹');
         if (!signupRes.success) {
           await login(demoEmail, demoPassword);
@@ -229,7 +225,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const backendUpdates: any = {};
       if (updates.name) backendUpdates.name = updates.name;
       if (updates.email) backendUpdates.email = updates.email;
-      if (updates.monthlyBudget !== undefined) backendUpdates.monthly_budget = updates.monthlyBudget;
 
       await api.auth.updateMe(backendUpdates);
     } catch (err) {

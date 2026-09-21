@@ -7,16 +7,14 @@ import {
   Plus,
   ChevronRight,
   Flame,
-  CircleDollarSign,
   Target,
   Sparkles,
-  ArrowUpRight,
-  Zap,
-  Clock,
-  Calendar,
-  AlertCircle,
   TrendingUp,
-  Smile
+  Activity,
+  Apple,
+  Droplets,
+  Dumbbell,
+  Scale,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData, getTodayDateStr, getPastDateStr } from '../../context/DataContext';
@@ -24,7 +22,7 @@ import { ScreenType, TaskPriority, TaskTag } from '../../types';
 
 interface TodayScreenProps {
   onNavigate: (screen: ScreenType) => void;
-  onOpenQuickAdd: (tab?: 'task' | 'habit' | 'goal' | 'expense' | 'journal') => void;
+  onOpenQuickAdd: (tab?: 'task' | 'habit' | 'goal' | 'food' | 'weight' | 'water' | 'workout') => void;
 }
 
 export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
@@ -39,12 +37,12 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
     goals,
     getGoalProgress,
     lifeScore,
-    spentThisMonth,
-    budgetRemaining,
-    budgetUsagePercent,
-    safeDailySpend,
-    todayEnergyLog,
-    addEnergyLog
+    healthProfile,
+    todayMacros,
+    dailyHealthStatus,
+    logWater,
+    todayWorkoutDay,
+    todayWorkoutLogs,
   } = useData();
 
   const [newTaskInput, setNewTaskInput] = useState('');
@@ -60,7 +58,7 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-    year: 'numeric'
+    year: 'numeric',
   }).format(new Date());
 
   const todayTasks = tasks.filter(t => !t.dueDate || t.dueDate === todayStr || t.completedAt === todayStr);
@@ -76,7 +74,6 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
       tag: selectedTag,
       priority: selectedPriority,
       dueDate: todayStr,
-      completed: false,
     });
     setNewTaskInput('');
   };
@@ -84,9 +81,12 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
   const daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const last7DateStrs = Array.from({ length: 7 }, (_, i) => getPastDateStr(6 - i));
 
-  return (
-    <div className="max-w-6xl mx-auto space-y-10 pb-16">
+  const completedExercisesCount = todayWorkoutLogs.filter(wl => wl.completed).length;
+  const totalExercisesCount = todayWorkoutDay?.exercises?.length || 0;
 
+  return (
+    <div className="max-w-6xl mx-auto space-y-10 pb-16 animate-fadeIn">
+      {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)] mb-2">
@@ -107,17 +107,18 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
             <span>New Task</span>
           </button>
           <button
-            onClick={() => onOpenQuickAdd('expense')}
+            onClick={() => onOpenQuickAdd('food')}
             className="px-4 py-2 rounded-xl bg-white border border-[var(--line)] hover:bg-[#ecebe4] text-xs font-semibold flex items-center gap-2 text-[var(--ink)] transition-colors shadow-sm cursor-pointer"
           >
-            <Plus size={14} className="text-amber-600" />
-            <span>Log Expense</span>
+            <Plus size={14} className="text-[#e66b4b]" />
+            <span>Log Food</span>
           </button>
         </div>
       </header>
 
+      {/* Top Banner: LifeScore & Health Snapshot */}
       <section className="grid lg:grid-cols-[1.15fr_1fr] gap-6">
-
+        {/* LifeScore Card */}
         <div className="bg-[var(--ink)] text-white rounded-3xl p-7 relative overflow-hidden shadow-xl flex flex-col justify-between">
           <div className="relative z-10 flex justify-between items-start">
             <div>
@@ -150,8 +151,8 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
               <p className="text-base font-semibold mt-1">{lifeScore.habitsScore}%</p>
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-white/50">Budget</p>
-              <p className="text-base font-semibold mt-1">{lifeScore.budgetScore}%</p>
+              <p className="text-[10px] uppercase tracking-wider text-white/50">Health</p>
+              <p className="text-base font-semibold mt-1">{lifeScore.healthScore}%</p>
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-wider text-white/50">Goals</p>
@@ -164,53 +165,78 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
           </div>
         </div>
 
+        {/* Health & Strength Snapshot Card */}
         <div className="bg-white rounded-3xl p-7 border border-[var(--line)] shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                <p className="text-xs uppercase tracking-[0.25em] text-[var(--muted)] font-semibold">Monthly Runway</p>
+          <div>
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                  <p className="text-xs uppercase tracking-[0.25em] text-[var(--muted)] font-semibold">Health & Nutrition</p>
+                </div>
+                <div className="flex items-baseline gap-3 mt-3">
+                  <span className="text-3xl sm:text-4xl font-bold text-[var(--ink)]">
+                    {todayMacros.calories}
+                  </span>
+                  <span className="text-xs font-semibold text-[var(--muted)]">/ {todayMacros.target_calories} kcal</span>
+                </div>
               </div>
-              <p className="text-3xl sm:text-4xl font-bold mt-3 text-[var(--ink)]">
-                {user?.currency || '₹'}{spentThisMonth.toLocaleString()}
-              </p>
-              <p className="text-xs text-[var(--muted)] mt-1">
-                Spent of {user?.currency || '₹'}{(user?.monthlyBudget || 25000).toLocaleString()} limit
-              </p>
+
+              <div className="text-right">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  {healthProfile.current_weight} kg
+                </span>
+                <p className="text-[10px] text-[var(--muted)] mt-1">Goal: {healthProfile.goal_weight} kg</p>
+              </div>
             </div>
 
-            <div className="text-right">
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${budgetRemaining > 0 ? 'bg-[var(--sage-light)] text-[var(--sage)]' : 'bg-red-50 text-red-600'}`}>
-                {user?.currency || '₹'}{Math.round(budgetRemaining).toLocaleString()} remaining
-              </span>
+            {/* Macro & Hydration Quick Stats */}
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-[var(--muted)] font-medium">Protein</span>
+                  <span className="font-bold text-[var(--ink)]">{todayMacros.protein}g / {todayMacros.target_protein}g</span>
+                </div>
+                <div className="w-full h-1.5 bg-[#eae7e1] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#e66b4b] rounded-full"
+                    style={{ width: `${Math.min(100, (todayMacros.protein / todayMacros.target_protein) * 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-[var(--muted)] font-medium">Water</span>
+                  <span className="font-bold text-blue-700">{(dailyHealthStatus.water_ml / 1000).toFixed(1)}L / {(healthProfile.target_water_ml / 1000).toFixed(1)}L</span>
+                </div>
+                <div className="w-full h-1.5 bg-[#eae7e1] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 rounded-full"
+                    style={{ width: `${Math.min(100, (dailyHealthStatus.water_ml / healthProfile.target_water_ml) * 100)}%` }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="mt-6 pt-5 border-t border-[var(--line)]">
-            <div className="flex justify-between text-xs mb-2">
-              <span className="font-semibold text-[var(--ink)]">Safe Daily Spend Rate</span>
-              <span className="font-bold text-[var(--accent)]">{user?.currency || '₹'}{safeDailySpend.toLocaleString()} / day</span>
+          <div className="mt-5 pt-4 border-t border-[var(--line)] flex items-center justify-between">
+            <div className="text-xs text-[var(--muted)]">
+              <span className="font-semibold text-[var(--ink)]">{todayWorkoutDay?.day_name.split(' ')[0] || 'Strength'}:</span>{' '}
+              {completedExercisesCount}/{totalExercisesCount} exercises
             </div>
-            <div className="w-full h-2.5 bg-[#f1f0ea] rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all ${budgetUsagePercent > 90 ? 'bg-red-500' : 'bg-[var(--sage)]'}`}
-                style={{ width: `${Math.min(100, budgetUsagePercent)}%` }}
-              />
-            </div>
-            <div className="flex justify-between items-center text-[11px] text-[var(--muted)] mt-2">
-              <span>{budgetUsagePercent}% budget used</span>
-              <button
-                onClick={() => onNavigate('expenses')}
-                className="hover:text-[var(--ink)] font-semibold flex items-center gap-1 cursor-pointer"
-              >
-                <span>View ledger</span>
-                <ChevronRight size={12} />
-              </button>
-            </div>
+            <button
+              onClick={() => onNavigate('health')}
+              className="hover:text-[var(--accent)] text-xs font-bold text-[var(--ink)] flex items-center gap-1 cursor-pointer transition-colors"
+            >
+              <span>Open Health</span>
+              <ChevronRight size={13} />
+            </button>
           </div>
         </div>
       </section>
 
+      {/* Future Simulator Banner */}
       <section
         onClick={() => onNavigate('trajectory')}
         className="p-6 rounded-3xl bg-gradient-to-r from-[#181a18] to-[#2a2e2a] text-white shadow-lg cursor-pointer hover:shadow-xl hover:scale-[1.01] transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-white/10"
@@ -228,7 +254,7 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
               Where will today's habits take you in 3 years?
             </h3>
             <p className="text-xs text-white/70 mt-1">
-              Simulate your compounding mastery, wealth trajectory, and body stamina vs. the drift path.
+              Simulate your compounding mastery, physical capacity, and daily focus vs. the drift path.
             </p>
           </div>
         </div>
@@ -268,7 +294,11 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
                 >
                   <button
                     onClick={() => toggleTask(task.id)}
-                    className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all cursor-pointer ${task.completed ? 'bg-[var(--accent)] border-[var(--accent)] text-white shadow-sm' : 'border-[var(--line)] hover:border-[var(--accent)]'}`}
+                    className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
+                      task.completed
+                        ? 'bg-[var(--accent)] border-[var(--accent)] text-white shadow-sm'
+                        : 'border-[var(--line)] hover:border-[var(--accent)]'
+                    }`}
                   >
                     {task.completed && <Check size={13} />}
                   </button>
@@ -319,7 +349,7 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
               <button
                 type="button"
                 onClick={() => onNavigate('tasks')}
-                className="hover:text-[var(--ink)] font-medium"
+                className="hover:text-[var(--ink)] font-medium cursor-pointer"
               >
                 Open Full Task Manager →
               </button>
@@ -327,8 +357,8 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
           </form>
         </div>
 
+        {/* Right Column: Habits & Physical Routine */}
         <div className="space-y-6">
-
           <div className="bg-white rounded-3xl p-7 border border-[var(--line)] shadow-sm">
             <div className="flex items-center justify-between pb-4 border-b border-[var(--line)]">
               <div>
@@ -337,7 +367,7 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
               </div>
               <button
                 onClick={() => onOpenQuickAdd('habit')}
-                className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[#f8f7f4] transition-colors"
+                className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[#f8f7f4] transition-colors cursor-pointer"
               >
                 <Plus size={16} />
               </button>
@@ -356,15 +386,14 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
             ) : (
               <div className="mt-4 space-y-4">
                 {habits.slice(0, 4).map((habit) => {
-                  const { currentStreak, consistency7d } = getHabitStreak(habit);
-                  const isDoneToday = !!habit.history[todayStr];
+                  const { currentStreak } = getHabitStreak(habit);
                   return (
                     <div key={habit.id} className="p-4 rounded-2xl bg-[#f8f7f4] border border-[var(--line)]">
                       <div className="flex items-center justify-between mb-3">
                         <div>
                           <p className="font-semibold text-sm text-[var(--ink)]">{habit.name}</p>
                           <p className="text-[11px] text-[var(--muted)] mt-0.5">
-                            {currentStreak} day streak · {consistency7d}% 7-day consistency
+                            {currentStreak} day streak
                           </p>
                         </div>
                         <div className="flex items-center gap-1 text-[var(--accent)] font-semibold text-xs">
@@ -415,39 +444,10 @@ export function TodayScreen({ onNavigate, onOpenQuickAdd }: TodayScreenProps) {
               </button>
             </div>
           </div>
-
-          <div className="bg-white rounded-3xl p-6 border border-[var(--line)] shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Zap size={16} className="text-amber-500" />
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Today's Focus & Energy</span>
-              </div>
-              <span className="text-xs font-semibold text-[var(--muted)]">
-                {todayEnergyLog ? `${todayEnergyLog.focusMinutes}m logged` : 'Not logged yet'}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between gap-2 p-3 bg-[#f8f7f4] rounded-2xl border border-[var(--line)]">
-              <div className="text-xs">
-                <p className="font-semibold text-[var(--ink)]">
-                  {todayEnergyLog ? `Mood: ${todayEnergyLog.mood}` : 'Record today\'s reflection'}
-                </p>
-                <p className="text-[11px] text-[var(--muted)] mt-0.5">
-                  {todayEnergyLog?.highlight ? `"${todayEnergyLog.highlight}"` : 'Track energy score (1-5) and focus hours'}
-                </p>
-              </div>
-
-              <button
-                onClick={() => onOpenQuickAdd('journal')}
-                className="px-3 py-1.5 rounded-xl bg-[var(--ink)] text-white text-xs font-medium hover:bg-black transition-colors cursor-pointer shrink-0"
-              >
-                {todayEnergyLog ? 'Edit' : 'Log Daily'}
-              </button>
-            </div>
-          </div>
         </div>
       </section>
 
+      {/* Strategic Goals Section */}
       <section className="bg-white rounded-3xl p-7 border border-[var(--line)] shadow-sm">
         <div className="flex items-center justify-between pb-4 border-b border-[var(--line)]">
           <div>
